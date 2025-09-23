@@ -1,0 +1,25 @@
+# Node/NestJS backend
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/.DS_Store
+backend/*.log
+
+# Flutter frontend
+frontend/.dart_tool/
+frontend/.idea/
+frontend/.vscode/
+frontend/build/
+frontend/.packages
+frontend/pubspec.lock
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.metadata
+
+# General
+*.log
+.DS_Store
+.env
+.vscode/
+.idea/
+build/
