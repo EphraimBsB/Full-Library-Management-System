@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
+import 'package:management_side/src/features/settings/modules/book_sources/presentation/screens/source_expanded.dart';
+import 'package:management_side/src/features/settings/modules/book_types/presentation/screens/book_type_expanded.dart';
+import 'package:management_side/src/features/settings/modules/categories/presentation/screens/categories_expanded.dart';
+import 'package:management_side/src/features/settings/modules/degrees/presentation/screens/degree_expanded.dart';
+import 'package:management_side/src/features/settings/modules/membership-types/presentation/screens/membership_types_expanded.dart';
+import 'package:management_side/src/features/settings/modules/subjects/presentation/screens/subjects_expanded.dart';
+import 'package:management_side/src/features/settings/modules/user-roles/presentation/screens/user_roles_expanded.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,7 +23,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -31,8 +39,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Settings'),
-        centerTitle: true,
+        title: const Text(
+          'Settings & Configurations',
+          style: TextStyle(color: AppTheme.textPrimaryColor),
+        ),
+        backgroundColor: AppTheme.surfaceColor,
+        centerTitle: false,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -52,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   });
                   // TODO: Save notification preference
                 },
-                activeColor: AppTheme.primaryColor,
+                activeColor: AppTheme.textPrimaryColor,
               ),
             ),
             _buildSettingItem(
@@ -66,7 +78,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   });
                   // TODO: Toggle dark mode
                 },
-                activeColor: AppTheme.primaryColor,
+
+                activeColor: AppTheme.textPrimaryColor,
               ),
             ),
             _buildSettingItem(
@@ -92,7 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }).toList(),
               ),
             ),
-            
+
             const SizedBox(height: 24),
             _buildSectionHeader('Account'),
             _buildSettingItem(
@@ -107,7 +120,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // TODO: Navigate to edit profile screen
               },
             ),
-            
+
+            const SizedBox(height: 24),
+            _buildSectionHeader('System Configurations'),
+            const CategoriesExpanded(),
+            const SubjectsExpanded(),
+            const SourcesExpanded(),
+            const BookTypesExpanded(),
+            const DegreesExpanded(),
+            const UserRolesExpanded(),
+            const MembershipTypesExpanded(),
+
             const SizedBox(height: 24),
             _buildSectionHeader('About'),
             _buildSettingItem(
@@ -129,7 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // TODO: Show terms of service
               },
             ),
-            
+
             const SizedBox(height: 32),
             Center(
               child: TextButton(
@@ -153,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 16,
+          fontSize: 14,
           fontWeight: FontWeight.bold,
           color: Colors.grey,
         ),
@@ -169,15 +192,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: AppTheme.surfaceColor,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(color: Colors.grey.shade200),
       ),
       child: ListTile(
-        leading: Icon(icon, color: AppTheme.primaryColor),
-        title: Text(title),
-        trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
+        leading: Icon(icon, color: AppTheme.textPrimaryColor, size: 20),
+        title: Text(title, style: TextStyle(fontSize: 13)),
+        trailing:
+            trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
@@ -257,7 +282,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // TODO: Implement password change logic
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Password updated successfully')),
+                  const SnackBar(
+                    content: Text('Password updated successfully'),
+                  ),
                 );
               }
             },
@@ -273,7 +300,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       applicationName: 'ISBAT LMS',
       applicationVersion: '1.0.0',
-      applicationIcon: const Icon(Icons.menu_book, size: 50, color: AppTheme.primaryColor),
+      applicationIcon: const Icon(
+        Icons.menu_book,
+        size: 50,
+        color: AppTheme.primaryColor,
+      ),
       applicationLegalese: '© 2025 ISBAT University. All rights reserved.',
       children: const [
         SizedBox(height: 16),

@@ -1,7 +1,10 @@
 import 'package:management_side/src/core/data/base_repository.dart';
 import 'package:management_side/src/core/utils/result.dart';
+import 'package:management_side/src/features/books/domain/models/book_details.dart'
+    as model;
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart'
     as model;
+import 'package:management_side/src/features/books/domain/models/book_details.dart';
 
 /// Interface for book repository operations
 abstract class BookRepository {
@@ -26,7 +29,7 @@ abstract class BookRepository {
   Future<Result<model.BookModel>> updateBook(model.BookModel book);
 
   /// Delete a book by ID
-  Future<Result<void>> deleteBook(String id);
+  Future<Result<void>> deleteBook(int id);
 
   /// Borrow a book
   Future<Result<model.BookModel>> borrowBook({
@@ -40,4 +43,7 @@ abstract class BookRepository {
     required String bookId,
     required String userId,
   });
+
+  /// Get detailed information about a book including copies and borrow history
+  Future<Result<BookDetails>> getBookDetails(int id);
 }

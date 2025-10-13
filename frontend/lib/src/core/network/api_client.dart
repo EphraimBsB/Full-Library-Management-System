@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:management_side/src/features/auth/utils/auth_interceptor.dart';
+import 'package:management_side/src/features/auth/utils/token_storage.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'api_constants.dart';
 import 'api_exceptions.dart';
@@ -8,14 +10,26 @@ class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   late final Dio _dio;
 
+  // final tokenStorage = TokenStorage();
+
   factory ApiClient() {
     return _instance;
+  }
+
+  Future<bool> get isConnected async {
+    try {
+      final response = await _dio.get('/');
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Get the internal Dio instance
   Dio get dio => _dio;
 
   ApiClient._internal() {
+    final tokenStorage = TokenStorage();
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
@@ -28,6 +42,7 @@ class ApiClient {
       ),
     );
 
+    _dio.interceptors.add(AuthInterceptor(tokenStorage, _dio));
     // Add interceptors
     _dio.interceptors.add(
       PrettyDioLogger(
@@ -35,7 +50,7 @@ class ApiClient {
         requestBody: false,
         responseBody: false,
         responseHeader: false,
-        error: true,
+        error: false,
         compact: true,
         maxWidth: 90,
       ),

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:management_side/src/core/widgets/build_book_card.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_book_card.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
-import 'package:management_side/src/features/books/presentation/screens/book_details_dialog.dart'
-    show showBookDetailsDialog;
-import 'package:management_side/src/features/dashboard/widgets/topbar.dart'
+import 'package:management_side/src/features/books/presentation/screens/book_details_screen.dart';
+import 'package:management_side/src/features/dashboard/presentation/widgets/topbar.dart'
     as dashboard;
 
 class BookListScreen extends StatefulWidget {
@@ -15,9 +14,9 @@ class BookListScreen extends StatefulWidget {
   State<BookListScreen> createState() => _BookListScreenState();
 }
 
-enum BookType { all, ebook, physical, both }
-
 enum BookStatus { all, available, unavailable }
+
+// Using BookType from book_enums.dart
 
 class _BookListScreenState extends State<BookListScreen> {
   final TextEditingController _searchController = TextEditingController();
@@ -49,14 +48,19 @@ class _BookListScreenState extends State<BookListScreen> {
       itemCount: books.length,
       itemBuilder: (context, index) {
         final book = books[index];
-        return buildBookCard(book, onTap: () => _showBookDetails(book));
+        return buildBookCard(
+          book,
+          onTap: () {
+            showBookDetailsDialog(context: context, bookId: book.id!);
+          },
+        );
       },
     );
   }
 
-  void _showBookDetails(BookModel book) {
-    showBookDetailsDialog(context: context, book: book);
-  }
+  // void _showBookDetails(BookModel book) {
+  //   // showBookDetailsDialog(context: context, book: book);
+  // }
 
   @override
   Widget build(BuildContext context) {

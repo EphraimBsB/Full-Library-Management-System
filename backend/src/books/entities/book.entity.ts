@@ -1,31 +1,20 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
-  UpdateDateColumn, 
-  DeleteDateColumn,
-  Index,
-  BeforeInsert,
-  BeforeUpdate,
-  ManyToMany,
-  OneToMany,
-  JoinTable
-} from 'typeorm';
-import { IsString, IsOptional, IsInt, IsArray, IsUrl, IsEnum, IsNumber, Min, Max, IsDateString, IsISBN, ValidateNested, ArrayMinSize } from 'class-validator';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, CreateDateColumn, UpdateDateColumn, Index, DeleteDateColumn, BeforeInsert, BeforeUpdate, JoinTable, ManyToMany, OneToOne } from 'typeorm';
+import { IsString, IsUUID, IsOptional, IsUrl, IsNumber, Min, Max, IsEnum, IsDateString, IsBoolean, ValidateNested, ArrayMinSize, IsInt, IsISBN } from 'class-validator';
 import { Type } from 'class-transformer';
-import { BookType, BookSource } from '../enums/book-type.enum';
-import { Category } from './category.entity';
-import { Subject } from './subject.entity';
-import { AccessNumber } from './access-number.entity';
-import { BorrowedBook } from './borrowed-book.entity';
+import { Type as TypeEntity } from '../../sys-configs/types/entities/type.entity';
+import { Subject } from '../../sys-configs/subjects/entities/subject.entity';
+import { BookCopy } from './book-copy.entity';
 import { BookRequest } from './book-request.entity';
+import { BookLoan } from './book-loan.entity';
+import { QueueEntry } from './queue-entry.entity';
+import { Category } from 'src/sys-configs/categories/entities/category.entity';
+import { Source } from 'src/sys-configs/sources/entities/source.entity';
+import { BookMetadata } from './book-metadata.entity';
 
 @Entity('books')
 @Index(['title', 'author'])
 @Index(['publicationYear'])
 @Index(['type'])
-@Index(['availableCopies'])
 export class Book {
   @PrimaryGeneratedColumn('increment')
   id: number;
@@ -59,6 +48,11 @@ export class Book {
   @IsOptional()
   @IsString()
   edition?: string;
+
+  @OneToMany(() => BookCopy, (copy) => copy.book)
+  @ValidateNested({ each: true })
+  @Type(() => BookCopy)
+  copies: BookCopy[];
 
   @Column('int', { default: 1 })
   @IsInt()
@@ -103,32 +97,34 @@ export class Book {
   @Type(() => Subject)
   subjects: Subject[];
 
-  @Column({
-    type: 'enum',
-    enum: BookType,
-    default: BookType.PHYSICAL
-  })
-  @IsEnum(BookType)
-  type: BookType = BookType.PHYSICAL;
+  @ManyToOne(() => TypeEntity, (type) => type.books)
+  @JoinColumn({ name: 'typeId' })
+  type?: TypeEntity;
 
   @Column({
-    type: 'enum',
-    enum: BookSource,
+    type: 'int',
     nullable: true
   })
-  @IsOptional()
-  @IsEnum(BookSource)
-  source?: BookSource;
+  typeId?: number;
+
+  @ManyToOne(() => Source, (source) => source.books)
+  @JoinColumn({ name: 'sourceId' })
+  source?: Source;
+
+  @Column({
+    type: 'int',
+    nullable: true
+  })
+  sourceId?: number;
 
   @Column({ nullable: true, name: 'ddc', unique: true })
   @IsOptional()
   @IsString()
-  ddc?: string; // Dewey Decimal Classification
+  ddc?: string;
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsString()
-  from?: string; // Source of the book (if donation, gift, etc.)
+  price?: string;
 
   @Column({ nullable: true })
   @IsOptional()
@@ -139,22 +135,24 @@ export class Book {
   @IsOptional()
   @IsString()
   location?: string;
-
   @Column({ nullable: true })
   @IsOptional()
   @IsString()
   shelf?: string;
 
-  @OneToMany(() => AccessNumber, (accessNumber) => accessNumber.book)
-  @ValidateNested({ each: true })
-  @Type(() => AccessNumber)
-  accessNumbers: AccessNumber[];
-
   @OneToMany(() => BookRequest, (request) => request.book)
   requests: BookRequest[];
 
-  @OneToMany(() => BorrowedBook, borrowedBook => borrowedBook.book)
-  borrowedBy: BorrowedBook[];
+  @OneToOne(() => BookMetadata, (metadata) => metadata.book, { cascade: true, eager: true })
+  metadata: BookMetadata;
+
+  @OneToMany('BookLoan', 'bookCopy')
+  loans: BookLoan[];
+
+  @OneToMany('QueueEntry', 'book')
+  queueEntries: QueueEntry[];
+  @Column({ type: 'int', default: 0 })
+  queueCount: number;
 
   @Column('decimal', { precision: 3, scale: 2, default: 0 })
   @IsOptional()

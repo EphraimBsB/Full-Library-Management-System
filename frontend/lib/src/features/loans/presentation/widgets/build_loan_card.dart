@@ -11,8 +11,22 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
       loan.status != LoanStatus.returned;
   final statusColor = _getStatusColor(loan.status);
   final daysDifference = loan.dueDate.difference(DateTime.now()).inDays.abs();
-  final bookCoverUrl = loan.book.coverImageUrl ?? '';
+
+  // Safely access nested book properties
+  final bookTitle = loan.bookData?['title']?.toString() ?? 'Unknown Book';
+  final bookAuthor = loan.bookData?['author']?.toString() ?? 'Unknown Author';
+  final bookCoverUrl =
+      loan.bookData?['coverImageUrl']?.toString() ??
+      loan.bookData?['book']?['coverImageUrl']?.toString() ??
+      '';
   final hasCoverImage = bookCoverUrl.isNotEmpty;
+  final ddc = loan.bookData?['ddc']?.toString() ?? 'N/A';
+
+  // Safely access user properties
+  final user = loan.user ?? {};
+  final firstName = user['firstName']?.toString() ?? '';
+  final lastName = user['lastName']?.toString() ?? '';
+  final rollNumber = user['rollNumber']?.toString() ?? 'N/A';
 
   return Card(
     elevation: 2,
@@ -60,7 +74,7 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                 ),
                 // Loan ID
                 Text(
-                  'Loan #${loan.id.split('-').last}',
+                  'Loan #${loan.id.split('-').first}',
                   style: TextStyle(
                     fontSize: 10,
                     color: Colors.grey[600],
@@ -90,95 +104,65 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                       ),
                     ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: hasCoverImage
-                        ? CachedNetworkImage(
-                            imageUrl: bookCoverUrl,
-                            fit: BoxFit.cover,
-                            width: 80,
-                            height: 120,
-                            placeholder: (context, url) => Container(
-                              color: Colors.grey[200],
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: Colors.grey[200],
-                              child: const Icon(
-                                Icons.book,
-                                color: Colors.grey,
-                                size: 24,
-                              ),
-                            ),
-                          )
-                        : Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: Icon(
-                                Icons.menu_book,
-                                color: Colors.grey,
-                                size: 32,
-                              ),
-                            ),
+                  child: hasCoverImage
+                      ? CachedNetworkImage(
+                          imageUrl: bookCoverUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                  ),
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.book),
+                        )
+                      : const Center(
+                          child: Icon(
+                            Icons.menu_book_rounded,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 12),
-                // Book and loan info
+
+                // Book and user details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Book title
                       Text(
-                        loan.book.title,
+                        bookTitle,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
                           fontSize: 14,
-                          height: 1.2,
+                          fontWeight: FontWeight.bold,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      // Author and DDC
+
+                      // Book author
+                      Text(
+                        bookAuthor,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // DDC number
                       Row(
                         children: [
                           const Icon(
-                            Icons.person_outline,
-                            size: 12,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              loan.book.author.isNotEmpty
-                                  ? loan.book.author
-                                  : 'Unknown Author',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[700],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(
                             Icons.numbers,
-                            size: 12,
+                            size: 14,
                             color: Colors.grey,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            loan.book.ddc ?? 'N/A',
+                            'DDC: $ddc',
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey[700],
@@ -210,7 +194,7 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Access: ${loan.accessNumber}',
+                              'Copy: ${loan.bookCopy!["accessNumber"]}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.blue[800],
@@ -241,7 +225,9 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${loan.user.firstName} ${loan.user.lastName}',
+                                  '$firstName $lastName'.trim().isNotEmpty
+                                      ? '$firstName $lastName'.trim()
+                                      : 'Unknown User',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -250,7 +236,7 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
-                                  'Roll: ${loan.user.rollNumber}',
+                                  'Roll: $rollNumber',
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.grey[600],
@@ -312,11 +298,12 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    loan.status == LoanStatus.returned
-                        ? 'Returned on ${_formatDate(loan.returnedDate!)}'
+                    loan.status == LoanStatus.returned &&
+                            loan.returnedAt != null
+                        ? 'Returned on ${_formatDate(loan.returnedAt!)}'
                         : isOverdue
-                        ? '${daysDifference} days overdue'
-                        : 'Due in ${daysDifference} days',
+                        ? '$daysDifference days overdue'
+                        : 'Due in $daysDifference days',
                     style: TextStyle(
                       fontSize: 10,
                       color: isOverdue ? Colors.red[800] : Colors.green[800],

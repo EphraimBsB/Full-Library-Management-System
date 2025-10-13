@@ -1,14 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:management_side/src/features/auth/utils/token_storage.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
-
+import 'package:management_side/src/features/auth/presentation/providers/auth_state_provider.dart';
 import 'presentation/screens/student_home_screen.dart';
 
-class StudentApp extends StatelessWidget {
-  const StudentApp({super.key});
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize token storage
+  final token = await tokenStorage.getToken();
+
+  runApp(ProviderScope(child: StudentApp(initialAuthState: token != null)));
+}
+
+class StudentApp extends ConsumerWidget {
+  final bool initialAuthState;
+
+  const StudentApp({super.key, required this.initialAuthState});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch auth state changes
+    final authState = ref.watch(authStateProvider);
+    final isAuthenticated = authState.authResponse != null;
+
+    // If user logs out, navigate to login screen
+    if (!isAuthenticated && initialAuthState) {
+      // WidgetsBinding.instance.addPostFrameCallback((_) {
+      //   Navigator.of(
+      //     context,
+      //   ).pushNamedAndRemoveUntil('/login', (route) => false);
+      // });
+    }
+
     return MaterialApp(
       title: 'ISBAT LMS - Student Portal',
       debugShowCheckedModeBanner: false,
@@ -56,6 +82,7 @@ class StudentApp extends StatelessWidget {
           ),
         ),
       ),
+      // Use a builder to handle initial route
       home: const StudentHomeScreen(),
     );
   }

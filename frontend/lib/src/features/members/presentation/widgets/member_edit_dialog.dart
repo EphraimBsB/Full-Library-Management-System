@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:management_side/src/features/users/domain/models/user_model.dart';
+import 'package:management_side/src/features/auth/domain/models/user_model.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/core/utils/date_utils.dart';
 
@@ -7,11 +7,8 @@ class MemberEditDialog extends StatefulWidget {
   final User? member;
   final Function(User) onSave;
 
-  const MemberEditDialog({
-    Key? key,
-    this.member,
-    required this.onSave,
-  }) : super(key: key);
+  const MemberEditDialog({Key? key, this.member, required this.onSave})
+    : super(key: key);
 
   @override
   _MemberEditDialogState createState() => _MemberEditDialogState();
@@ -37,12 +34,15 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
     _firstNameController = TextEditingController(text: member?.firstName ?? '');
     _lastNameController = TextEditingController(text: member?.lastName ?? '');
     _emailController = TextEditingController(text: member?.email ?? '');
-    _rollNumberController = TextEditingController(text: member?.rollNumber ?? '');
+    _rollNumberController = TextEditingController(
+      text: member?.rollNumber ?? '',
+    );
     _phoneController = TextEditingController(text: member?.phoneNumber ?? '');
     _courseController = TextEditingController(text: member?.course ?? '');
     _degreeController = TextEditingController(text: member?.degree ?? '');
     _dateOfBirth = member?.dateOfBirth;
-    _expiryDate = member?.expiryDate ?? DateTime.now().add(const Duration(days: 365));
+    _expiryDate =
+        member?.expiryDate ?? DateTime.now().add(const Duration(days: 365));
     _isActive = member?.isActive ?? true;
   }
 
@@ -61,7 +61,9 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
   Future<void> _selectDate(BuildContext context, bool isBirthDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isBirthDate ? _dateOfBirth ?? DateTime(2000) : _expiryDate ?? DateTime.now(),
+      initialDate: isBirthDate
+          ? _dateOfBirth ?? DateTime(2000)
+          : _expiryDate ?? DateTime.now(),
       firstDate: isBirthDate ? DateTime(1900) : DateTime.now(),
       lastDate: isBirthDate ? DateTime.now() : DateTime(2100),
     );
@@ -79,14 +81,22 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
       final member = User(
-        id: widget.member?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            widget.member?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         rollNumber: _rollNumberController.text.trim(),
-        phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        course: _courseController.text.trim().isNotEmpty ? _courseController.text.trim() : null,
-        degree: _degreeController.text.trim().isNotEmpty ? _degreeController.text.trim() : null,
+        phoneNumber: _phoneController.text.trim().isNotEmpty
+            ? _phoneController.text.trim()
+            : null,
+        course: _courseController.text.trim().isNotEmpty
+            ? _courseController.text.trim()
+            : null,
+        degree: _degreeController.text.trim().isNotEmpty
+            ? _degreeController.text.trim()
+            : null,
         dateOfBirth: _dateOfBirth,
         createdAt: widget.member?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
@@ -103,7 +113,7 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.member != null;
-    
+
     return AlertDialog(
       title: Text(isEditing ? 'Edit Member' : 'Add New Member'),
       content: SingleChildScrollView(
@@ -116,13 +126,15 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
               _buildTextField(
                 label: 'First Name *',
                 controller: _firstNameController,
-                validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               _buildTextField(
                 label: 'Last Name *',
                 controller: _lastNameController,
-                validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               _buildTextField(
@@ -139,7 +151,8 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
               _buildTextField(
                 label: 'Roll Number *',
                 controller: _rollNumberController,
-                validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               _buildTextField(
@@ -148,15 +161,9 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 12),
-              _buildTextField(
-                label: 'Course',
-                controller: _courseController,
-              ),
+              _buildTextField(label: 'Course', controller: _courseController),
               const SizedBox(height: 12),
-              _buildTextField(
-                label: 'Degree',
-                controller: _degreeController,
-              ),
+              _buildTextField(label: 'Degree', controller: _degreeController),
               const SizedBox(height: 12),
               _buildDateField(
                 label: 'Date of Birth',
@@ -228,13 +235,14 @@ class _MemberEditDialogState extends State<MemberEditDialog> {
           labelText: isRequired ? '$label *' : label,
           border: const OutlineInputBorder(),
           suffixIcon: const Icon(Icons.calendar_today),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
         ),
         child: Text(
           date != null ? AppDateUtils.formatDate(date) : 'Select a date',
-          style: TextStyle(
-            color: date != null ? null : Colors.grey[600],
-          ),
+          style: TextStyle(color: date != null ? null : Colors.grey[600]),
         ),
       ),
     );

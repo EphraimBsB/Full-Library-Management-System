@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #d9534f; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 4px; margin: 15px 0; }
+        .footer { margin-top: 20px; font-size: 12px; color: #777; text-align: center; }
+        .urgent { color: #d9534f; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Overdue Book Notice</h1>
+    </div>
+    <div class="content">
+        <p>Hello {{userName}},</p>
+        
+        <p class="urgent">The book <strong>{{bookTitle}}</strong> is now <strong>{{daysOverdue}} day(s) overdue</strong>.</p>
+        
+        <p>It was due on <strong>{{dueDate}}</strong>. Please return it as soon as possible to avoid additional fees.</p>
+        
+        <div style="text-align: center; margin: 25px 0;">
+            <a href="{{returnLink}}" class="button">View My Account</a>
+        </div>
+        
+        <p>If you believe this is an error or have any questions, please contact our support team at <a href="mailto:{{contactEmail}}">{{contactEmail}}</a>.</p>
+        
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

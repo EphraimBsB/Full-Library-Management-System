@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:management_side/src/features/users/domain/models/user_model.dart';
+import 'package:management_side/src/features/auth/domain/models/user_model.dart';
 
 class MemberDetailsDialog extends StatelessWidget {
   final User member;
@@ -17,7 +17,9 @@ class MemberDetailsDialog extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Member'),
-        content: const Text('Are you sure you want to delete this member? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete this member? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -32,9 +34,7 @@ class MemberDetailsDialog extends StatelessWidget {
                 const SnackBar(content: Text('Member deleted successfully')),
               );
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
@@ -55,7 +55,8 @@ class MemberDetailsDialog extends StatelessWidget {
             radius: 30,
             backgroundImage: member.profileImageUrl != null
                 ? NetworkImage(member.profileImageUrl!)
-                : const AssetImage('assets/default_avatar.png') as ImageProvider,
+                : const AssetImage('assets/default_avatar.png')
+                      as ImageProvider,
             onBackgroundImageError: (_, __) {
               // Handle image loading error
             },
@@ -105,7 +106,7 @@ class MemberDetailsDialog extends StatelessWidget {
             _buildDetailRow(
               context,
               'Member Since',
-              dateFormat.format(member.joinDate),
+              dateFormat.format(member.joinDate!),
             ),
             _buildDetailRow(
               context,
@@ -136,7 +137,7 @@ class MemberDetailsDialog extends StatelessWidget {
                 final dueDate = entry.value;
                 final isOverdue = dueDate.isBefore(DateTime.now());
                 final dueInDays = dueDate.difference(DateTime.now()).inDays;
-                
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
@@ -174,15 +175,19 @@ class MemberDetailsDialog extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: isOverdue ? Colors.red.shade100 : Colors.orange.shade100,
+                        color: isOverdue
+                            ? Colors.red.shade100
+                            : Colors.orange.shade100,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        isOverdue 
-                            ? 'Overdue ${-dueInDays} days' 
+                        isOverdue
+                            ? 'Overdue ${-dueInDays} days'
                             : 'Due in $dueInDays days',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: isOverdue ? Colors.red.shade800 : Colors.orange.shade800,
+                          color: isOverdue
+                              ? Colors.red.shade800
+                              : Colors.orange.shade800,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -201,16 +206,11 @@ class MemberDetailsDialog extends StatelessWidget {
         ),
         TextButton(
           onPressed: () => _showDeleteConfirmation(context),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.red,
-          ),
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
           child: const Text('Delete'),
         ),
         if (onEditPressed != null)
-          ElevatedButton(
-            onPressed: onEditPressed,
-            child: const Text('Edit'),
-          ),
+          ElevatedButton(onPressed: onEditPressed, child: const Text('Edit')),
       ],
     );
   }
@@ -223,7 +223,7 @@ class MemberDetailsDialog extends StatelessWidget {
     Color? highlightColor,
   }) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -263,10 +263,8 @@ class MemberDetailsDialog extends StatelessWidget {
   }) {
     showDialog(
       context: context,
-      builder: (context) => MemberDetailsDialog(
-        member: member,
-        onEditPressed: onEdit,
-      ),
+      builder: (context) =>
+          MemberDetailsDialog(member: member, onEditPressed: onEdit),
     );
   }
 }

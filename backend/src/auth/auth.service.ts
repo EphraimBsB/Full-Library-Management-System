@@ -30,13 +30,14 @@ export class AuthService {
     const payload = { 
       email: user.email, 
       sub: user.id,
-      role: user.role // Make sure your User entity has a role field
+      role: user.role?.name // Access the role name from the relation
     };
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
+        avatarUrl: user.avatarUrl,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
