@@ -4,6 +4,8 @@ import { User } from '../../users/entities/user.entity';
 export enum NotificationType {
   BOOK_REQUEST_STATUS = 'BOOK_REQUEST_STATUS',
   BORROWED_BOOK_DUE = 'BORROWED_BOOK_DUE',
+  DUE_SOON = 'DUE_SOON',
+  OVERDUE = 'OVERDUE',
   GENERAL = 'GENERAL',
 }
 

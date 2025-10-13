@@ -1,184 +1,140 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ConflictException, 
-  BadRequestException,
-  Inject,
-  forwardRef
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, Not, IsNull, In } from 'typeorm';
+import { Repository, In, IsNull, Not, DataSource } from 'typeorm';
 import { Book } from './entities/book.entity';
-import { Category } from './entities/category.entity';
-import { Subject } from './entities/subject.entity';
-import { AccessNumber } from './entities/access-number.entity';
-import { CreateBookDto } from './dto/create-book.dto';
+import { BookCopy, BookCopyStatus } from './entities/book-copy.entity';
+import { Category } from 'src/sys-configs/categories/entities/category.entity';
+import { Subject } from 'src/sys-configs/subjects/entities/subject.entity';
+import { Type } from 'src/sys-configs/types/entities/type.entity';
+import { Source } from 'src/sys-configs/sources/entities/source.entity';
+import { BookCopiesDto, CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BookQueryDto } from './dto/book-query.dto';
-import { BatchCreateBooksDto, BatchUpdateBooksDto } from './dto/batch-book.dto';
+// import { BookQueryDto } from './dto/book-query.dto';
 
 @Injectable()
 export class BooksService {
-  private readonly bookSelection = {
-    id: true,
-    title: true,
-    isbn: true,
-    ddc: true,
-    author: true,
-    publisher: true,
-    publicationYear: true,
-    edition: true,
-    totalCopies: true,
-    availableCopies: true,
-    location: true,
-    description: true,
-    type: true,
-    source: true,
-    from: true,
-    rating: true,
-    coverImageUrl: true,
-    ebookUrl: true,
-    createdAt: true,
-    updatedAt: true,
-    categories: { id: true, name: true, description: true },
-    subjects: { id: true, name: true, description: true },
-    accessNumbers: { id: true, number: true }
-  };
-
   constructor(
     @InjectRepository(Book)
     private readonly bookRepository: Repository<Book>,
+    @InjectRepository(BookCopy)
+    private readonly bookCopyRepository: Repository<BookCopy>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Subject)
     private readonly subjectRepository: Repository<Subject>,
-    @InjectRepository(AccessNumber)
-    private readonly accessNumberRepository: Repository<AccessNumber>,
+    @InjectRepository(Type)
+    private readonly typeRepository: Repository<Type>,
+    @InjectRepository(Source)
+    private readonly sourceRepository: Repository<Source>,
+    private dataSource: DataSource
   ) {}
 
+  // Create a new book with copies
   async create(createBookDto: CreateBookDto): Promise<Book> {
-    // Check if ISBN already exists
-    if (createBookDto.isbn) {
-      const existingBook = await this.bookRepository.findOne({ 
-        where: { isbn: createBookDto.isbn, deletedAt: IsNull() } 
-      });
-      
-      if (existingBook) {
-        throw new ConflictException('A book with this ISBN already exists');
-      }
-    }
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Process categories - create or find existing
-    const categories = await Promise.all(
-      createBookDto.categories.map(categoryDto => 
-        this.categoryRepository.findOne({ where: { name: categoryDto.name } })
-          .then(existing => existing || this.categoryRepository.create(categoryDto))
-      )
-    );
-
-    // Process subjects - create or find existing
-    const subjects = await Promise.all(
-      (createBookDto.subjects || []).map(subjectDto => 
-        this.subjectRepository.findOne({ where: { name: subjectDto.name } })
-          .then(existing => existing || this.subjectRepository.create(subjectDto))
-      )
-    );
-
-    // Create access numbers
-    const accessNumbers = (createBookDto.accessNumbers || []).map(accessNumberDto => 
-      this.accessNumberRepository.create(accessNumberDto)
-    );
-
-    const book = this.bookRepository.create({
-      ...createBookDto,
-      availableCopies: createBookDto.totalCopies,
-      categories,
-      subjects,
-      accessNumbers,
-    });
-
-    return this.bookRepository.save(book);
-  }
-
-  async createMany(batchCreateBooksDto: BatchCreateBooksDto): Promise<Book[]> {
-    const { books } = batchCreateBooksDto;
-    
-    // Process all books in parallel
-    const createdBooks = await Promise.all(
-      books.map(async (bookDto) => {
-        // Check for duplicate ISBN in the batch
-        const isDuplicateInBatch = books.some(
-          (b, index) => b.isbn && b.isbn === bookDto.isbn && books.indexOf(bookDto) !== index
-        );
-        
-        if (isDuplicateInBatch) {
-          throw new ConflictException(`Duplicate ISBN found in batch: ${bookDto.isbn}`);
-        }
-
-        // Check if ISBN already exists in the database
-        if (bookDto.isbn) {
-          const existingBook = await this.bookRepository.findOne({
-            where: { isbn: bookDto.isbn, deletedAt: IsNull() }
-          });
-          
-          if (existingBook) {
-            throw new ConflictException(`A book with ISBN ${bookDto.isbn} already exists`);
-          }
-        }
-
-        // Process categories
-        const categories = await Promise.all(
-          bookDto.categories.map(categoryDto => 
-            this.categoryRepository.findOne({ where: { name: categoryDto.name } })
-              .then(existing => existing || this.categoryRepository.create(categoryDto))
-          )
-        );
-
-        // Process subjects
-        const subjects = await Promise.all(
-          (bookDto.subjects || []).map(subjectDto => 
-            this.subjectRepository.findOne({ where: { name: subjectDto.name } })
-              .then(existing => existing || this.subjectRepository.create(subjectDto))
-          )
-        );
-
-        // Create access numbers
-        const accessNumbers = (bookDto.accessNumbers || []).map(accessNumberDto => 
-          this.accessNumberRepository.create(accessNumberDto)
-        );
-
-        // Create book
-        const book = this.bookRepository.create({
-          ...bookDto,
-          availableCopies: bookDto.totalCopies,
-          categories,
-          subjects,
-          accessNumbers,
+    try {
+      // Check for duplicate ISBN if provided
+      if (createBookDto.isbn) {
+        const existingBook = await this.bookRepository.findOne({
+          where: { isbn: createBookDto.isbn, deletedAt: IsNull() }
         });
+        if (existingBook) {
+          throw new ConflictException('A book with this ISBN already exists');
+        }
+      }
 
-        return book;
-      })
-    );
+      // Get or create categories
+      const categories = await Promise.all(
+        createBookDto.categories.map(categoryDto => 
+          this.getOrCreateCategory(categoryDto, queryRunner)
+        )
+      );
 
-    // Save all books in a transaction
-    return this.bookRepository.save(createdBooks);
+      // Get or create subjects
+      const subjects = await Promise.all(
+        (createBookDto.subjects || []).map(subjectDto =>
+          this.getOrCreateSubject(subjectDto, queryRunner)
+        )
+      );
+
+      // Get type and source
+      const type = await this.typeRepository.findOne({
+        where: { id: createBookDto.typeId }
+      });
+      if (!type) {
+        throw new NotFoundException(`Type with ID ${createBookDto.typeId} not found`);
+      }
+
+      let source: Source | null = null;
+      if (createBookDto.sourceId) {
+        source = await this.sourceRepository.findOne({
+          where: { id: createBookDto.sourceId }
+        });
+        if (!source) {
+          throw new NotFoundException(`Source with ID ${createBookDto.sourceId} not found`);
+        }
+      }
+
+      // Create book entity
+      const bookData = {
+        ...createBookDto,
+        categories,
+        subjects,
+        type,
+        source: source || undefined, // Convert null to undefined to match the expected type
+        availableCopies: 0,
+        totalCopies: 0,
+        // Explicitly exclude relations that might be in the DTO but shouldn't be in the entity
+        copies: undefined
+      };
+      
+      // Create and save the book in one step
+      const book = this.bookRepository.create(bookData);
+      const savedBook = await queryRunner.manager.save(book);
+
+      // Create book copies if provided
+      if (createBookDto.copies?.length) {
+        const copies = createBookDto.copies.map(copy => ({
+          accessNumber: copy.accessNumber,
+          notes: copy.notes
+        }));
+        await this.createBookCopies(savedBook, copies, queryRunner);
+      }
+
+      await queryRunner.commitTransaction();
+      // Ensure we're working with a single book
+      if (Array.isArray(savedBook)) {
+        if (savedBook.length === 0) {
+          throw new Error('Failed to create book: No book was saved');
+        }
+        return this.getBookWithRelations(savedBook[0].id);
+      }
+      return this.getBookWithRelations(savedBook.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      if (error instanceof ConflictException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to create book: ' + error.message);
+    } finally {
+      await queryRunner.release();
+    }
   }
 
-  async findAll(query: BookQueryDto): Promise<{ data: Book[]; total: number }> {
-    const { 
-      search, 
-      author, 
-      title, 
-      isbn, 
-      minYear, 
-      maxYear, 
-      categories, 
-      type, 
-      minAvailable = 1,
-      page = 1, 
-      limit = 10, 
-      sortBy = 'title', 
-      sortOrder = 'ASC' 
+  // Find all books with pagination and filtering
+  async findAll(query: BookQueryDto) {
+    const {
+      search,
+      page = 1,
+      limit = 10,
+      minAvailable,
+      sortBy = 'title',
+      sortOrder = 'ASC',
+      ...filters
     } = query;
 
     const skip = (page - 1) * limit;
@@ -186,313 +142,375 @@ export class BooksService {
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.categories', 'categories')
       .leftJoinAndSelect('book.subjects', 'subjects')
-      .leftJoinAndSelect('book.accessNumbers', 'accessNumbers')
-      .select([
-        'book.id', 'book.title', 'book.isbn', 'book.author', 'book.publisher',
-        'book.publicationYear', 'book.edition', 'book.totalCopies', 'book.availableCopies',
-        'book.description', 'book.coverImageUrl', 'book.ebookUrl', 'book.rating',
-        'book.createdAt', 'book.updatedAt',
-        'categories.id', 'categories.name',
-        'subjects.id', 'subjects.name',
-        'accessNumbers.id', 'accessNumbers.number'
-      ])
+      .leftJoinAndSelect('book.copies', 'copies')
+      .leftJoinAndSelect('book.type', 'type')
+      .leftJoinAndSelect('book.source', 'source')
+      .leftJoinAndSelect('book.metadata', 'metadata')
       .where('book.deletedAt IS NULL');
 
-    // Apply filters
+    // Apply search
     if (search) {
-      queryBuilder.andWhere('(book.title LIKE :search OR book.author LIKE :search)', { 
-        search: `%${search}%` 
-      });
+      queryBuilder.andWhere(
+        '(book.title ILIKE :search OR book.author ILIKE :search OR book.isbn = :isbn)',
+        { search: `%${search}%`, isbn: search }
+      );
     }
-    
-    if (author) {
-      queryBuilder.andWhere('book.author LIKE :author', { author: `%${author}%` });
+
+    // Apply minAvailable filter
+    if (minAvailable !== undefined) {
+      queryBuilder.andWhere('book.availableCopies >= :minAvailable', { minAvailable });
     }
-    
-    if (title) {
-      queryBuilder.andWhere('book.title LIKE :title', { title: `%${title}%` });
-    }
-    
-    if (isbn) {
-      queryBuilder.andWhere('book.isbn = :isbn', { isbn });
-    }
-    
-    if (minYear !== undefined && maxYear !== undefined) {
-      queryBuilder.andWhere('book.publicationYear BETWEEN :minYear AND :maxYear', { 
-        minYear, 
-        maxYear 
-      });
-    } else if (minYear !== undefined) {
-      queryBuilder.andWhere('book.publicationYear >= :minYear', { minYear });
-    } else if (maxYear !== undefined) {
-      queryBuilder.andWhere('book.publicationYear <= :maxYear', { maxYear });
-    }
-    
-    if (categories && categories.length > 0) {
-      queryBuilder.andWhere('category.id IN (:...categoryIds)', { 
-        categoryIds: categories 
-      });
-    }
-    
-    if (type) {
-      queryBuilder.andWhere('book.type = :type', { type });
-    }
-    
-    // queryBuilder.andWhere('book.availableCopies >= :minAvailable', { minAvailable });
+
+    // Apply other filters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && key !== 'sortBy' && key !== 'sortOrder') {
+        queryBuilder.andWhere(`book.${key} = :${key}`, { [key]: value });
+      }
+    });
 
     // Apply sorting
-    const order: any = {};
-    order[`book.${sortBy}`] = sortOrder;
-    queryBuilder.orderBy(order);
+    queryBuilder.orderBy(
+      `book.${sortBy}`,
+      sortOrder.toUpperCase() as 'ASC' | 'DESC'
+    );
 
-    // Apply pagination
-    queryBuilder.skip(skip).take(limit);
+    // Get paginated results
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
-    // Get results
-    const [data, total] = await queryBuilder.getManyAndCount();
-
-    return { data, total };
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
+  // Find a book by ID with relations
   async findOne(id: number): Promise<Book> {
     const book = await this.bookRepository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['categories', 'subjects', 'accessNumbers'],
-      select: this.bookSelection as any
+      relations: ['categories', 'subjects', 'copies', 'type', 'source']
     });
 
     if (!book) {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
+
     return book;
   }
 
+  // Update a book
   async update(id: number, updateBookDto: UpdateBookDto): Promise<Book> {
-    const book = await this.bookRepository.findOne({ 
-      where: { id, deletedAt: IsNull() },
-      relations: ['categories', 'subjects', 'accessNumbers']
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!book) {
-      throw new NotFoundException(`Book with ID ${id} not found`);
-    }
-
-    // Check if ISBN is being updated and if it already exists
-    if (updateBookDto.isbn && updateBookDto.isbn !== book.isbn) {
-      const existingBook = await this.bookRepository.findOne({ 
-        where: { isbn: updateBookDto.isbn, deletedAt: IsNull() } 
-      });
-      
-      if (existingBook) {
-        throw new ConflictException('A book with this ISBN already exists');
-      }
-    }
-
-    // Update categories if provided
-    if (updateBookDto.categories) {
-      book.categories = await Promise.all(
-        updateBookDto.categories.map(categoryDto => 
-          this.categoryRepository.findOne({ where: { name: categoryDto.name } })
-            .then(existing => existing || this.categoryRepository.create(categoryDto))
-        )
-      );
-    }
-
-    // Update subjects if provided
-    if (updateBookDto.subjects) {
-      book.subjects = await Promise.all(
-        (updateBookDto.subjects || []).map(subjectDto => 
-          this.subjectRepository.findOne({ where: { name: subjectDto.name } })
-            .then(existing => existing || this.subjectRepository.create(subjectDto))
-        )
-      );
-    }
-
-    // Update access numbers if provided
-    if (updateBookDto.accessNumbers) {
-      // Remove existing access numbers
-      await this.accessNumberRepository.delete({ book: { id: book.id } });
-      
-      // Create new access numbers
-      book.accessNumbers = updateBookDto.accessNumbers.map(accessNumberDto => 
-        this.accessNumberRepository.create({
-          ...accessNumberDto,
-          book: { id: book.id }
-        })
-      );
-    }
-
-    // Update book properties
-    Object.assign(book, updateBookDto);
-
-    // Update available copies if total copies changed
-    if (updateBookDto.totalCopies !== undefined) {
-      const difference = updateBookDto.totalCopies - book.totalCopies;
-      book.availableCopies = Math.max(0, book.availableCopies + difference);
-      book.totalCopies = updateBookDto.totalCopies;
-    }
-
-    return this.bookRepository.save(book);
-  }
-
-  async updateMany(batchUpdateBooksDto: BatchUpdateBooksDto): Promise<Book[]> {
-    const { updates } = batchUpdateBooksDto;
-    
-    // Process all updates in parallel
-    const updatePromises = updates.map(async ({ id, data: updateData }) => {
-      const book = await this.bookRepository.findOne({ 
+    try {
+      const book = await this.bookRepository.findOne({
         where: { id, deletedAt: IsNull() },
-        relations: ['categories', 'subjects', 'accessNumbers']
+        relations: ['categories', 'subjects']
       });
 
       if (!book) {
         throw new NotFoundException(`Book with ID ${id} not found`);
       }
 
-      // Check if ISBN is being updated and if it already exists
-      if (updateData.isbn && updateData.isbn !== book.isbn) {
-        const existingBook = await this.bookRepository.findOne({ 
-          where: { 
-            isbn: updateData.isbn, 
-            id: Not(id), // Exclude current book from the check
-            deletedAt: IsNull() 
-          } 
-        });
-        
-        if (existingBook) {
-          throw new ConflictException(`A book with ISBN ${updateData.isbn} already exists`);
-        }
-      }
-
       // Update categories if provided
-      if (updateData.categories) {
+      if (updateBookDto.categories) {
         book.categories = await Promise.all(
-          updateData.categories.map(categoryDto => 
-            this.categoryRepository.findOne({ where: { name: categoryDto.name } })
-              .then(existing => existing || this.categoryRepository.create(categoryDto))
+          updateBookDto.categories.map(cat => 
+            this.getOrCreateCategory(cat, queryRunner)
           )
         );
       }
 
       // Update subjects if provided
-      if (updateData.subjects) {
+      if (updateBookDto.subjects) {
         book.subjects = await Promise.all(
-          updateData.subjects.map(subjectDto => 
-            this.subjectRepository.findOne({ where: { name: subjectDto.name } })
-              .then(existing => existing || this.subjectRepository.create(subjectDto))
+          updateBookDto.subjects.map(sub => 
+            this.getOrCreateSubject(sub, queryRunner)
           )
         );
       }
 
-      // Update access numbers if provided
-      if (updateData.accessNumbers) {
-        // Remove existing access numbers
-        await this.accessNumberRepository.delete({ book: { id: book.id } });
-        
-        // Create new access numbers
-        book.accessNumbers = updateData.accessNumbers.map(accessNumberDto => 
-          this.accessNumberRepository.create({
-            ...accessNumberDto,
-            book: { id: book.id }
-          })
-        );
-      }
-      
+      // Update other fields
+      const { categories, subjects, copies, ...bookData } = updateBookDto;
+      Object.assign(book, bookData);
 
-      // Update book properties
-      Object.assign(book, updateData);
-
-      // Update available copies if total copies changed
-      if (updateData.totalCopies !== undefined) {
-        if (updateData.totalCopies < 0) {
-          throw new BadRequestException('Total copies cannot be negative');
-        }
-        
-        // If reducing total copies, ensure we don't go below checked out copies
-        const checkedOutCopies = book.totalCopies - book.availableCopies;
-        if (updateData.totalCopies < checkedOutCopies) {
-          throw new BadRequestException(
-            `Cannot reduce total copies below ${checkedOutCopies} (currently checked out copies)`
-          );
-        }
-        
-        // Update available copies to maintain the difference
-        book.availableCopies = updateData.totalCopies - checkedOutCopies;
-        book.totalCopies = updateData.totalCopies;
+      // Update copies if provided
+      if (copies) {
+        const copiesData = copies.map(copy => ({
+          ...copy,
+          accessNumber: copy.accessNumber || '' // Ensure accessNumber is not undefined
+        }));
+        await this.updateBookCopies(book, copiesData, queryRunner);
       }
 
-      return book;
-    });
-
-    // Execute all updates and return the results
-    const updatedBooks = await Promise.all(updatePromises);
-    return this.bookRepository.save(updatedBooks);
+      const updatedBook = await queryRunner.manager.save(book);
+      await queryRunner.commitTransaction();
+      return this.getBookWithRelations(updatedBook.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
+  // Soft delete a book
   async remove(id: number): Promise<void> {
     const book = await this.bookRepository.findOne({
-      where: { id },
-      relations: ['accessNumbers']
+      where: { id, deletedAt: IsNull() },
+      relations: ['copies']
     });
 
     if (!book) {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
-    // Remove associated access numbers
-    if (book.accessNumbers && book.accessNumbers.length > 0) {
-      await this.accessNumberRepository.remove(book.accessNumbers);
+    // Check for borrowed copies
+    const borrowedCopies = book.copies?.filter(
+      copy => copy.status === BookCopyStatus.BORROWED
+    ) || [];
+
+    if (borrowedCopies.length > 0) {
+      throw new BadRequestException(
+        `Cannot delete book with ID ${id} as it has ${borrowedCopies.length} borrowed copies`
+      );
     }
 
-    // Soft delete the book
+    // Soft delete the book and its copies
     await this.bookRepository.softRemove(book);
   }
 
-  // async checkOutBook(id: number, quantity: number = 1): Promise<Book> {
-  //   if (quantity <= 0) {
-  //     throw new BadRequestException('Quantity must be greater than 0');
-  //   }
+  // Helper method to get or create a category
+  private async getOrCreateCategory(
+    categoryDto: { name: string },
+    queryRunner: any
+  ): Promise<Category> {
+    let category = await this.categoryRepository.findOne({
+      where: { name: categoryDto.name }
+    });
 
-  //   const book = await this.bookRepository.findOne({
-  //     where: { id, deletedAt: IsNull() },
-  //     lock: { mode: 'pessimistic_write' } // Lock the row for update
-  //   });
+    if (!category) {
+      category = this.categoryRepository.create(categoryDto);
+      await queryRunner.manager.save(category);
+    }
 
-  //   if (!book) {
-  //     throw new NotFoundException(`Book with ID ${id} not found`);
-  //   }
+    return category;
+  }
+
+  // Helper method to get or create a subject
+  private async getOrCreateSubject(
+    subjectDto: { name: string },
+    queryRunner: any
+  ): Promise<Subject> {
+    let subject = await this.subjectRepository.findOne({
+      where: { name: subjectDto.name }
+    });
+
+    if (!subject) {
+      subject = this.subjectRepository.create(subjectDto);
+      await queryRunner.manager.save(subject);
+    }
+
+    return subject;
+  }
+
+  // Helper method to create book copies
+  private async createBookCopies(
+    book: Book,
+    copies: Array<{ accessNumber: string; notes?: string }>,
+    queryRunner: any
+  ): Promise<void> {
+    const bookCopies = copies.map(copy =>
+      this.bookCopyRepository.create({
+        ...copy,
+        book,
+        status: BookCopyStatus.AVAILABLE
+      })
+    );
+
+    const savedCopies = await queryRunner.manager.save(bookCopies);
     
-  //   if (book.availableCopies < quantity) {
-  //     throw new BadRequestException(
-  //       `Not enough copies available. Available: ${book.availableCopies}, Requested: ${quantity}`
-  //     );
-  //   }
-
-  //   book.availableCopies -= quantity;
-  //   return this.bookRepository.save(book);
-  // }
-
-  // async returnBook(id: number, quantity: number = 1): Promise<Book> {
-  //   if (quantity <= 0) {
-  //     throw new BadRequestException('Quantity must be greater than 0');
-  //   }
-
-  //   const book = await this.bookRepository.findOne({
-  //     where: { id, deletedAt: IsNull() },
-  //     lock: { mode: 'pessimistic_write' } // Lock the row for update
-  //   });
-
-  //   if (!book) {
-  //     throw new NotFoundException(`Book with ID ${id} not found`);
-  //   }
+    // Update book counts
+    book.totalCopies = (book.totalCopies || 0) + savedCopies.length;
+    book.availableCopies = (book.availableCopies || 0) + savedCopies.length;
     
-  //   if (book.availableCopies + quantity > book.totalCopies) {
-  //     throw new BadRequestException(
-  //       `Cannot return more copies than were checked out. Current available: ${book.availableCopies}, Total: ${book.totalCopies}`
-  //     );
-  //   }
+    await queryRunner.manager.save(book);
+  }
 
-  //   book.availableCopies += quantity;
-  //   return this.bookRepository.save(book);
-  // }
+  // Helper method to update book copies
+  private async updateBookCopies(
+    book: Book,
+    copies: Array<{ id?: number; accessNumber: string; notes?: string }>,
+    queryRunner: any
+  ): Promise<void> {
+    const existingCopies = await this.bookCopyRepository.find({
+      where: { book: { id: book.id } }
+    });
+
+    // Update existing copies
+    const updatedCopies: BookCopy[] = [];
+    for (const copyDto of copies) {
+      if ('id' in copyDto && copyDto.id) {
+        const existingCopy = existingCopies.find(c => c.id === copyDto.id);
+        if (existingCopy) {
+          Object.assign(existingCopy, {
+            accessNumber: copyDto.accessNumber,
+            notes: copyDto.notes
+          });
+          const updatedCopy = await queryRunner.manager.save(BookCopy, existingCopy);
+          updatedCopies.push(updatedCopy);
+        }
+      } else {
+        // Create new copy
+        const newCopy = this.bookCopyRepository.create({
+          accessNumber: copyDto.accessNumber,
+          notes: copyDto.notes,
+          book,
+          status: BookCopyStatus.AVAILABLE
+        });
+        const savedCopy = await queryRunner.manager.save(BookCopy, newCopy);
+        updatedCopies.push(savedCopy);
+      }
+    }
+
+    // Delete copies not in the updated list
+    const updatedCopyIds = copies
+      .map(c => 'id' in c ? c.id : null)
+      .filter((id): id is number => id !== null);
+
+    const copiesToDelete = existingCopies.filter(
+      copy => !updatedCopyIds.includes(copy.id)
+    );
+
+    if (copiesToDelete.length > 0) {
+      await queryRunner.manager.softRemove(copiesToDelete);
+    }
+
+    // Update book counts
+    const availableCount = updatedCopies.filter(
+      (copy: BookCopy) => copy.status === BookCopyStatus.AVAILABLE
+    ).length;
+
+    book.totalCopies = updatedCopies.length;
+    book.availableCopies = availableCount;
+    await queryRunner.manager.save(book);
+  }
+
+  async getBookDetails(id: number) {
+    const book = await this.bookRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+      relations: ['copies', 'categories', 'subjects', 'type', 'source', 'metadata']
+    });
+
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+
+    // Get current borrow status
+    const currentBorrows = await this.bookCopyRepository
+      .createQueryBuilder('copy')
+      .leftJoinAndSelect('copy.loans', 'loan', 'loan.status = :status', { status: 'ACTIVE' })
+      .leftJoinAndSelect('loan.user', 'user')
+      .where('copy.bookId = :bookId', { bookId: id })
+      .andWhere('loan.id IS NOT NULL')
+      .getMany();
+
+    // Get borrow history (last 10 returns)
+    const borrowHistory = await this.bookCopyRepository
+      .createQueryBuilder('copy')
+      .leftJoinAndSelect('copy.loans', 'loan', 'loan.status = :status', { status: 'RETURNED' })
+      .leftJoinAndSelect('loan.user', 'user')
+      .where('copy.bookId = :bookId', { bookId: id })
+      .andWhere('loan.id IS NOT NULL')
+      .orderBy('loan.returnedAt', 'DESC').getMany();
+
+    // Get queue requests
+    const queueRequests = await this.bookRepository
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.queueEntries', 'queue', 'queue.status = :queueStatus', { queueStatus: 'WAITING' })
+      .leftJoinAndSelect('queue.user', 'user')
+      .where('book.id = :bookId', { bookId: id })
+      .orderBy('queue.position', 'ASC')
+      .getOne();
+
+    // Format current borrows
+    const currentBorrowsFormatted = currentBorrows.flatMap(copy =>
+      copy.loans?.map(loan => ({
+        copy_id: copy.id,
+        copy_access_number: copy.accessNumber,
+        borrower: {
+          user_id: loan.user.id,
+          name: `${loan.user.firstName} ${loan.user.lastName}`.trim(),
+          roll_number: loan.user.rollNumber,
+          email: loan.user.email,
+          phone: loan.user.phoneNumber
+        },
+        borrowed_at: loan.borrowedAt,
+        due_date: loan.dueDate,
+        is_overdue: loan.dueDate < new Date()
+      })) || []
+    );
+
+    // Format borrow history
+    const borrowHistoryFormatted = borrowHistory.flatMap(copy =>
+      copy.loans?.map(loan => ({
+        copy_id: copy.id,
+        copy_access_number: copy.accessNumber,
+        borrower: {
+          user_id: loan.user.id,
+          name: `${loan.user.firstName} ${loan.user.lastName}`.trim(),
+          roll_number: loan.user.rollNumber,
+          email: loan.user.email,
+          phone: loan.user.phoneNumber
+        },
+        borrowed_at: loan.borrowedAt,
+        returned_at: loan.returnedAt
+      })) || []
+    );
+
+    // Format queue requests
+    const queueRequestsFormatted = queueRequests?.queueEntries?.map((entry, index) => ({
+      position: index + 1,
+      user_id: entry.user.id,
+      name: `${entry.user.firstName} ${entry.user.lastName}`.trim(),
+      roll_number: entry.user.rollNumber,
+      email: entry.user.email,
+      phone: entry.user.phoneNumber,
+      requested_at: entry.createdAt
+    })) || [];
+
+    return {
+      book,
+      current_borrows: currentBorrowsFormatted,
+      borrow_history: borrowHistoryFormatted,
+      queue_requests: queueRequestsFormatted
+    };
+  }
+
+  // Helper method to get book with relations
+  private async getBookWithRelations(id: number): Promise<Book> {
+    const book = await this.bookRepository.findOne({
+      where: { id },
+      relations: [
+        'categories',
+        'subjects',
+        'copies',
+        'type',
+        'source'
+      ]
+    });
+
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+
+    return book;
+  }
 }

@@ -4,6 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
+import 'package:management_side/src/features/books/presentation/screens/ebook_reader_screen.dart';
+import 'package:management_side/src/features/books/presentation/screens/reader_test.dart';
+import 'package:management_side/src/features/requests/presentation/providers/book_request_provider.dart';
+import 'package:management_side/src/features/student/presentation/widgets/borrow_request_dialog.dart';
+import 'package:management_side/src/core/error/failures.dart';
+import 'package:management_side/src/features/student/presentation/widgets/membership_request_dialog.dart';
 
 class StudentHomeScreen extends ConsumerWidget {
   const StudentHomeScreen({super.key});
@@ -44,7 +50,26 @@ class StudentHomeScreen extends ConsumerWidget {
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () async {
+                final result = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => const MembershipRequestDialog(),
+                );
+
+                if (result == true) {
+                  // Show success message
+                  // if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Membership request submitted successfully!',
+                      ),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // }
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -65,12 +90,16 @@ class StudentHomeScreen extends ConsumerWidget {
       body: booksAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (books) => _buildContent(context, books),
+        data: (books) => _buildContent(context, books, ref),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, List<BookModel> books) {
+  Widget _buildContent(
+    BuildContext context,
+    List<BookModel> books,
+    WidgetRef ref,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
       child: Padding(
@@ -81,7 +110,7 @@ class StudentHomeScreen extends ConsumerWidget {
             const SizedBox(height: 20),
             Center(
               child: const Text(
-                'Find Your Next',
+                'Find a book',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -126,7 +155,7 @@ class StudentHomeScreen extends ConsumerWidget {
               ),
               itemCount: books.length,
               itemBuilder: (context, index) {
-                return _buildBookCard(books[index]);
+                return _buildBookCard(books[index], context, ref);
               },
             ),
             const SizedBox(height: 40),
@@ -166,7 +195,7 @@ class StudentHomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBookCard(BookModel book) {
+  Widget _buildBookCard(BookModel book, BuildContext context, WidgetRef ref) {
     return Container(
       // margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -260,20 +289,20 @@ class StudentHomeScreen extends ConsumerWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: book.availableCopies > 0
+                          color: book.availableCopies! > 0
                               ? Colors.green[50]
                               : Colors.orange[50],
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: book.availableCopies > 0
+                            color: book.availableCopies! > 0
                                 ? Colors.green[100]!
                                 : Colors.orange[100]!,
                           ),
                         ),
                         child: Text(
-                          book.availableCopies > 0 ? 'Available' : 'Borrowed',
+                          book.availableCopies! > 0 ? 'Available' : 'Borrowed',
                           style: TextStyle(
-                            color: book.availableCopies > 0
+                            color: book.availableCopies! > 0
                                 ? Colors.green[800]
                                 : Colors.orange[800],
                             fontSize: 10,
@@ -289,7 +318,7 @@ class StudentHomeScreen extends ConsumerWidget {
                         ? '${book.description!.substring(0, book.description!.length > 100 ? 100 : book.description!.length)}...'
                         : 'No description available',
                     style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    maxLines: 5,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const Spacer(),
@@ -300,6 +329,15 @@ class StudentHomeScreen extends ConsumerWidget {
                         child: ElevatedButton.icon(
                           onPressed: () {
                             // Handle read now action
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EbookReaderScreen(
+                                  bookTitle: book.title,
+                                  ebookUrl: book.ebookUrl!,
+                                ),
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey[100],
@@ -321,7 +359,66 @@ class StudentHomeScreen extends ConsumerWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            // Handle borrow action
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return BorrowRequestDialog(
+                                  bookTitle: book.title,
+                                  onSubmit: (reason) async {
+                                    final result = await ref
+                                        .read(bookRequestRepositoryProvider)
+                                        .createBookRequest(
+                                          bookId: book.id.toString(),
+                                          reason: reason,
+                                        );
+
+                                    if (!context.mounted) return;
+
+                                    if (context.mounted) {
+                                      Navigator.of(
+                                        context,
+                                      ).pop(); // Close dialog
+
+                                      result.fold(
+                                        (failure) {
+                                          String errorMessage =
+                                              'Failed to submit request';
+                                          if (failure is ServerFailure) {
+                                            errorMessage = failure.message;
+                                          } else if (failure
+                                              is NetworkFailure) {
+                                            errorMessage =
+                                                'No internet connection';
+                                          }
+
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(errorMessage),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        },
+                                        (bookRequest) {
+                                          _showSuccessDialog(context);
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Borrow request submitted successfully',
+                                              ),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    }
+                                  },
+                                );
+                              },
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
@@ -349,4 +446,35 @@ class StudentHomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _showSuccessDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      title: const Text(
+        'Request Submitted',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Colors.green,
+        ),
+      ),
+      content: const Text(
+        'Your request has been submitted successfully.\n '
+        'An email will be sent to you once approved, or you can see the librarian for approval.',
+        style: TextStyle(fontSize: 14),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text(
+            'OK',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    ),
+  );
 }

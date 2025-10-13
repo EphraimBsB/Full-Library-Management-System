@@ -1,33 +1,42 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { BullModule } from '@nestjs/bull';
+import loanConfig from './config/loan.config';
 import { AuthModule } from '../auth/auth.module';
 
 // Entities
 import { Book } from './entities/book.entity';
-import { Category } from './entities/category.entity';
-import { Subject } from './entities/subject.entity';
-import { AccessNumber } from './entities/access-number.entity';
-import { BorrowedBook } from './entities/borrowed-book.entity';
-import { BookRequest } from './entities/book-request.entity';
+import { Subject } from '../sys-configs/subjects/entities/subject.entity';
 import { User } from '../users/entities/user.entity';
 
 // Controllers
 import { BooksController } from './books.controller';
-import { CategoryController } from './controllers/category.controller';
-import { SubjectController } from './controllers/subject.controller';
-import { BookBorrowingController } from './controllers/book-borrowing.controller';
-import { BookRequestController } from './controllers/book-request.controller';
 
 // Services
 import { BooksService } from './books.service';
-import { CategoryService } from './services/category.service';
-import { SubjectService } from './services/subject.service';
-import { BookBorrowingService } from './services/book-borrowing.service';
-import { BookRequestService } from './services/book-request.service';
 
 import { UsersModule } from '../users/users.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { BookCopy } from './entities/book-copy.entity';
+import { BookRequest } from './entities/book-request.entity';
+import { BookLoan } from './entities/book-loan.entity';
+import { QueueEntry } from './entities/queue-entry.entity';
+import { BookLoanController } from './controllers/book-loan.controller';
+import { BookRequestController } from './controllers/book-request.controller';
+import { QueueController } from './controllers/queue.controller';
+import { BookLoanService } from './services/book-loan.service';
+import { BookRequestService } from './services/book-request.service';
+import { QueueService } from './services/queue.service';
+import { EmailModule } from 'src/emails/email.module';
+import { MembershipModule } from '../membership/membership.module';
+import { Category } from 'src/sys-configs/categories/entities/category.entity';
+import { Type } from 'src/sys-configs/types/entities/type.entity';
+import { Source } from 'src/sys-configs/sources/entities/source.entity';
+import { TypesModule } from 'src/sys-configs/types/types.module';
+import { SourcesModule } from 'src/sys-configs/sources/sources.module';
+import { LoanSettingsModule } from 'src/sys-configs/loan-settings/loan-settings.module';
 
 @Module({
   imports: [
@@ -35,37 +44,60 @@ import { NotificationsModule } from '../notifications/notifications.module';
       Book,
       Category,
       Subject,
-      AccessNumber,
-      BorrowedBook,
+      Type,
+      Source,
+      BookCopy,
       BookRequest,
+      BookLoan,
+      QueueEntry,
       User,
     ]),
-    ConfigModule,
+    TypesModule,
+    SourcesModule,
+    ConfigModule.forFeature(loanConfig),
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        ttl: configService.get<number>('loan.cacheTtl', 300),
+      }),
+      inject: [ConfigService],
+      isGlobal: true,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    BullModule.registerQueue({ name: 'book-loan' }),
     forwardRef(() => UsersModule),
     forwardRef(() => AuthModule),
     forwardRef(() => NotificationsModule),
+    forwardRef(() => EmailModule),
+    forwardRef(() => MembershipModule),
+    LoanSettingsModule,
   ],
   controllers: [
     BooksController,
-    CategoryController,
-    SubjectController,
-    BookBorrowingController,
+    BookLoanController,
     BookRequestController,
+    QueueController,
   ],
   providers: [
     BooksService,
-    CategoryService,
-    SubjectService,
-    BookBorrowingService,
+    BookLoanService,
     BookRequestService,
+    QueueService,
   ],
   exports: [
     BooksService,
-    CategoryService,
-    SubjectService,
-    BookBorrowingService,
+    BookLoanService,
     BookRequestService,
-    TypeOrmModule,
+    QueueService,
   ],
 })
 export class BooksModule {}

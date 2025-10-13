@@ -1,19 +1,27 @@
-import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
-import { IsArray, IsOptional, ValidateNested, IsString, IsNumber, IsEnum, Min, Max, IsInt } from 'class-validator';
-import { BookType, BookSource } from '../enums/book-type.enum';
-import { UpdateCategoryDto } from './category.dto';
-import { UpdateSubjectDto } from './subject.dto';
+import { 
+  IsArray, 
+  IsOptional, 
+  ValidateNested, 
+  IsString, 
+  IsNumber, 
+  Min, 
+  Max, 
+  IsInt, 
+  IsISBN, 
+  IsUrl, 
+} from 'class-validator';
+import { CreateCategoryDto } from 'src/sys-configs/categories/dto/create-category.dto';
+import { CreateSubjectDto } from 'src/sys-configs/subjects/dto/create-subject.dto';
 
-class UpdateAccessNumberDto {
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  id?: number;
-  
-  @IsOptional()
+class BookCopiesDto {
   @IsString()
-  number?: string;
+  @IsOptional()
+  accessNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
 }
 
 export class UpdateBookDto {
@@ -25,91 +33,94 @@ export class UpdateBookDto {
   @IsOptional()
   author?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @IsISBN()
   isbn?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   publisher?: string;
 
-  @IsNumber()
   @IsOptional()
+  @IsInt()
   @Min(0)
   publicationYear?: number;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   edition?: string;
 
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsOptional()
-  @Min(0)
   totalCopies?: number;
 
-  @IsNumber()
   @IsOptional()
-  @Min(0)
-  availableCopies?: number;
-
   @IsString()
-  @IsOptional()
   description?: string;
 
-  @IsString()
   @IsOptional()
+  @IsUrl({
+    require_tld: false,
+    require_protocol: true,
+    protocols: ['http', 'https']
+  })
   coverImageUrl?: string;
 
-  @IsEnum(BookType)
+  @IsArray()
   @IsOptional()
-  type?: BookType;
+  @ValidateNested({ each: true })
+  @Type(() => CreateCategoryDto)
+  categories?: CreateCategoryDto[];
 
-  @IsEnum(BookSource)
+  @IsArray()
   @IsOptional()
-  source?: BookSource;
-
-  @IsString()
-  @IsOptional()
-  ddc?: string;
-
-  @IsString()
-  @IsOptional()
-  from?: string;
-
-  @IsString()
-  @IsOptional()
-  ebookUrl?: string;
-
-  @IsString()
-  @IsOptional()
-  location?: string;
-
-  @IsString()
-  @IsOptional()
-  shelf?: string;
+  @ValidateNested({ each: true })
+  @Type(() => CreateSubjectDto)
+  subjects?: CreateSubjectDto[];
 
   @IsNumber()
   @IsOptional()
+  typeId?: number;
+
+  @IsNumber()
+  @IsOptional()
+  sourceId?: number;
+
+  @IsOptional()
+  @IsString()
+  ddc?: string;
+
+  @IsOptional()
+  @IsString()
+  price?: string;
+
+  @IsOptional()
+  @IsUrl({
+    require_tld: false,
+    require_protocol: true,
+    protocols: ['http', 'https']
+  })
+  ebookUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  shelf?: string;
+
+  @IsOptional()
+  @IsNumber()
   @Min(0)
   @Max(5)
   rating?: number;
 
-  // Relationships
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => UpdateCategoryDto)
+  @Type(() => BookCopiesDto)
   @IsOptional()
-  categories?: UpdateCategoryDto[];
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateSubjectDto)
-  @IsOptional()
-  subjects?: UpdateSubjectDto[];
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateAccessNumberDto)
-  @IsOptional()
-  accessNumbers?: UpdateAccessNumberDto[];
+  copies?: BookCopiesDto[];
 }

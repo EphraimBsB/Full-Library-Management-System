@@ -8,7 +8,7 @@ config({ path: path.resolve(__dirname, '../.env') });
 
 // Import the data source configuration
 import dataSource from './database/data-source';
-import MainSeeder from './database/seeds/main.seeder';
+import { DatabaseSeeder } from './database/seeds';
 
 async function runSeed() {
   console.log('Starting database seeding...');
@@ -19,10 +19,8 @@ async function runSeed() {
     console.log('Data Source has been initialized!');
 
     // Run the seeder
-    const seeder = new MainSeeder(dataSource);
+    const seeder = new DatabaseSeeder(dataSource);
     await seeder.run();
-
-    console.log('Seeding completed successfully!');
   } catch (error) {
     console.error('Error during seeding:', error);
     process.exit(1);

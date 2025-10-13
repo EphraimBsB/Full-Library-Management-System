@@ -1,20 +1,20 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Patch, 
-  Delete, 
-  Query, 
-  ParseIntPipe, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Delete,
+  Query,
+  ParseIntPipe,
   DefaultValuePipe,
   HttpStatus,
   HttpCode,
   UseInterceptors,
   ClassSerializerInterceptor
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, getSchemaPath } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -28,7 +28,7 @@ import { BatchCreateBooksDto, BatchUpdateBooksDto } from './dto/batch-book.dto';
 @Controller('books')
 @UseInterceptors(ClassSerializerInterceptor)
 export class BooksController {
-  constructor(private readonly booksService: BooksService) {}
+  constructor(private readonly booksService: BooksService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -37,22 +37,8 @@ export class BooksController {
   @ApiResponse({ status: HttpStatus.CREATED, description: 'The book has been successfully created.', type: Book })
   @ApiResponse({ status: HttpStatus.CONFLICT, description: 'A book with this ISBN already exists.' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input data.' })
-  async create(@Body() createBookDto: CreateBookDto): Promise<Book> {
+  async create(@Body() createBookDto: CreateBookDto): Promise<Book | null> {
     return this.booksService.create(createBookDto);
-  }
-
-  @Post('batch')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create multiple books in a batch' })
-  @ApiBody({ type: BatchCreateBooksDto })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
-    description: 'The books have been successfully created.', 
-    type: [Book] 
-  })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input data.' })
-  async createMany(@Body() batchCreateBooksDto: BatchCreateBooksDto): Promise<Book[]> {
-    return this.booksService.createMany(batchCreateBooksDto);
   }
 
   @Get()
@@ -86,25 +72,21 @@ export class BooksController {
   @ApiParam({ name: 'id', description: 'Book ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Returns the book with the specified ID.', type: Book })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Book> {
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Book | null> {
     return this.booksService.findOne(id);
   }
 
-  @Patch('batch')
+  @Get(':id/details')
+  @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update multiple books in a batch' })
-  @ApiBody({ type: BatchUpdateBooksDto })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'The books have been successfully updated.', 
-    type: [Book] 
-  })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'One or more books not found.' })
-  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'A book with this ISBN already exists.' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input data.' })
-  async updateMany(@Body() batchUpdateBooksDto: BatchUpdateBooksDto): Promise<Book[]> {
-    return this.booksService.updateMany(batchUpdateBooksDto);
+  @ApiOperation({ summary: 'Get details of a book by ID' })
+  @ApiParam({ name: 'id', description: 'Book ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Returns the details of the book with the specified ID.', })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
+  async getBookDetails(@Param('id', ParseIntPipe) id: number) {
+    return this.booksService.getBookDetails(id);
   }
+
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
@@ -118,7 +100,7 @@ export class BooksController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBookDto: UpdateBookDto,
-  ): Promise<Book> {
+  ): Promise<Book | null> {
     return this.booksService.update(id, updateBookDto);
   }
 
@@ -132,33 +114,5 @@ export class BooksController {
     return this.booksService.remove(id);
   }
 
-  // @Post(':id/checkout')
-  // @HttpCode(HttpStatus.OK)
-  // @ApiOperation({ summary: 'Check out a book' })
-  // @ApiParam({ name: 'id', description: 'Book ID' })
-  // @ApiQuery({ name: 'quantity', required: false, type: Number, description: 'Number of copies to check out (default: 1)' })
-  // @ApiResponse({ status: HttpStatus.OK, description: 'The book has been checked out successfully.', type: Book })
-  // @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
-  // @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Not enough copies available or invalid quantity.' })
-  // async checkOutBook(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Query('quantity', new DefaultValuePipe(1), ParseIntPipe) quantity: number,
-  // ): Promise<Book> {
-  //   return this.booksService.checkOutBook(id, quantity);
-  // }
 
-  // @Post(':id/return')
-  // @HttpCode(HttpStatus.OK)
-  // @ApiOperation({ summary: 'Return a checked out book' })
-  // @ApiParam({ name: 'id', description: 'Book ID' })
-  // @ApiQuery({ name: 'quantity', required: false, type: Number, description: 'Number of copies to return (default: 1)' })
-  // @ApiResponse({ status: HttpStatus.OK, description: 'The book has been returned successfully.', type: Book })
-  // @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
-  // @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid quantity or more copies returned than checked out.' })
-  // async returnBook(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Query('quantity', new DefaultValuePipe(1), ParseIntPipe) quantity: number,
-  // ): Promise<Book> {
-  //   return this.booksService.returnBook(id, quantity);
-  // }
 }

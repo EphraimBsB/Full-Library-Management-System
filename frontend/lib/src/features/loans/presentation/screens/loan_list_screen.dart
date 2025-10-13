@@ -1,9 +1,21 @@
+// ignore_for_file: unused_result
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:management_side/src/features/dashboard/widgets/topbar.dart';
+import 'package:management_side/src/features/dashboard/presentation/widgets/topbar.dart';
 import 'package:management_side/src/features/loans/domain/models/loan_model.dart';
 import 'package:management_side/src/features/loans/presentation/providers/loan_provider.dart';
 import 'package:management_side/src/features/loans/presentation/widgets/build_loan_card.dart';
+
+enum LoanSortOption {
+  newestFirst,
+  oldestFirst,
+  dueDateAscending,
+  dueDateDescending,
+  borrowerName,
+  bookTitle,
+  status,
+}
 
 class LoanListScreen extends ConsumerStatefulWidget {
   const LoanListScreen({super.key});
@@ -16,18 +28,19 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
   final TextEditingController _searchController = TextEditingController();
   LoanStatus? _selectedStatus;
   bool _isLoading = false;
+  LoanSortOption _currentSortOption = LoanSortOption.newestFirst;
 
   Future<void> _loadLoans() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      await ref
-          .read(loanProvider.notifier)
-          .loadLoans(
-            searchQuery: _searchController.text.isEmpty
-                ? null
-                : _searchController.text,
-            status: _selectedStatus,
-          );
+      // Trigger a refresh of the data
+      await ref.refresh(allLoansProvider.future);
+    } catch (e) {
+      if (mounted) {
+        // Handle error if needed
+        debugPrint('Error loading loans: $e');
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -82,11 +95,61 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loanState = ref.watch(loanProvider);
-    final loans = loanState.loans;
+    final loanState = ref.watch(allLoansProvider);
+    final loans = loanState.value ?? [];
     final error = loanState.error;
     final isLoading = _isLoading || loanState.isLoading;
-    final currentSortOption = loanState.currentSortOption;
+
+    // Apply filters and search
+    final filteredLoans = loans.where((loan) {
+      final matchesSearch =
+          _searchController.text.isEmpty ||
+          loan.bookData!['title'].toLowerCase().contains(
+            _searchController.text.toLowerCase(),
+          ) ||
+          '${loan.user!['firstName']} ${loan.user!['lastName']}'
+              .toLowerCase()
+              .contains(_searchController.text.toLowerCase());
+
+      final matchesStatus =
+          _selectedStatus == null || loan.status == _selectedStatus;
+
+      return matchesSearch && matchesStatus;
+    }).toList();
+
+    // Apply sorting
+    List<Loan> sortedLoans = List.from(filteredLoans);
+    switch (_currentSortOption) {
+      case LoanSortOption.newestFirst:
+        sortedLoans.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case LoanSortOption.oldestFirst:
+        sortedLoans.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        break;
+      case LoanSortOption.dueDateAscending:
+        sortedLoans.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+        break;
+      case LoanSortOption.dueDateDescending:
+        sortedLoans.sort((a, b) => b.dueDate.compareTo(a.dueDate));
+        break;
+      case LoanSortOption.borrowerName:
+        sortedLoans.sort(
+          (a, b) => '${a.user!['firstName']} ${a.user!['lastName']}'.compareTo(
+            '${b.user!['firstName']} ${b.user!['lastName']}',
+          ),
+        );
+        break;
+      case LoanSortOption.bookTitle:
+        sortedLoans.sort(
+          (a, b) => a.bookData!['title'].compareTo(b.bookData!['title']),
+        );
+        break;
+      case LoanSortOption.status:
+        sortedLoans.sort(
+          (a, b) => a.status.toString().compareTo(b.status.toString()),
+        );
+        break;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -185,7 +248,7 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
                       child: SizedBox(
                         height: 40,
                         child: DropdownButtonFormField<LoanSortOption>(
-                          value: currentSortOption,
+                          value: _currentSortOption,
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.black,
@@ -211,7 +274,9 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
                               .toList(),
                           onChanged: (value) {
                             if (value != null) {
-                              ref.read(loanProvider).sortLoans(value);
+                              setState(() {
+                                _currentSortOption = value;
+                              });
                             }
                           },
                           isExpanded: true,
@@ -270,7 +335,7 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
-                          childAspectRatio: 1.02,
+                          childAspectRatio: 0.9,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),

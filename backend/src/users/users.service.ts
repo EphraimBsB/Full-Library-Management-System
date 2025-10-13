@@ -81,15 +81,18 @@ export class UsersService {
       total,
       page,
       limit,
-      totalPages,
       hasPreviousPage: page > 1,
       hasNextPage: page < totalPages,
     });
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
+    const user = await this.userRepository.findOne({ 
+      where: { 
+        id,
+        deletedAt: IsNull()
+      },
+      relations: ['role']
     });
 
     if (!user) {
@@ -97,6 +100,44 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async remove(id: string): Promise<void> {
+    const user = await this.findOne(id);
+    await this.userRepository.softRemove(user);
+  }
+
+  async activateUser(userId: string): Promise<User> {
+    const user = await this.findOne(userId);
+    user.isActive = true;
+    return this.userRepository.save(user);
+  }
+
+  async deactivateUser(userId: string): Promise<User> {
+    const user = await this.findOne(userId);
+    user.isActive = false;
+    return this.userRepository.save(user);
+  }
+
+  async isUserActive(userId: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({ 
+      where: { 
+        id: userId,
+        isActive: true,
+        deletedAt: IsNull()
+      } 
+    });
+    
+    if (!user) {
+      return false;
+    }
+    
+    // Check if user has an active membership (if applicable)
+    if (user.expiryDate) {
+      return new Date(user.expiryDate) > new Date();
+    }
+    
+    return true;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
@@ -135,18 +176,10 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async remove(id: string): Promise<void> {
-    const user = await this.findOne(id);
-    
-    // Check if user has any active book loans
-    // You'll need to implement this check based on your loan/borrowing system
-    
-    await this.userRepository.softRemove(user);
-  }
-
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
+      relations: ['role']
     });
   }
 
@@ -156,17 +189,5 @@ export class UsersService {
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     return isPasswordValid ? user : null;
-  }
-
-  async deactivateUser(id: string): Promise<User> {
-    const user = await this.findOne(id);
-    user.isActive = false;
-    return this.userRepository.save(user);
-  }
-
-  async activateUser(id: string): Promise<User> {
-    const user = await this.findOne(id);
-    user.isActive = true;
-    return this.userRepository.save(user);
   }
 }

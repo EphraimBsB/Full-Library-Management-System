@@ -1,312 +1,298 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Inject,
+  forwardRef,
+  Logger,
+  BadRequestException
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, IsNull, Not } from 'typeorm';
-import { Book } from '../entities/book.entity';
+import { Repository, DataSource, In } from 'typeorm';
+import { BookRequest, BookRequestStatus } from '../entities/book-request.entity';
 import { User } from '../../users/entities/user.entity';
-import { BookRequest, RequestStatus } from '../entities/book-request.entity';
-import { BookBorrowingService } from './book-borrowing.service';
-import { AccessNumber } from '../entities/access-number.entity';
-import { NotificationsService } from '../../notifications/notifications.service';
-import { NotificationType } from '../../notifications/entities/notification.entity';
-import { EmailService } from '../../notifications/email.service';
+import { Book } from '../entities/book.entity';
+import { BookCopy, BookCopyStatus } from '../entities/book-copy.entity';
+import { QueueEntry, QueueStatus } from '../entities/queue-entry.entity';
+import { BookLoan, LoanStatus } from '../entities/book-loan.entity';
+import { BookLoanService } from './book-loan.service';
+import { QueueService } from './queue.service';
+import { BookNotAvailableException } from '../exceptions/book-not-available.exception';
+import { MembershipService, MembershipStatus } from 'src/membership/membership.service';
 
 @Injectable()
 export class BookRequestService {
+  private readonly logger = new Logger(BookRequestService.name);
+
   constructor(
     @InjectRepository(BookRequest)
     private readonly bookRequestRepository: Repository<BookRequest>,
-    @InjectRepository(Book)
-    private readonly bookRepository: Repository<Book>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(AccessNumber)
-    private readonly accessNumberRepository: Repository<AccessNumber>,
-    @Inject(forwardRef(() => BookBorrowingService))
-    private readonly bookBorrowingService: BookBorrowingService,
-    private dataSource: DataSource,
-    private readonly notifications: NotificationsService,
-    private readonly email: EmailService,
-  ) {}
+    @InjectRepository(QueueEntry)
+    private readonly queueEntryRepository: Repository<QueueEntry>,
+    @InjectRepository(BookCopy)
+    private readonly bookCopyRepository: Repository<BookCopy>,
+    @Inject(forwardRef(() => BookLoanService))
+    private readonly bookLoanService: BookLoanService,
+    @Inject(forwardRef(() => QueueService))
+    private readonly queueService: QueueService,
+    private readonly dataSource: DataSource,
+    private readonly membershipService: MembershipService,
+  ) { }
 
-  /**
-   * Request a book that is currently not available
-   */
-  async requestBook(userId: string, bookId: number): Promise<BookRequest> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  async createRequest(bookId: string, userId: string, reason?: string): Promise<BookRequest> {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      // 1. Check membership status first
+      const membership = await this.membershipService.findActiveMembership(userId);
+      if (!membership) {
+        throw new BadRequestException('Active membership is required to request books');
+      }
 
-    try {
-      // 1. Check if book exists
-      const book = await queryRunner.manager.findOne(Book, {
-        where: { id: bookId },
-        relations: ['accessNumbers'],
+      // 2. Check if membership is suspended/expired
+      if (membership.status !== MembershipStatus.ACTIVE) {
+        throw new BadRequestException(`Membership is ${membership.status.toLowerCase()}`);
+      }
+
+      // Check if book exists and get available copies
+      const book = await transactionalEntityManager.findOne(Book, {
+        where: { id: Number(bookId) },
+        relations: ['copies'],
       });
 
       if (!book) {
         throw new NotFoundException('Book not found');
       }
 
-      // 2. Check if user exists
-      const user = await queryRunner.manager.findOne(User, {
-        where: { id: userId },
-      });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      // 3. Check if book is actually available
-      if (book.availableCopies > 0) {
-        throw new BadRequestException('This book is currently available for immediate borrowing');
-      }
-
-      // 4. Check if user already has an active request for this book
-      const existingRequest = await queryRunner.manager.findOne(BookRequest, {
-        where: {
-          userId,
-          bookId,
-          status: RequestStatus.PENDING,
-        },
-      });
+      // Check if user already has a pending request or active loan for this book
+      const [existingRequest, existingLoan] = await Promise.all([
+        transactionalEntityManager.findOne(BookRequest, {
+          where: {
+            book: { id: book.id },
+            user: { id: userId },
+            status: BookRequestStatus.PENDING,
+          },
+        }),
+        transactionalEntityManager.findOne(BookLoan, {
+          where: {
+            user: { id: userId },
+            bookCopy: {
+              book: { id: book.id },
+            },
+            status: In([LoanStatus.ACTIVE, LoanStatus.OVERDUE]),
+          },
+          relations: ['bookCopy', 'bookCopy.book'],
+        }),
+      ]);
 
       if (existingRequest) {
-        throw new BadRequestException('You already have a pending request for this book');
+        throw new ConflictException('You already have a pending request for this book');
       }
 
-      // 5. Create the book request
-      const bookRequest = this.bookRequestRepository.create({
-        userId,
-        user,
-        bookId,
-        book,
-        status: RequestStatus.PENDING,
+      if (existingLoan) {
+        throw new ConflictException('You already have an active loan for this book');
+      }
+
+      // Create the book request
+      const request = transactionalEntityManager.create(BookRequest, {
+        book: { id: book.id },
+        user: { id: userId },
+        reason,
+        status: BookRequestStatus.PENDING,
       });
 
-      await queryRunner.manager.save(bookRequest);
-      await queryRunner.commitTransaction();
-
-      // 6. Calculate and set the position in queue
-      bookRequest.position = await this.calculateQueuePosition(bookRequest.id, bookId);
-      
-      return bookRequest;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+      // Save the request first to get an ID
+      const savedRequest = await transactionalEntityManager.save(BookRequest, request);
+      return savedRequest;
+    });
   }
 
-  /**
-   * Cancel a book request
-   */
-  async cancelRequest(userId: string, requestId: number): Promise<void> {
+  async approveRequest(
+    requestId: string,
+    approvedById: string,
+    preferredCopyId?: string
+  ): Promise<{ loan?: BookLoan; queueEntry?: QueueEntry }> {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      const request = await transactionalEntityManager.findOne(BookRequest, {
+        where: { id: requestId },
+        relations: ['user', 'book', 'queueEntry'],
+      });
+
+      if (!request) {
+        throw new NotFoundException('Request not found');
+      }
+
+      if (request.status !== BookRequestStatus.PENDING) {
+        throw new ConflictException('Request is not in a pending state');
+      }
+
+      // Update request status
+      request.status = BookRequestStatus.APPROVED;
+      request.approvedAt = new Date();
+      request.approvedBy = { id: approvedById } as User;
+      request.approvedById = approvedById;
+
+      try {
+        // Try to create a loan with the preferred copy if specified
+        const loan = await this.bookLoanService.createLoan(transactionalEntityManager, {
+          preferredCopyId,
+          bookId: request.book.id.toString(),
+          userId: request.user.id,
+          requestId: request.id,
+          approvedById
+        });
+
+        // If we get here, the loan was created successfully
+        request.status = BookRequestStatus.FULFILLED;
+        request.fulfilledAt = new Date();
+        // Update the request with the loan information
+        await transactionalEntityManager.update(BookRequest, request.id, {
+          status: BookRequestStatus.FULFILLED,
+          fulfilledAt: new Date(),
+          approvedById,
+          loanId: loan.id
+        });
+
+        // If there was a queue entry, remove it
+        if (request.queueEntry) {
+          request.queueEntry.status = QueueStatus.FULFILLED;
+          request.queueEntry.fulfilledAt = new Date();
+          await transactionalEntityManager.save(QueueEntry, request.queueEntry);
+          request.queueEntry = null;
+        }
+
+        return { loan };
+      } catch (error) {
+        if (!(error instanceof BookNotAvailableException)) {
+          throw error;
+        }
+
+        // If we get here, the preferred copy (or any copy) is not available
+        this.logger.warn(
+          `No available copy found for book ${request.book.id}` +
+          (preferredCopyId ? ` (preferred copy: ${preferredCopyId})` : '')
+        );
+
+        // Save the approved request first
+        await transactionalEntityManager.save(BookRequest, request);
+
+        // Add to queue if not already in queue
+        if (!request.queueEntry) {
+          const queueEntry = await this.queueService.addToQueue(
+            request.book.id.toString(),
+            request.user.id,
+          );
+          request.queueEntry = queueEntry;
+          request.queueEntryId = queueEntry.id;
+          await transactionalEntityManager.save(BookRequest, request);
+          return { queueEntry };
+        }
+
+        return { queueEntry: request.queueEntry };
+      }
+    });
+  }
+
+  async rejectRequest(
+    requestId: string,
+    reason: string,
+    rejectedById: string
+  ): Promise<BookRequest> {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      const request = await transactionalEntityManager.findOne(BookRequest, {
+        where: { id: requestId },
+        relations: ['queueEntry'],
+      });
+
+      if (!request) {
+        throw new NotFoundException('Request not found');
+      }
+
+      if (request.status !== BookRequestStatus.PENDING) {
+        throw new ConflictException('Request is not in a pending state');
+      }
+
+      // Update request status
+      request.status = BookRequestStatus.REJECTED;
+      request.rejectedAt = new Date();
+      request.rejectionReason = reason;
+      request.rejectedBy = { id: rejectedById } as User;
+      request.rejectedById = rejectedById;
+
+      // If there's an associated queue entry, remove it
+      if (request.queueEntry) {
+        await transactionalEntityManager.remove(QueueEntry, request.queueEntry);
+      }
+
+      return transactionalEntityManager.save(BookRequest, request);
+    });
+  }
+
+  async cancelRequest(requestId: string, userId: string): Promise<BookRequest> {
     const request = await this.bookRequestRepository.findOne({
-      where: { id: requestId, userId },
+      where: { id: requestId, user: { id: userId } },
+      relations: ['queueEntry'],
     });
 
     if (!request) {
-      throw new NotFoundException('Request not found or you do not have permission to cancel it');
+      throw new NotFoundException('Request not found');
     }
 
-    if (request.status !== RequestStatus.PENDING) {
-      throw new BadRequestException('Only pending requests can be cancelled');
+    if (request.status !== BookRequestStatus.PENDING) {
+      throw new ConflictException('Only pending requests can be cancelled');
     }
 
-    request.status = RequestStatus.CANCELLED;
-    await this.bookRequestRepository.save(request);
+    request.status = BookRequestStatus.CANCELLED;
 
-    // Notify user about cancellation
-    await this.notifyUser(userId, {
-      title: 'Request Cancelled',
-      message: `Your request for book ID ${request.bookId} has been cancelled.`,
-      bookId: request.bookId,
-      requestId: request.id,
-    });
+    // If there's an associated queue entry, remove it
+    if (request.queueEntry) {
+      await this.queueEntryRepository.remove(request.queueEntry);
+    }
+
+    return this.bookRequestRepository.save(request);
   }
 
-  /**
-   * Get all pending requests for a book
-   */
-  async getBookQueue(bookId: number): Promise<BookRequest[]> {
-    const requests = await this.bookRequestRepository.find({
-      where: { 
-        bookId, 
-        status: RequestStatus.PENDING,
-      },
-      relations: ['user'],
-      order: { createdAt: 'ASC' },
-    });
-
-    // Add position in queue
-    return requests.map((request, index) => ({
-      ...request,
-      position: index + 1,
-    }));
-  }
-
-  /**
-   * Get all requests for a user
-   */
   async getUserRequests(userId: string): Promise<BookRequest[]> {
-    const requests = await this.bookRequestRepository.find({
-      where: { userId },
-      relations: ['book'],
+    return this.bookRequestRepository.find({
+      where: { user: { id: userId } },
+      relations: ['book', 'queueEntry', 'approvedBy', 'rejectedBy'],
       order: { createdAt: 'DESC' },
     });
-
-    // Add position in queue for pending requests
-    return Promise.all(requests.map(async (request) => {
-      if (request.status === RequestStatus.PENDING) {
-        const position = await this.calculateQueuePosition(request.id, request.bookId);
-        return { ...request, position };
-      }
-      return request;
-    }));
   }
 
-  /**
-   * Mark a user's pending request as fulfilled
-   */
-  async markRequestAsFulfilled(userId: string, bookId: number): Promise<void> {
+  async getBookRequests(bookId: string): Promise<BookRequest[]> {
+    return this.bookRequestRepository.find({
+      where: { book: { id: Number(bookId) } },
+      relations: ['user', 'queueEntry', 'approvedBy', 'rejectedBy'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async getRequestById(requestId: string): Promise<BookRequest> {
     const request = await this.bookRequestRepository.findOne({
-      where: {
-        userId,
-        bookId,
-        status: RequestStatus.PENDING,
-      },
+      where: { id: requestId },
+      relations: ['user', 'book', 'queueEntry', 'approvedBy', 'rejectedBy'],
     });
 
-    if (request) {
-      request.status = RequestStatus.FULFILLED;
-      request.fulfilledAt = new Date();
-      await this.bookRequestRepository.save(request);
-
-      // Notify user about fulfillment
-      await this.notifyUser(request.userId, {
-        title: 'Request Fulfilled',
-        message: `Your request for book ID ${request.bookId} is fulfilled and ready to borrow.`,
-        bookId: request.bookId,
-        requestId: request.id,
-      });
+    if (!request) {
+      throw new NotFoundException('Request not found');
     }
+
+    return request;
   }
 
-  /**
-   * Process book returns and notify next in queue
-   */
-  async processBookReturn(bookId: number): Promise<void> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // 1. Find the next pending request for this book
-      const nextRequest = await queryRunner.manager.findOne(BookRequest, {
-        where: { 
-          bookId, 
-          status: RequestStatus.PENDING,
-        },
-        relations: ['user', 'book'],
-        order: { createdAt: 'ASC' },
-      });
-
-      if (!nextRequest) {
-        // No pending requests for this book
-        return;
-      }
-
-      // 2. Find an available copy of the book
-      const availableCopy = await queryRunner.manager.findOne(AccessNumber, {
-        where: { 
-          bookId,
-          // Find a copy that's not currently borrowed
-          borrowedBooks: {
-            returnedAt: IsNull(),
-          },
-        },
-        relations: ['borrowedBooks'],
-      });
-
-      if (!availableCopy) {
-        throw new Error('No available copies found despite book being marked as available');
-      }
-
-      // 3. Update the request status
-      nextRequest.status = RequestStatus.FULFILLED;
-      nextRequest.fulfilledAt = new Date();
-      await queryRunner.manager.save(nextRequest);
-
-      // 4. Notify the user
-      await this.notifyUser(nextRequest.userId, {
-        title: 'Book Available',
-        message: `The book "${nextRequest.book.title}" is now available for you to borrow.`,
-        bookId: nextRequest.bookId,
-        requestId: nextRequest.id,
-      });
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  /**
-   * Calculate the position of a request in the queue
-   */
-  private async calculateQueuePosition(requestId: number, bookId: number): Promise<number> {
-    return this.bookRequestRepository
+  async findAll(filters?: { status?: BookRequestStatus }): Promise<BookRequest[]> {
+    const query = this.bookRequestRepository
       .createQueryBuilder('request')
-      .where('request.bookId = :bookId', { bookId })
-      .andWhere('request.status = :status', { status: RequestStatus.PENDING })
-      .andWhere('request.id <= :requestId', { requestId })
-      .getCount();
-  }
+      .leftJoinAndSelect('request.user', 'user')
+      .leftJoinAndSelect('request.book', 'book')
+      .leftJoinAndSelect('book.copies', 'copies')
+      .leftJoinAndSelect('request.queueEntry', 'queueEntry')
+      .leftJoinAndSelect('request.approvedBy', 'approvedBy')
+      .leftJoinAndSelect('request.rejectedBy', 'rejectedBy');
 
-  /**
-   * Get all pending book requests with pagination
-   */
-  async getPendingRequests(page: number = 1, limit: number = 10) {
-    const [items, total] = await this.bookRequestRepository.findAndCount({
-      where: {
-        status: RequestStatus.PENDING,
-      },
-      relations: ['book', 'user'],
-      order: {
-        createdAt: 'ASC', // Oldest first
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  /**
-   * Notify user (placeholder - implement based on your notification system)
-   */
-  private async notifyUser(userId: string, data: { title: string; message: string; bookId?: number; requestId?: number }) {
-    // In-app notification
-    await this.notifications.create({
-      userId,
-      title: data.title,
-      message: data.message,
-      type: NotificationType.BOOK_REQUEST_STATUS,
-      data: { bookId: data.bookId, requestId: data.requestId },
-    });
-
-    // Email (if enabled)
-    if (this.email.isEnabled) {
-      await this.email.sendToUser(
-        userId,
-        data.title,
-        `${data.message}${data.bookId ? ` (Book ID: ${data.bookId})` : ''}`,
-      );
+    if (filters?.status) {
+      query.andWhere('request.status = :status', { status: filters.status });
     }
+
+    return (await query.getMany()).reverse();
   }
 }

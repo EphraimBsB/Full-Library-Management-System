@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:management_side/src/core/data/base_repository.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
+import 'package:management_side/src/features/books/domain/models/book_details.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:management_side/src/core/network/api_constants.dart';
 
@@ -21,17 +22,23 @@ abstract class BookApiService {
     @Query('sort') String? sort,
   });
 
+  @GET('/books/{id}/details')
+  Future<BookDetails> getBookDetails(@Path('id') int id);
+
   @GET('/books/{id}')
   Future<BookModel> getBook(@Path('id') String id);
 
   @POST('/books')
-  Future<BookModel> createBook(@Body() BookModel book);
+  Future<BookModel> createBook(@Body() Map<String, dynamic> book);
 
-  @PUT('/books/{id}')
-  Future<BookModel> updateBook(@Path('id') String id, @Body() BookModel book);
+  @PATCH('/books/{id}')
+  Future<BookModel> updateBook(
+    @Path('id') int id,
+    @Body() Map<String, dynamic> book,
+  );
 
   @DELETE('/books/{id}')
-  Future<void> deleteBook(@Path('id') String id);
+  Future<void> deleteBook(@Path('id') int id);
 
   @POST('/books/{id}/borrow')
   Future<BookModel> borrowBook(

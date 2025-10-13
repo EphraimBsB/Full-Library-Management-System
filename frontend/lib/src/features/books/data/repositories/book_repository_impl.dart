@@ -3,6 +3,7 @@ import 'package:management_side/src/core/data/base_repository.dart';
 import 'package:management_side/src/core/network/api_client.dart';
 import 'package:management_side/src/core/utils/result.dart';
 import 'package:management_side/src/features/books/data/api/book_api_service.dart';
+import 'package:management_side/src/features/books/domain/models/book_details.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/domain/repositories/book_repository.dart';
 
@@ -17,7 +18,7 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
   @override
   Future<Result<PaginatedResponse<BookModel>>> getBooks({
     int page = 1,
-    int limit = 10,
+    int limit = 24,
     String? search,
     String? category,
     String? status,
@@ -47,9 +48,12 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
   }
 
   @override
+  @override
   Future<Result<BookModel>> createBook(BookModel book) {
     return handleApiCall<BookModel>(() async {
-      final response = await _apiService.createBook(book);
+      // Convert the Book object to JSON before sending
+      final bookJson = book.toCreateJson();
+      final response = await _apiService.createBook(bookJson);
       return response;
     }, errorMessage: 'Failed to create book');
   }
@@ -57,13 +61,35 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
   @override
   Future<Result<BookModel>> updateBook(BookModel book) {
     return handleApiCall<BookModel>(() async {
-      final response = await _apiService.updateBook(book.id.toString(), book);
-      return response;
+      final bookJson = book.toCreateJson();
+      print('=== UPDATE BOOK REQUEST ===');
+      print('Endpoint: PATCH /books/${book.id}');
+      print('Request Data:');
+      bookJson.forEach((key, value) {
+        print('  $key: $value (${value?.runtimeType})');
+      });
+
+      try {
+        final response = await _apiService.updateBook(book.id!, bookJson);
+        print('=== UPDATE SUCCESS ===');
+        print('Response: $response');
+        return response;
+      } on DioException catch (e) {
+        print('=== UPDATE FAILED ===');
+        print('Status: ${e.response?.statusCode}');
+        print('Response: ${e.response?.data}');
+        print('Headers: ${e.response?.headers}');
+        rethrow;
+      } catch (e) {
+        print('=== UNEXPECTED ERROR ===');
+        print('Error: $e');
+        rethrow;
+      }
     }, errorMessage: 'Failed to update book');
   }
 
   @override
-  Future<Result<void>> deleteBook(String id) {
+  Future<Result<void>> deleteBook(int id) {
     return handleApiCall(
       () => _apiService.deleteBook(id),
       errorMessage: 'Failed to delete book',
@@ -93,6 +119,14 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
     return handleApiCall<BookModel>(
       () => _apiService.returnBook(bookId, {'user_id': userId}),
       errorMessage: 'Failed to return book',
+    );
+  }
+
+  @override
+  Future<Result<BookDetails>> getBookDetails(int id) {
+    return handleApiCall<BookDetails>(
+      () => _apiService.getBookDetails(id),
+      errorMessage: 'Failed to load book details',
     );
   }
 }

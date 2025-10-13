@@ -1,29 +1,29 @@
-import { 
-  IsString, 
-  IsOptional, 
-  IsInt, 
-  IsArray, 
-  IsUrl, 
-  IsEnum, 
-  IsNumber, 
-  Min, 
-  Max, 
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsArray,
+  IsUrl,
   IsISBN,
-  ArrayMinSize,
   ValidateNested,
-  IsUUID,
   IsNotEmpty,
-  ArrayNotEmpty
+  ArrayNotEmpty,
+  Min,
+  IsNumber,
+  Max
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { BookType, BookSource } from '../enums/book-type.enum';
-import { CreateCategoryDto } from './category.dto';
-import { CreateSubjectDto } from './subject.dto';
+import { CreateCategoryDto } from 'src/sys-configs/categories/dto/create-category.dto';
+import { CreateSubjectDto } from 'src/sys-configs/subjects/dto/create-subject.dto';
 
-class AccessNumberDto {
+export class BookCopiesDto {
   @IsString()
   @IsNotEmpty()
-  number: string;
+  accessNumber: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 export class CreateBookDto {
@@ -60,7 +60,11 @@ export class CreateBookDto {
   description?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({
+    require_tld: false,
+    require_protocol: true,
+    protocols: ['http', 'https']
+  })
   coverImageUrl?: string;
 
   @IsArray()
@@ -75,12 +79,13 @@ export class CreateBookDto {
   @IsOptional()
   subjects: CreateSubjectDto[] = [];
 
-  @IsEnum(BookType)
-  type: BookType = BookType.PHYSICAL;
+  @IsNumber()
+  @IsNotEmpty()
+  typeId: number;
 
   @IsOptional()
-  @IsEnum(BookSource)
-  source?: BookSource;
+  @IsNumber()
+  sourceId?: number;
 
   @IsOptional()
   @IsString()
@@ -88,10 +93,14 @@ export class CreateBookDto {
 
   @IsOptional()
   @IsString()
-  from?: string;
+  price?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({
+    require_tld: false,
+    require_protocol: true,
+    protocols: ['http', 'https']
+  })
   ebookUrl?: string;
 
   @IsOptional()
@@ -104,9 +113,9 @@ export class CreateBookDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => AccessNumberDto)
+  @Type(() => BookCopiesDto)
   @IsOptional()
-  accessNumbers: AccessNumberDto[] = [];
+  copies: BookCopiesDto[] = [];
 
   @IsOptional()
   @IsNumber()

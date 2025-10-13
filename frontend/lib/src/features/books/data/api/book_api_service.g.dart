@@ -12,7 +12,7 @@ part of 'book_api_service.dart';
 
 class _BookApiService implements BookApiService {
   _BookApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://localhost:3000';
+    baseUrl ??= 'http://localhost:3000/api/v1';
   }
 
   final Dio _dio;
@@ -69,6 +69,33 @@ class _BookApiService implements BookApiService {
   }
 
   @override
+  Future<BookDetails> getBookDetails(int id) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<BookDetails>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/books/${id}/details',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late BookDetails _value;
+    try {
+      _value = BookDetails.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<BookModel> getBook(String id) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -96,12 +123,12 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<BookModel> createBook(BookModel book) async {
+  Future<BookModel> createBook(Map<String, dynamic> book) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(book.toJson());
+    _data.addAll(book);
     final _options = _setStreamType<BookModel>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
@@ -124,14 +151,14 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<BookModel> updateBook(String id, BookModel book) async {
+  Future<BookModel> updateBook(int id, Map<String, dynamic> book) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(book.toJson());
+    _data.addAll(book);
     final _options = _setStreamType<BookModel>(
-      Options(method: 'PUT', headers: _headers, extra: _extra)
+      Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
             '/books/${id}',
@@ -152,7 +179,7 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<void> deleteBook(String id) async {
+  Future<void> deleteBook(int id) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};

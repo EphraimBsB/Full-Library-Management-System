@@ -1,37 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/loans/domain/models/loan_model.dart';
+import 'package:management_side/src/features/loans/presentation/providers/loan_provider.dart';
 
-class LoanDetailsDialog extends StatefulWidget {
+class LoanDetailsDialog extends ConsumerStatefulWidget {
   final Loan loan;
-  final Function(Loan) onUpdate;
-  final Function(String) onDelete;
+  final Function(Loan)? onUpdate;
+  final Function(String)? onDelete;
+  final bool isAdmin;
 
   const LoanDetailsDialog({
     super.key,
     required this.loan,
-    required this.onUpdate,
-    required this.onDelete,
+    this.onUpdate,
+    this.onDelete,
+    this.isAdmin = true,
   });
 
+  static Future<String?> show(
+    BuildContext context, {
+    required Loan loan,
+    bool isAdmin = true,
+    Function(Loan)? onUpdate,
+    Function(String)? onDelete,
+  }) async {
+    return showDialog<String>(
+      context: context,
+      builder: (context) => LoanDetailsDialog(
+        loan: loan,
+        isAdmin: isAdmin,
+        onUpdate: onUpdate,
+        onDelete: onDelete,
+      ),
+    );
+  }
+
   @override
-  State<LoanDetailsDialog> createState() => _LoanDetailsDialogState();
+  ConsumerState<LoanDetailsDialog> createState() => _LoanDetailsDialogState();
 }
 
-class _LoanDetailsDialogState extends State<LoanDetailsDialog> {
+class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
   final _formKey = GlobalKey<FormState>();
-  late LoanStatus _status;
-  double? _fineAmount;
   final _notesController = TextEditingController();
-  bool _isLoading = false;
+  bool _isReturning = false;
+  bool _isRenewing = false;
 
   @override
   void initState() {
     super.initState();
-    _status = widget.loan.status;
-    _fineAmount = widget.loan.fineAmount;
     _notesController.text = widget.loan.notes ?? '';
   }
 
@@ -44,62 +63,524 @@ class _LoanDetailsDialogState extends State<LoanDetailsDialog> {
   Future<void> _handleReturn() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() => _isReturning = true);
 
     try {
       final updatedLoan = widget.loan.copyWith(
         status: LoanStatus.returned,
-        returnedDate: DateTime.now(),
-        fineAmount: _fineAmount,
+        returnedAt: DateTime.now(),
         notes: _notesController.text,
         updatedAt: DateTime.now(),
       );
 
-      await widget.onUpdate(updatedLoan);
+      if (widget.onUpdate != null) {
+        await widget.onUpdate!(updatedLoan);
+      }
+
       if (mounted) {
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop('RETURNED');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update loan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to return book: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isReturning = false);
       }
     }
   }
 
-  Future<void> _handleUpdateStatus() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
+  Future<void> _handleRenew() async {
+    setState(() => _isRenewing = true);
 
     try {
-      final updatedLoan = widget.loan.copyWith(
-        status: _status,
-        fineAmount: _fineAmount,
-        notes: _notesController.text,
-        updatedAt: DateTime.now(),
-      );
+      final repository = ref.read(loanRepositoryProvider);
+      final renewedLoan = await repository.renewLoan(widget.loan.id!, {
+        'renewalNotes': _notesController.text.isNotEmpty
+            ? _notesController.text
+            : 'Renewed on ${DateTime.now().toIso8601String()}',
+      });
 
-      await widget.onUpdate(updatedLoan);
       if (mounted) {
-        Navigator.of(context).pop(true);
+        if (widget.onUpdate != null) {
+          await widget.onUpdate!(renewedLoan as Loan);
+        }
+        Navigator.of(context).pop('RENEWED');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update loan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to renew loan: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isRenewing = false);
       }
     }
+  }
+
+  Future<void> _showReturnConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Return'),
+        content: const Text(
+          'Are you sure you want to mark this book as returned?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('CONFIRM RETURN'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _handleReturn();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isReturned = widget.loan.status == LoanStatus.returned;
+    final isOverdue =
+        !isReturned && widget.loan.dueDate.isBefore(DateTime.now());
+    final daysDifference = widget.loan.dueDate
+        .difference(DateTime.now())
+        .inDays
+        .abs();
+    final statusColor = _getStatusColor(widget.loan.status);
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.6,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20.0, top: 16.0),
+                    child: Text(
+                      'Loan Details',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0, top: 12.0),
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.grey[300],
+                        foregroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Book Information Section
+                      _buildSection(
+                        context,
+                        title: 'Book Information',
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Book Cover
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    widget
+                                        .loan
+                                        .bookCopy?['book']?['coverImageUrl'] ??
+                                    'assets/default_book.jpg',
+                                height: 200,
+                                width: 140,
+                                fit: BoxFit.cover,
+                                errorWidget: (context, url, error) =>
+                                    Image.asset('assets/default_book.jpg'),
+                                placeholder: (context, url) =>
+                                    const CircularProgressIndicator(),
+                              ),
+                            ),
+
+                            const SizedBox(width: 16),
+
+                            // Book Details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildDetailRow(
+                                    'Title',
+                                    widget.loan.bookCopy?['book']?['title'] ??
+                                        'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Author',
+                                    widget.loan.bookCopy?['book']?['author'] ??
+                                        'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'ISBN',
+                                    widget.loan.bookCopy?['book']?['isbn'] ??
+                                        'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'DDC',
+                                    widget.loan.bookCopy?['book']?['ddc'] ??
+                                        'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Publisher',
+                                    widget
+                                            .loan
+                                            .bookCopy?['book']?['publisher'] ??
+                                        'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Access Number',
+                                    widget.loan.bookCopy?['accessNumber'] ??
+                                        'N/A',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Borrower Information Section
+                      _buildSection(
+                        context,
+                        title: 'Borrower Information',
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // User Avatar
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    widget.loan.user?['profileImageUrl'] ??
+                                    'assets/default_avatar.png',
+                                height: 120,
+                                width: 120,
+                                fit: BoxFit.cover,
+                                errorWidget: (context, url, error) =>
+                                    Image.asset('assets/default_avatar.png'),
+                                placeholder: (context, url) =>
+                                    const CircularProgressIndicator(),
+                              ),
+                            ),
+
+                            const SizedBox(width: 16),
+
+                            // User Details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildDetailRow(
+                                    'Name',
+                                    '${widget.loan.user?['firstName'] ?? ''} ${widget.loan.user?['lastName'] ?? ''}'
+                                        .trim(),
+                                  ),
+                                  _buildDetailRow(
+                                    'Roll Number',
+                                    widget.loan.user?['rollNumber'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Email',
+                                    widget.loan.user?['email'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Phone',
+                                    widget.loan.user?['phoneNumber'] ?? 'N/A',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Loan Information Section
+                      _buildSection(
+                        context,
+                        title: 'Loan Information',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDetailRow(
+                              'Status',
+                              widget.loan.status
+                                  .toString()
+                                  .split('.')
+                                  .last
+                                  .toUpperCase(),
+                              isStatus: true,
+                            ),
+                            _buildDetailRow(
+                              'Borrowed On',
+                              _formatDate(widget.loan.borrowedAt),
+                            ),
+                            _buildDetailRow(
+                              'Due Date',
+                              _formatDate(widget.loan.dueDate),
+                              valueColor: isOverdue ? Colors.red : null,
+                            ),
+                            if (isReturned)
+                              _buildDetailRow(
+                                'Returned On',
+                                _formatDate(widget.loan.returnedAt),
+                              ),
+                            if (widget.loan.fineAmount != null &&
+                                widget.loan.fineAmount! > 0)
+                              _buildDetailRow(
+                                'Fine Amount',
+                                'UGX ${widget.loan.fineAmount?.toStringAsFixed(2)}',
+                                valueColor: Colors.orange,
+                              ),
+                            if (!isReturned && isOverdue)
+                              _buildDetailRow(
+                                'Overdue By',
+                                '$daysDifference days',
+                                valueColor: Colors.red,
+                              ),
+                            if (!isReturned && !isOverdue)
+                              _buildDetailRow(
+                                'Due In',
+                                '$daysDifference days',
+                                valueColor: Colors.green,
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // Notes Section
+                      if (widget.loan.notes?.isNotEmpty == true ||
+                          !isReturned) ...[
+                        const SizedBox(height: 16),
+                        _buildSection(
+                          context,
+                          title: 'Notes',
+                          child: TextFormField(
+                            controller: _notesController,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              hintText: 'Add any notes about this loan...',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.all(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              // Footer with action buttons
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade200, width: 1),
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Close button
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('CLOSE'),
+                    ),
+
+                    // Return button (show only for borrowed/overdue loans)
+                    if (!isReturned && widget.isAdmin) ...[
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _isReturning
+                            ? null
+                            : _showReturnConfirmation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: _isReturning
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('RETURN BOOK'),
+                      ),
+                    ],
+
+                    // Renew button (show only for borrowed, non-overdue loans)
+                    if (!isReturned && !isOverdue && widget.isAdmin) ...[
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: _isRenewing ? null : _handleRenew,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                        child: _isRenewing
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.blue,
+                                ),
+                              )
+                            : const Text('RENEW LOAN'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSection(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          color: AppTheme.backgroundColor,
+          child: Padding(padding: const EdgeInsets.all(16), child: child),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    Color? valueColor,
+    bool isStatus = false,
+    bool isMultiline = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          isStatus
+              ? Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(widget.loan.status),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    value.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : Expanded(
+                  child: Text(
+                    value,
+                    style: TextStyle(color: valueColor ?? Colors.black87),
+                    maxLines: isMultiline ? 2 : 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+        ],
+      ),
+    );
   }
 
   Color _getStatusColor(LoanStatus status) {
@@ -110,492 +591,13 @@ class _LoanDetailsDialogState extends State<LoanDetailsDialog> {
         return Colors.green;
       case LoanStatus.overdue:
         return Colors.red;
+      case LoanStatus.lost:
+        return Colors.purple;
+      case LoanStatus.damaged:
+        return Colors.orange;
       default:
         return Colors.grey;
     }
-  }
-
-  Widget _buildDetailItem(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: Colors.grey[600]),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 2),
-            SizedBox(
-              width: 200,
-              child: Text(
-                value,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateInfo(
-    String label,
-    String date,
-    IconData icon, {
-    bool isWarning = false,
-    bool isSuccess = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: isWarning
-                ? Colors.red
-                : isSuccess
-                ? Colors.green
-                : Colors.grey[600],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
-          ),
-          Text(
-            date,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: isWarning
-                  ? Colors.red
-                  : isSuccess
-                  ? Colors.green
-                  : Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isReturned = _status == LoanStatus.returned;
-    final isOverdue =
-        !isReturned && widget.loan.dueDate.isBefore(DateTime.now());
-    final daysDifference = widget.loan.dueDate
-        .difference(DateTime.now())
-        .inDays
-        .abs();
-    final statusColor = _getStatusColor(_status);
-
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      backgroundColor: AppTheme.backgroundColor,
-      content: Container(
-        width: MediaQuery.of(context).size.width * 0.5,
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header with status and close button
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _status.toString().split('.').last.toUpperCase(),
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Main content
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Book cover
-                    Container(
-                      width: 160,
-                      height: 240,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child:
-                            widget.loan.book.coverImageUrl?.isNotEmpty == true
-                            ? CachedNetworkImage(
-                                imageUrl: widget.loan.book.coverImageUrl!,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 1.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.grey[400]!,
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const Icon(
-                                      Icons.broken_image,
-                                      size: 40,
-                                      color: Colors.grey,
-                                    ),
-                              )
-                            : const Center(
-                                child: Icon(
-                                  Icons.menu_book,
-                                  size: 48,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 24),
-
-                    // Book and loan details
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Book title and author
-                          Text(
-                            widget.loan.book.title,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'by ${widget.loan.book.author.isNotEmpty ? widget.loan.book.author : 'Unknown Author'}\n',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-
-                          // Book details grid
-                          GridView.count(
-                            shrinkWrap: true,
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 4,
-                            children: [
-                              _buildDetailItem(
-                                Icons.confirmation_number,
-                                'Access Number',
-                                widget.loan.accessNumber,
-                              ),
-                              _buildDetailItem(
-                                Icons.numbers,
-                                'DDC',
-                                widget.loan.book.ddc ?? 'N/A',
-                              ),
-                              _buildDetailItem(
-                                Icons.library_books,
-                                'ISBN',
-                                widget.loan.book.isbn,
-                              ),
-                              _buildDetailItem(
-                                Icons.category,
-                                'Categories',
-                                widget.loan.book.categories.isNotEmpty
-                                    ? widget.loan.book.categories.join(', ')
-                                    : 'N/A',
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    //Borrower info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Borrower info
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Borrower Information',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: theme.primaryColor.withOpacity(
-                                0.1,
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                color: Colors.blue,
-                              ),
-                            ),
-                            title: Text(
-                              widget.loan.user.fullName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Roll: ${widget.loan.user.rollNumber}'),
-                                Text('Email: ${widget.loan.user.email}'),
-                                // Text('Phone: ${widget.loan.user.phoneNumber}'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    //Loan info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Loan dates
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Loan Information',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDateInfo(
-                            'Borrowed',
-                            _formatDate(widget.loan.borrowedDate),
-                            Icons.calendar_today,
-                          ),
-                          _buildDateInfo(
-                            'Due Date',
-                            _formatDate(widget.loan.dueDate),
-                            Icons.event_busy,
-                            isWarning: isOverdue,
-                          ),
-                          if (isReturned)
-                            _buildDateInfo(
-                              'Returned',
-                              _formatDate(widget.loan.returnedDate!),
-                              Icons.check_circle,
-                              isSuccess: true,
-                            ),
-
-                          // Days remaining/overdue
-                          if (!isReturned) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isOverdue
-                                    ? Colors.red[50]
-                                    : Colors.green[50],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isOverdue
-                                      ? Colors.red[100]!
-                                      : Colors.green[100]!,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isOverdue
-                                        ? Icons.warning_amber_rounded
-                                        : Icons.timer,
-                                    color: isOverdue
-                                        ? Colors.red
-                                        : Colors.green,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    isOverdue
-                                        ? '$daysDifference days overdue'
-                                        : 'Due in $daysDifference days',
-                                    style: TextStyle(
-                                      color: isOverdue
-                                          ? Colors.red
-                                          : Colors.green,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-
-                          // Fine amount
-                          const SizedBox(height: 16),
-                          if (widget.loan.fineAmount != null &&
-                              widget.loan.fineAmount! > 0)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.orange[50],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.orange[100]!),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Fine Amount',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orange,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextFormField(
-                                    initialValue:
-                                        _fineAmount?.toStringAsFixed(2) ??
-                                        widget.loan.fineAmount?.toStringAsFixed(
-                                          2,
-                                        ) ??
-                                        '0.00',
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      prefixText: 'UGX ',
-                                      border: const OutlineInputBorder(),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                      suffixText: 'UGX',
-                                      suffixStyle: const TextStyle(
-                                        color: Colors.orange,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    onChanged: (value) {
-                                      _fineAmount = double.tryParse(value);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Notes
-                const SizedBox(height: 16),
-                const Text(
-                  'Notes',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Add any notes about this loan...',
-                    border: const OutlineInputBorder(),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Close'),
-        ),
-        if (!isReturned) ...[
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: _isLoading
-                ? null
-                : () {
-                    if (_status == LoanStatus.returned) {
-                      _handleReturn();
-                    } else {
-                      _handleUpdateStatus();
-                    }
-                  },
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text('Mark as Returned'),
-          ),
-        ],
-      ],
-    );
   }
 
   String _formatDate(DateTime? date) {

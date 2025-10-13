@@ -2,104 +2,47 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'user_model.g.dart';
 
-/// User roles in the system
-enum UserRole {
-  @JsonValue('admin')
-  admin,
-  @JsonValue('librarian')
-  librarian,
-  @JsonValue('member')
-  member,
-  @JsonValue('guest')
-  guest,
-}
-
-/// Model representing a user in the system
 @JsonSerializable()
-class UserModel {
-  @JsonKey(name: 'id')
-  final String? id;
-
-  @JsonKey(name: 'firstName')
-  final String? firstName;
-
-  @JsonKey(name: 'lastName')
-  final String? lastName;
-
-  @JsonKey(name: 'email')
-  final String? email;
-
-  @JsonKey(name: 'rollNumber')
-  final String? rollNumber;
-
-  @JsonKey(name: 'phoneNumber')
+class User {
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String rollNumber;
   final String? phoneNumber;
-
-  @JsonKey(name: 'profileImageUrl')
   final String? profileImageUrl;
-
-  @JsonKey(name: 'course')
   final String? course;
-
-  @JsonKey(name: 'degree')
   final String? degree;
-
-  @JsonKey(name: 'dateOfBirth')
   final DateTime? dateOfBirth;
-
-  @JsonKey(name: 'role')
-  final UserRole? role;
-
-  @JsonKey(name: 'isActive')
-  final bool isActive;
-
-  @JsonKey(name: 'joinDate')
-  final DateTime? joinDate;
-
-  @JsonKey(name: 'expiryDate')
-  final DateTime? expiryDate;
-
-  @JsonKey(name: 'createdAt')
   final DateTime? createdAt;
-
-  @JsonKey(name: 'updatedAt')
   final DateTime? updatedAt;
-  final String? avatarUrl;
+  final bool isActive;
+  final DateTime? joinDate;
+  final DateTime? expiryDate;
+  final Map<String, DateTime>? borrowedBooks; // Map of book title to due date
 
-  const UserModel({
-    this.id,
-    this.firstName,
-    this.lastName,
-    this.email,
-    this.rollNumber,
+  const User({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.rollNumber,
     this.phoneNumber,
     this.profileImageUrl,
     this.course,
     this.degree,
     this.dateOfBirth,
-    this.role,
-    this.avatarUrl,
+    this.createdAt,
+    this.updatedAt,
     this.isActive = true,
     this.joinDate,
     this.expiryDate,
-    this.createdAt,
-    this.updatedAt,
+    this.borrowedBooks,
   });
 
-  /// Creates a [UserModel] from JSON data
-  factory UserModel.fromJson(Map<String, dynamic> json) =>
-      _$UserModelFromJson(json);
+  String get fullName => '$firstName $lastName';
 
-  /// Converts this [UserModel] to JSON
-  Map<String, dynamic> toJson() => _$UserModelToJson(this);
-
-  // JSON conversion helper
-
-  /// Full name of the user
-  String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
-
-  /// Creates a copy of this user with the given fields replaced by the non-null parameter values.
-  UserModel copyWith({
+  User copyWith({
     String? id,
     String? firstName,
     String? lastName,
@@ -110,15 +53,14 @@ class UserModel {
     String? course,
     String? degree,
     DateTime? dateOfBirth,
-    UserRole? role,
-    String? avatarUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     bool? isActive,
     DateTime? joinDate,
     DateTime? expiryDate,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    Map<String, DateTime>? borrowedBooks,
   }) {
-    return UserModel(
+    return User(
       id: id ?? this.id,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
@@ -129,25 +71,29 @@ class UserModel {
       course: course ?? this.course,
       degree: degree ?? this.degree,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-      role: role ?? this.role,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
       joinDate: joinDate ?? this.joinDate,
       expiryDate: expiryDate ?? this.expiryDate,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      borrowedBooks: borrowedBooks ?? this.borrowedBooks,
     );
   }
 
-  /// Returns true if the user has admin role
-  bool get isAdmin => role == UserRole.admin;
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
-  /// Returns true if the user has librarian role
-  bool get isLibrarian => role == UserRole.librarian;
+  Map<String, dynamic> toJson() => _$UserToJson(this);
 
-  /// Returns true if the user has member role
-  bool get isMember => role == UserRole.member;
+  // Legacy toMap method that uses the generated toJson
+  Map<String, dynamic> toMap() => toJson();
 
-  /// Returns true if the user has guest role
-  bool get isGuest => role == UserRole.guest;
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is User && other.id == id && other.email == email;
+  }
+
+  @override
+  int get hashCode => id.hashCode ^ email.hashCode;
 }
