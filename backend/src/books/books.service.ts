@@ -28,7 +28,7 @@ export class BooksService {
     @InjectRepository(Source)
     private readonly sourceRepository: Repository<Source>,
     private dataSource: DataSource
-  ) {}
+  ) { }
 
   // Create a new book with copies
   async create(createBookDto: CreateBookDto): Promise<Book> {
@@ -49,7 +49,7 @@ export class BooksService {
 
       // Get or create categories
       const categories = await Promise.all(
-        createBookDto.categories.map(categoryDto => 
+        createBookDto.categories.map(categoryDto =>
           this.getOrCreateCategory(categoryDto, queryRunner)
         )
       );
@@ -91,7 +91,7 @@ export class BooksService {
         // Explicitly exclude relations that might be in the DTO but shouldn't be in the entity
         copies: undefined
       };
-      
+
       // Create and save the book in one step
       const book = this.bookRepository.create(bookData);
       const savedBook = await queryRunner.manager.save(book);
@@ -138,7 +138,8 @@ export class BooksService {
     } = query;
 
     const skip = (page - 1) * limit;
-    const queryBuilder = this.bookRepository
+
+    const qb = this.bookRepository
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.categories', 'categories')
       .leftJoinAndSelect('book.subjects', 'subjects')
@@ -148,46 +149,43 @@ export class BooksService {
       .leftJoinAndSelect('book.metadata', 'metadata')
       .where('book.deletedAt IS NULL');
 
-    // Apply search
+    // 🔍 Apply case-insensitive search (MySQL)
     if (search) {
-      queryBuilder.andWhere(
-        '(book.title ILIKE :search OR book.author ILIKE :search OR book.isbn = :isbn)',
-        { search: `%${search}%`, isbn: search }
+      qb.andWhere(
+        `(LOWER(book.title) LIKE LOWER(:search)
+        OR LOWER(book.author) LIKE LOWER(:search)
+        OR book.isbn = :isbn)`,
+        { search: `%${search.toLowerCase()}%`, isbn: search }
       );
     }
 
-    // Apply minAvailable filter
+    // 📘 Filter by available copies
     if (minAvailable !== undefined) {
-      queryBuilder.andWhere('book.availableCopies >= :minAvailable', { minAvailable });
+      qb.andWhere('book.availableCopies >= :minAvailable', { minAvailable });
     }
 
-    // Apply other filters
+    // 🎯 Apply other filters dynamically (e.g. typeId, sourceId)
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && key !== 'sortBy' && key !== 'sortOrder') {
-        queryBuilder.andWhere(`book.${key} = :${key}`, { [key]: value });
+        qb.andWhere(`book.${key} = :${key}`, { [key]: value });
       }
     });
 
-    // Apply sorting
-    queryBuilder.orderBy(
-      `book.${sortBy}`,
-      sortOrder.toUpperCase() as 'ASC' | 'DESC'
-    );
+    // 🧭 Sorting
+    qb.orderBy(`book.${sortBy}`, sortOrder.toUpperCase() as 'ASC' | 'DESC');
 
-    // Get paginated results
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    // 📄 Pagination
+    const [data, total] = await qb.skip(skip).take(limit).getManyAndCount();
 
     return {
       data,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     };
   }
+
 
   // Find a book by ID with relations
   async findOne(id: number): Promise<Book> {
@@ -222,7 +220,7 @@ export class BooksService {
       // Update categories if provided
       if (updateBookDto.categories) {
         book.categories = await Promise.all(
-          updateBookDto.categories.map(cat => 
+          updateBookDto.categories.map(cat =>
             this.getOrCreateCategory(cat, queryRunner)
           )
         );
@@ -231,7 +229,7 @@ export class BooksService {
       // Update subjects if provided
       if (updateBookDto.subjects) {
         book.subjects = await Promise.all(
-          updateBookDto.subjects.map(sub => 
+          updateBookDto.subjects.map(sub =>
             this.getOrCreateSubject(sub, queryRunner)
           )
         );
@@ -336,11 +334,11 @@ export class BooksService {
     );
 
     const savedCopies = await queryRunner.manager.save(bookCopies);
-    
+
     // Update book counts
     book.totalCopies = (book.totalCopies || 0) + savedCopies.length;
     book.availableCopies = (book.availableCopies || 0) + savedCopies.length;
-    
+
     await queryRunner.manager.save(book);
   }
 

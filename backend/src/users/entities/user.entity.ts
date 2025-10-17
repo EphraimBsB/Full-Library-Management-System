@@ -6,6 +6,8 @@ import { QueueEntry } from '../../books/entities/queue-entry.entity';
 import { BookRequest } from 'src/books/entities/book-request.entity';
 import { Membership } from 'src/membership/entities/membership.entity';
 import { MembershipRequest } from 'src/membership/entities/membership-request.entity';
+import { BookNote } from '../../books/entities/book-note.entity';
+import { BookFavorite } from '../../books/entities/book-favorite.entity';
 
 @Entity('users')
 export class User {
@@ -90,6 +92,12 @@ export class User {
 
   @OneToMany(() => MembershipRequest, request => request.user)
   membershipRequests: MembershipRequest[];
+
+  @OneToMany(() => BookNote, note => note.user)
+  bookNotes: BookNote[];
+
+  @OneToMany(() => BookFavorite, favorite => favorite.user)
+  bookFavorites: BookFavorite[];
 
   @Column({ type: 'int', default: 0 })
   activeLoansCount: number;

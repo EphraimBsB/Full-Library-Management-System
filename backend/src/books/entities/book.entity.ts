@@ -10,6 +10,8 @@ import { QueueEntry } from './queue-entry.entity';
 import { Category } from 'src/sys-configs/categories/entities/category.entity';
 import { Source } from 'src/sys-configs/sources/entities/source.entity';
 import { BookMetadata } from './book-metadata.entity';
+import { BookNote } from './book-note.entity';
+import { BookFavorite } from './book-favorite.entity';
 
 @Entity('books')
 @Index(['title', 'author'])
@@ -145,6 +147,12 @@ export class Book {
 
   @OneToOne(() => BookMetadata, (metadata) => metadata.book, { cascade: true, eager: true })
   metadata: BookMetadata;
+
+  @OneToMany(() => BookNote, note => note.book)
+  notes: BookNote[];
+
+  @OneToMany(() => BookFavorite, favorite => favorite.book)
+  favorites: BookFavorite[];
 
   @OneToMany('BookLoan', 'bookCopy')
   loans: BookLoan[];

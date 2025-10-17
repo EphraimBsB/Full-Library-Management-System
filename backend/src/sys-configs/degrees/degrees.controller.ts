@@ -7,12 +7,15 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DegreesService } from './degrees.service';
 import { CreateDegreeDto } from './dto/create-degree.dto';
 import { UpdateDegreeDto } from './dto/update-degree.dto';
 import { Degree } from './entities/degree.entity';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('degrees')
 @Controller('degrees')
@@ -27,6 +30,8 @@ export class DegreesController {
   }
 
   @Get()
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all degree programs' })
   @ApiResponse({ status: 200, description: 'Return all degree programs', type: [Degree] })
   findAll() {
@@ -34,6 +39,8 @@ export class DegreesController {
   }
 
   @Get(':id')
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a degree program by ID' })
   @ApiResponse({ status: 200, description: 'Return the degree program', type: Degree })
   @ApiResponse({ status: 404, description: 'Degree program not found' })
