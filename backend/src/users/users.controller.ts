@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -7,6 +7,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { PaginationOptions } from 'src/common/interfaces/pagination-options.interface';
+import { UserProfileSummaryDto } from './dto/user-profile.dto';
+import { BookLoan } from '../books/entities/book-loan.entity';
+import { BookFavorite } from '../books/entities/book-favorite.entity';
+import { BookNote } from '../books/entities/book-note.entity';
 
 @ApiTags('users')
 @Controller('users')
@@ -44,6 +49,50 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Get(':id/profile-summary')
+  @ApiOperation({ summary: 'Get user profile summary' })
+  @ApiResponse({ status: 200, description: 'Profile summary retrieved successfully', type: UserProfileSummaryDto })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getProfileSummary(@Param('id') userId: string) {
+    return this.usersService.getUserProfileSummary(userId);
+  }
+
+  @Get(':id/borrow-history')
+  @ApiOperation({ summary: 'Get user borrow history' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getBorrowHistory(
+    @Param('id') userId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.usersService.getUserBorrowHistory(userId, { page, limit });
+  }
+
+  @Get(':id/favorites')
+  @ApiOperation({ summary: 'Get user favorite books' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getFavorites(
+    @Param('id') userId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.usersService.getUserFavorites(userId, { page, limit });
+  }
+
+  @Get(':id/notes')
+  @ApiOperation({ summary: 'Get user notes' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getNotes(
+    @Param('id') userId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.usersService.getUserNotes(userId, { page, limit });
   }
 
   @Patch(':id')

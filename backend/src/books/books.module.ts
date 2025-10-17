@@ -37,6 +37,12 @@ import { Source } from 'src/sys-configs/sources/entities/source.entity';
 import { TypesModule } from 'src/sys-configs/types/types.module';
 import { SourcesModule } from 'src/sys-configs/sources/sources.module';
 import { LoanSettingsModule } from 'src/sys-configs/loan-settings/loan-settings.module';
+import { BookFavorite } from './entities/book-favorite.entity';
+import { BookNote } from './entities/book-note.entity';
+import { BookFavoriteController } from './controllers/book-favorite.controller';
+import { BookNoteController } from './controllers/book-note.controller';
+import { BookFavoriteService } from './services/book-favorite.service';
+import { BookNoteService } from './services/book-note.service';
 
 @Module({
   imports: [
@@ -49,6 +55,8 @@ import { LoanSettingsModule } from 'src/sys-configs/loan-settings/loan-settings.
       BookCopy,
       BookRequest,
       BookLoan,
+      BookFavorite,
+      BookNote,
       QueueEntry,
       User,
     ]),
@@ -86,18 +94,24 @@ import { LoanSettingsModule } from 'src/sys-configs/loan-settings/loan-settings.
     BookLoanController,
     BookRequestController,
     QueueController,
+    BookFavoriteController,
+    BookNoteController,
   ],
   providers: [
     BooksService,
     BookLoanService,
     BookRequestService,
     QueueService,
+    BookFavoriteService,
+    BookNoteService,
   ],
   exports: [
     BooksService,
     BookLoanService,
     BookRequestService,
     QueueService,
+    BookFavoriteService,
+    BookNoteService,
   ],
 })
 export class BooksModule {}

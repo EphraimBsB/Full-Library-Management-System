@@ -13,6 +13,8 @@ import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response, Request } from 'express';
@@ -33,18 +35,20 @@ import { Public } from 'src/auth/decorators/public.decorator';
 export class StorageController {
   constructor(private readonly storageService: StorageService) { }
   @Post('upload')
+  @Public()
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile() file: UploadedFileType,
-    @GetUser() user: User,
-    @Req() req: Request,
+    @GetUser() user?: User,
+    @Req() req?: Request,
   ): Promise<FileResponseDto> {
     // Manually parse form data since we're bypassing DTO
-    const formData = req.body as Record<string, any>;
+    const formData = req?.body as Record<string, any> || {};
     const folder = formData?.folder || 'uploads';
     const isPublic = formData?.isPublic === 'true' || false;
     const generateThumbnail = formData?.generateThumbnail !== 'false'; // default true
+    const userId = user?.id || 'guest';
 
     if (!file) {
       console.error('No file received in request');
@@ -52,7 +56,7 @@ export class StorageController {
     }
 
     try {
-      const fileRecord = await this.storageService.uploadFile(file, user.id, {
+      const fileRecord = await this.storageService.uploadFile(file, userId, {
         folder,
         isPublic,
         generateThumbnail,
@@ -66,6 +70,7 @@ export class StorageController {
 
   @Get(':id')
   @Public()
+  @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'public, max-age=31536000')
   @Header('Access-Control-Allow-Origin', '*')
   @Header('Access-Control-Allow-Methods', 'GET, OPTIONS')

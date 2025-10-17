@@ -20,6 +20,8 @@ import { Degree } from 'src/sys-configs/degrees/entities/degree.entity';
 import { UserRole } from 'src/sys-configs/user-roles/entities/user-role.entity';
 import { BookMetadata } from 'src/books/entities/book-metadata.entity';
 import { LoanSettings } from 'src/sys-configs/loan-settings/loan-settings.entity';
+import { BookFavorite } from 'src/books/entities/book-favorite.entity';
+import { BookNote } from 'src/books/entities/book-note.entity';
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -39,6 +41,8 @@ import { LoanSettings } from 'src/sys-configs/loan-settings/loan-settings.entity
           Subject,
           BookRequest,
           BookLoan,
+          BookNote,
+          BookFavorite,
           QueueEntry,
           Notification,
           FileRecord,

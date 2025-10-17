@@ -7,12 +7,15 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MembershipTypesService } from './membership-types.service';
 import { CreateMembershipTypeDto } from './dto/create-membership-type.dto';
 import { UpdateMembershipTypeDto } from './dto/update-membership-type.dto';
 import { MembershipType } from './entities/membership-type.entity';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('membership-types')
 @Controller('membership-types')
@@ -27,6 +30,8 @@ export class MembershipTypesController {
   }
 
   @Get()
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all membership types' })
   @ApiResponse({ status: 200, description: 'Return all membership types', type: [MembershipType] })
   findAll() {
@@ -34,6 +39,8 @@ export class MembershipTypesController {
   }
 
   @Get(':id')
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a membership type by ID' })
   @ApiResponse({ status: 200, description: 'Return the membership type', type: MembershipType })
   @ApiResponse({ status: 404, description: 'Membership type not found' })

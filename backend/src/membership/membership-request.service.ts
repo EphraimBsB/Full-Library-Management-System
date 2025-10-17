@@ -7,6 +7,7 @@ import { User } from '../users/entities/user.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
 import { CreateMembershipRequestDto } from './dto/create-membership-request.dto';
 import { UserRole } from 'src/sys-configs/user-roles/entities/user-role.entity';
+import { hashSync } from 'bcrypt';
 
 @Injectable()
 export class MembershipRequestService {
@@ -83,7 +84,14 @@ export class MembershipRequestService {
       let role = await this.userRoleRepository.findOne({
         where: { id: createDto.roleId }
       });
+
+      if (!createDto.rollNumber) {
+        throw new BadRequestException('Roll number is required');
+      }
+      
+      const password = hashSync(createDto.rollNumber, 10);
       const userData: Partial<User> = {
+        avatarUrl: createDto.avatarUrl,
         email: createDto.email,
         firstName: createDto.firstName,
         lastName: createDto.lastName,
@@ -93,7 +101,7 @@ export class MembershipRequestService {
         isActive: false, // Will be activated when request is approved
         role: role!,
         joinDate: new Date(), // Set the join date to now
-        passwordHash: createDto.rollNumber // Temporary password, should be reset later
+        passwordHash: password
       };
       
       user = this.userRepository.create(userData);

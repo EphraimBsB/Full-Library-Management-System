@@ -145,15 +145,6 @@ export class MembershipRequestController {
       return {
         success: true,
         message: 'Membership request approved successfully',
-        data: {
-          request,
-          user: {
-            id: user.id,
-            email: user.email,
-            isActive: user.isActive,
-            role: user.role
-          }
-        }
       };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ConflictException) {
@@ -187,16 +178,6 @@ export class MembershipRequestController {
       return {
         success: true,
         message: 'Membership request rejected successfully',
-        data: {
-          request,
-          user: {
-            id: user.id,
-            email: user.email,
-            isActive: user.isActive,
-            role: user.role
-          },
-          rejectionReason: reason
-        }
       };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ConflictException) {

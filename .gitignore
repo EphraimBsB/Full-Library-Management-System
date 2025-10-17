@@ -4,6 +4,7 @@ backend/dist/
 backend/.env
 backend/.DS_Store
 backend/*.log
+backend/storage/
 
 # Flutter frontend
 frontend/.dart_tool/

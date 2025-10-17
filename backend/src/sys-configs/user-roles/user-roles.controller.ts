@@ -7,12 +7,15 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRolesService } from './user-roles.service';
 import { CreateUserRoleDto } from './dto/create-user-role.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UserRole } from './entities/user-role.entity';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('user-roles')
 @Controller('user-roles')
@@ -27,6 +30,8 @@ export class UserRolesController {
   }
 
   @Get()
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all user roles' })
   @ApiResponse({ status: 200, description: 'Return all user roles', type: [UserRole] })
   findAll() {
@@ -34,6 +39,8 @@ export class UserRolesController {
   }
 
   @Get(':id')
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a user role by ID' })
   @ApiResponse({ status: 200, description: 'Return the user role', type: UserRole })
   @ApiResponse({ status: 404, description: 'User role not found' })
