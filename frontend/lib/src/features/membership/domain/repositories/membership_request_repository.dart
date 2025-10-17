@@ -19,13 +19,13 @@ abstract class MembershipRequestRepository {
   });
 
   /// Approves a membership request
-  Future<Either<Failure, MembershipRequest>> approveMembershipRequest(
+  Future<Either<Failure, Map<String, dynamic>>> approveMembershipRequest(
     String requestId, {
     Map<String, dynamic>? data,
   });
 
   /// Rejects a membership request
-  Future<Either<Failure, MembershipRequest>> rejectMembershipRequest(
+  Future<Either<Failure, Map<String, dynamic>>> rejectMembershipRequest(
     String requestId, {
     required String reason,
   });

@@ -87,7 +87,7 @@ class BookDetailsDialog extends ConsumerWidget {
     BookModel book,
   ) async {
     try {
-      // final updatedBook = showBookFormDialog(context: context, book: book);
+      final updatedBook = showBookFormDialog(context: context, book: book);
 
       if (context.mounted) {
         // Invalidate the cache to force a refresh
@@ -227,18 +227,18 @@ class BookDetailsDialog extends ConsumerWidget {
               _buildInfoRow('Type', book.type!.name),
 
               // Categories
-              if (book.categories.isNotEmpty) ...[
+              if (book.categories != null && book.categories!.isNotEmpty) ...[
                 _buildInfoRow(
                   'Categories',
-                  book.categories.map((c) => c.name).join(", "),
+                  book.categories!.map((c) => c.name).join(", "),
                 ),
               ],
 
               // Subjects
-              if (book.subjects.isNotEmpty) ...[
+              if (book.subjects != null && book.subjects!.isNotEmpty) ...[
                 _buildInfoRow(
                   'Subjects',
-                  book.subjects.map((s) => s.name).join(", "),
+                  book.subjects!.map((s) => s.name).join(", "),
                 ),
               ],
             ],
@@ -333,8 +333,8 @@ class BookDetailsDialog extends ConsumerWidget {
                   child: TabBarView(
                     children: [
                       // Book Copies Tab
-                      bookDetails.book.copies.isNotEmpty
-                          ? _buildBookCopiesList(bookDetails.book.copies)
+                      bookDetails.book.copies!.isNotEmpty
+                          ? _buildBookCopiesList(bookDetails.book.copies!)
                           : _buildEmptyState('No copies available', Icons.book),
 
                       // Currently Borrowed By Tab

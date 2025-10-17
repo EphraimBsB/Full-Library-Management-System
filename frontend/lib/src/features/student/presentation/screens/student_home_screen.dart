@@ -1,14 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
+import 'package:management_side/src/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:management_side/src/features/auth/presentation/widgets/login_dialog.dart';
+import 'package:management_side/src/features/auth/utils/token_storage.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
-import 'package:management_side/src/features/books/presentation/screens/ebook_reader_screen.dart';
-import 'package:management_side/src/features/books/presentation/screens/reader_test.dart';
-import 'package:management_side/src/features/requests/presentation/providers/book_request_provider.dart';
-import 'package:management_side/src/features/student/presentation/widgets/borrow_request_dialog.dart';
-import 'package:management_side/src/core/error/failures.dart';
+import 'package:management_side/src/features/student/presentation/widgets/build_book_card_web.dart';
 import 'package:management_side/src/features/student/presentation/widgets/membership_request_dialog.dart';
 
 class StudentHomeScreen extends ConsumerWidget {
@@ -17,6 +17,7 @@ class StudentHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final booksAsync = ref.watch(allBooksProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -24,66 +25,213 @@ class StudentHomeScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: Row(children: [Image.asset('assets/logo.png', height: 64)]),
+        title: Row(
+          children: [
+            InkWell(
+              onTap: () => context.go('/'),
+              child: Image.asset('assets/logo.png', height: 64),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Home',
-              style: TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Sign In',
-              style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: ElevatedButton(
-              onPressed: () async {
-                final result = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => const MembershipRequestDialog(),
-                );
-
-                if (result == true) {
-                  // Show success message
-                  // if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Membership request submitted successfully!',
-                      ),
-                      backgroundColor: Colors.green,
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: PopupMenuButton<String>(
+                offset: const Offset(0, 50), // Position below the avatar
+                color: AppTheme.backgroundColor,
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'profile',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.person_outline,
+                          size: 20,
+                          color: AppTheme.textPrimaryColor,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'My Profile',
+                          style: TextStyle(
+                            color: AppTheme.textPrimaryColor,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                  // }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.logout, size: 20, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Logout',
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                onSelected: (String value) async {
+                  if (value == 'profile') {
+                    // Navigate to profile screen
+                    if (context.mounted) {
+                      context.go('/profile');
+                    }
+                  } else if (value == 'logout') {
+                    // Handle logout
+                    await tokenStorage.clearAll();
+                    if (context.mounted) {
+                      context.go('/');
+                    }
+                  }
+                },
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: CachedNetworkImage(
+                        imageUrl: user['avatarUrl'] ?? '',
+                        placeholder: (context, url) =>
+                            const Center(child: CircularProgressIndicator()),
+                        errorWidget: (context, url, error) => Text(
+                          '${user['firstName'][0]}${user['lastName']?.isNotEmpty == true ? user['lastName'][0] : ''}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${user['firstName']} ${user['lastName'] ?? ''}',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppTheme.textPrimaryColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                        ),
+                        if (user['degree'] != null || user['role'] != null)
+                          Row(
+                            children: [
+                              if (user['degree'] != null)
+                                Text(
+                                  '${user['degree']}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: AppTheme.textSecondaryColor,
+                                        fontSize: 12,
+                                      ),
+                                ),
+                              if (user['degree'] != null &&
+                                  user['role'] != null)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 4.0,
+                                  ),
+                                  child: Text(
+                                    '•',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textSecondaryColor,
+                                    ),
+                                  ),
+                                ),
+                              if (user['role'] != null)
+                                Text(
+                                  '${user['role']['name']}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: AppTheme.textSecondaryColor,
+                                        fontSize: 12,
+                                      ),
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: const Text('Sign Up'),
             ),
-          ),
+          if (user == null)
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'Home',
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => showLoginDialog(
+                    context,
+                    message: 'Please sign in to continue',
+                  ),
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(
+                      color: AppTheme.textPrimaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final result = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => const MembershipRequestDialog(),
+                      );
+
+                      if (result == true) {
+                        // Show success message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Membership request submitted successfully!',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                    ),
+                    child: const Text('Sign Up'),
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(width: 16),
         ],
       ),
@@ -131,7 +279,7 @@ class StudentHomeScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 15),
-            _buildSearchBar(),
+            _buildSearchBar(ref),
             const SizedBox(height: 32),
             // All Books Section
             const Text(
@@ -155,7 +303,7 @@ class StudentHomeScreen extends ConsumerWidget {
               ),
               itemCount: books.length,
               itemBuilder: (context, index) {
-                return _buildBookCard(books[index], context, ref);
+                return buildBookCardWeb(books[index], context, ref);
               },
             ),
             const SizedBox(height: 40),
@@ -165,7 +313,9 @@ class StudentHomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(WidgetRef ref) {
+    final searchNotifier = ref.read(searchNotifierProvider);
+
     return TextField(
       style: const TextStyle(fontSize: 13),
       decoration: InputDecoration(
@@ -192,289 +342,7 @@ class StudentHomeScreen extends ConsumerWidget {
           ),
         ),
       ),
+      onSubmitted: (value) => searchNotifier(value),
     );
   }
-
-  Widget _buildBookCard(BookModel book, BuildContext context, WidgetRef ref) {
-    return Container(
-      // margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Book Cover
-          Container(
-            width: 172,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                bottomLeft: Radius.circular(8),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                bottomLeft: Radius.circular(8),
-              ),
-              child: CachedNetworkImage(
-                imageUrl: book.coverImageUrl ?? '',
-                errorWidget: (context, url, error) =>
-                    Image.asset('assets/default_book.jpg', fit: BoxFit.cover),
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[100],
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.primaryColor,
-                      ),
-                    ),
-                  ),
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
-          // Book Details
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'by ${book.author}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${book.rating}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: book.availableCopies! > 0
-                              ? Colors.green[50]
-                              : Colors.orange[50],
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: book.availableCopies! > 0
-                                ? Colors.green[100]!
-                                : Colors.orange[100]!,
-                          ),
-                        ),
-                        child: Text(
-                          book.availableCopies! > 0 ? 'Available' : 'Borrowed',
-                          style: TextStyle(
-                            color: book.availableCopies! > 0
-                                ? Colors.green[800]
-                                : Colors.orange[800],
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    book.description?.isNotEmpty == true
-                        ? '${book.description!.substring(0, book.description!.length > 100 ? 100 : book.description!.length)}...'
-                        : 'No description available',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  // read now and borrow now buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            // Handle read now action
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => EbookReaderScreen(
-                                  bookTitle: book.title,
-                                  ebookUrl: book.ebookUrl!,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[100],
-                            foregroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
-                          icon: const Icon(Icons.menu_book_outlined, size: 18),
-                          label: const Text('Read'),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      // Borrow Button
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return BorrowRequestDialog(
-                                  bookTitle: book.title,
-                                  onSubmit: (reason) async {
-                                    final result = await ref
-                                        .read(bookRequestRepositoryProvider)
-                                        .createBookRequest(
-                                          bookId: book.id.toString(),
-                                          reason: reason,
-                                        );
-
-                                    if (!context.mounted) return;
-
-                                    if (context.mounted) {
-                                      Navigator.of(
-                                        context,
-                                      ).pop(); // Close dialog
-
-                                      result.fold(
-                                        (failure) {
-                                          String errorMessage =
-                                              'Failed to submit request';
-                                          if (failure is ServerFailure) {
-                                            errorMessage = failure.message;
-                                          } else if (failure
-                                              is NetworkFailure) {
-                                            errorMessage =
-                                                'No internet connection';
-                                          }
-
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(errorMessage),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        },
-                                        (bookRequest) {
-                                          _showSuccessDialog(context);
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Borrow request submitted successfully',
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    }
-                                  },
-                                );
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
-                          icon: const Icon(
-                            Icons.add_shopping_cart_outlined,
-                            size: 18,
-                          ),
-                          label: const Text('Borrow'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-void _showSuccessDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      title: const Text(
-        'Request Submitted',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.green,
-        ),
-      ),
-      content: const Text(
-        'Your request has been submitted successfully.\n '
-        'An email will be sent to you once approved, or you can see the librarian for approval.',
-        style: TextStyle(fontSize: 14),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
-            'OK',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    ),
-  );
 }

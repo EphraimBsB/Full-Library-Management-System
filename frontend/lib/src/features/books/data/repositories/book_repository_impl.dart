@@ -59,23 +59,20 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
   }
 
   @override
-  Future<Result<BookModel>> updateBook(BookModel book) {
+  Future<Result<BookModel>> updateBook(BookModel book, int id) {
     return handleApiCall<BookModel>(() async {
       final bookJson = book.toCreateJson();
       print('=== UPDATE BOOK REQUEST ===');
-      print('Endpoint: PATCH /books/${book.id}');
+      print('Endpoint: PATCH /books/$id');
       print('Request Data:');
       bookJson.forEach((key, value) {
         print('  $key: $value (${value?.runtimeType})');
       });
 
       try {
-        final response = await _apiService.updateBook(book.id!, bookJson);
-        print('=== UPDATE SUCCESS ===');
-        print('Response: $response');
+        final response = await _apiService.updateBook(id, bookJson);
         return response;
       } on DioException catch (e) {
-        print('=== UPDATE FAILED ===');
         print('Status: ${e.response?.statusCode}');
         print('Response: ${e.response?.data}');
         print('Headers: ${e.response?.headers}');

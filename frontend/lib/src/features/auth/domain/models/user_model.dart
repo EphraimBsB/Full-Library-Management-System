@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:management_side/src/features/settings/modules/user-roles/domain/models/user_role_model.dart';
 
 part 'user_model.g.dart';
 
@@ -10,7 +11,7 @@ class User {
   final String email;
   final String rollNumber;
   final String? phoneNumber;
-  final String? profileImageUrl;
+  final String? avatarUrl;
   final String? course;
   final String? degree;
   final DateTime? dateOfBirth;
@@ -19,6 +20,7 @@ class User {
   final bool isActive;
   final DateTime? joinDate;
   final DateTime? expiryDate;
+  final UserRole? role;
   final Map<String, DateTime>? borrowedBooks; // Map of book title to due date
 
   const User({
@@ -28,7 +30,7 @@ class User {
     required this.email,
     required this.rollNumber,
     this.phoneNumber,
-    this.profileImageUrl,
+    this.avatarUrl,
     this.course,
     this.degree,
     this.dateOfBirth,
@@ -38,6 +40,7 @@ class User {
     this.joinDate,
     this.expiryDate,
     this.borrowedBooks,
+    this.role,
   });
 
   String get fullName => '$firstName $lastName';
@@ -49,7 +52,7 @@ class User {
     String? email,
     String? rollNumber,
     String? phoneNumber,
-    String? profileImageUrl,
+    String? avatarUrl,
     String? course,
     String? degree,
     DateTime? dateOfBirth,
@@ -59,6 +62,7 @@ class User {
     DateTime? joinDate,
     DateTime? expiryDate,
     Map<String, DateTime>? borrowedBooks,
+    UserRole? role,
   }) {
     return User(
       id: id ?? this.id,
@@ -67,7 +71,7 @@ class User {
       email: email ?? this.email,
       rollNumber: rollNumber ?? this.rollNumber,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       course: course ?? this.course,
       degree: degree ?? this.degree,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
@@ -77,6 +81,7 @@ class User {
       joinDate: joinDate ?? this.joinDate,
       expiryDate: expiryDate ?? this.expiryDate,
       borrowedBooks: borrowedBooks ?? this.borrowedBooks,
+      role: role ?? this.role,
     );
   }
 

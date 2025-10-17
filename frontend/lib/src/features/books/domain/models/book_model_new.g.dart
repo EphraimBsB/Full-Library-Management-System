@@ -18,11 +18,11 @@ BookModel _$BookModelFromJson(Map<String, dynamic> json) => BookModel(
   availableCopies: (json['availableCopies'] as num?)?.toInt(),
   description: json['description'] as String?,
   coverImageUrl: json['coverImageUrl'] as String?,
-  categories: (json['categories'] as List<dynamic>)
-      .map((e) => Category.fromJson(e as Map<String, dynamic>))
+  categories: (json['categories'] as List<dynamic>?)
+      ?.map((e) => Category.fromJson(e as Map<String, dynamic>))
       .toList(),
-  subjects: (json['subjects'] as List<dynamic>)
-      .map((e) => Subject.fromJson(e as Map<String, dynamic>))
+  subjects: (json['subjects'] as List<dynamic>?)
+      ?.map((e) => Subject.fromJson(e as Map<String, dynamic>))
       .toList(),
   type: json['type'] == null
       ? null
@@ -50,8 +50,8 @@ BookModel _$BookModelFromJson(Map<String, dynamic> json) => BookModel(
   deletedAt: json['deletedAt'] == null
       ? null
       : DateTime.parse(json['deletedAt'] as String),
-  copies: (json['copies'] as List<dynamic>)
-      .map((e) => BookCopy.fromJson(e as Map<String, dynamic>))
+  copies: (json['copies'] as List<dynamic>?)
+      ?.map((e) => BookCopy.fromJson(e as Map<String, dynamic>))
       .toList(),
   metadata: json['metadata'] as Map<String, dynamic>?,
 );

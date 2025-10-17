@@ -7,7 +7,6 @@ import 'package:management_side/src/features/dashboard/presentation/widgets/righ
 import 'package:management_side/src/features/dashboard/presentation/widgets/topbar.dart';
 import 'package:management_side/src/features/loans/presentation/screens/loan_list_screen.dart';
 import 'package:management_side/src/features/members/presentation/screens/member_list_screen.dart';
-import 'package:management_side/src/features/requests/presentation/screens/requests_list_screen.dart';
 import 'package:management_side/src/features/settings/presentation/screens/settings_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -42,7 +41,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Books Content
     const BookListScreen(),
     // Requests Content
-    const RequestsListScreen(),
+    // const RequestsListScreen(),
     // Loans Content
     const LoanListScreen(),
     // Membership Requests Content

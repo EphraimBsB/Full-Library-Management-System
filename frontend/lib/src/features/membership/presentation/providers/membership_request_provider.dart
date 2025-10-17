@@ -85,7 +85,7 @@ class MembershipRequestNotifier
     );
   }
 
-  Future<MembershipRequest> approveMembershipRequest(String id) async {
+  Future<Map<String, dynamic>> approveMembershipRequest(String id) async {
     final result = await _repository.approveMembershipRequest(id);
     final request = await result.fold(
       (failure) => throw failure,
@@ -95,7 +95,7 @@ class MembershipRequestNotifier
     return request;
   }
 
-  Future<MembershipRequest> rejectMembershipRequest(
+  Future<Map<String, dynamic>> rejectMembershipRequest(
     String id,
     String reason,
   ) async {

@@ -26,7 +26,7 @@ abstract class BookRepository {
   Future<Result<model.BookModel>> createBook(model.BookModel book);
 
   /// Update an existing book
-  Future<Result<model.BookModel>> updateBook(model.BookModel book);
+  Future<Result<model.BookModel>> updateBook(model.BookModel book, int id);
 
   /// Delete a book by ID
   Future<Result<void>> deleteBook(int id);

@@ -80,14 +80,14 @@ class MembershipRequestDialog extends ConsumerWidget {
                   _buildDetailRow('Degree', request.user.degree!, theme),
                 if (request.notes?.isNotEmpty ?? false)
                   _buildDetailRow('Notes', request.notes!, theme),
-                if (request.user.profileImageUrl?.isNotEmpty ?? false) ...[
+                if (request.user.avatarUrl?.isNotEmpty ?? false) ...[
                   const SizedBox(height: 16),
                   Text('Profile Image', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      request.user.profileImageUrl!,
+                      request.user.avatarUrl!,
                       width: double.infinity,
                       height: 200,
                       fit: BoxFit.cover,
@@ -199,6 +199,7 @@ class MembershipRequestDialog extends ConsumerWidget {
         Navigator.of(context).pop();
       }
     } catch (e) {
+      print('Error approving request: $e');
       if (context.mounted) {
         scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('Failed to approve request: $e')),

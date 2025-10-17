@@ -86,31 +86,59 @@ class FileUploader {
     }
   }
 
+  Future<String> uploadFileWeb(
+    Uint8List bytes,
+    String fileName, {
+    bool isImage = true,
+  }) async {
+    final formData = FormData.fromMap({
+      'file': MultipartFile.fromBytes(bytes, filename: fileName),
+      'folder': isImage ? 'images' : 'documents',
+      'isPublic': 'true',
+      'generateThumbnail': isImage.toString(),
+    });
+
+    final dio = Dio();
+    final response = await dio.post<Map<String, dynamic>>(
+      '${ApiConstants.baseUrl}/files/upload',
+      data: formData,
+      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      onSendProgress: (sent, total) {
+        if (total != -1) {
+          final progress = (sent / total * 100).toStringAsFixed(2);
+          print('Upload progress: $progress%');
+        }
+      },
+    );
+
+    if (response.data != null && response.data!['url'] != null) {
+      return response.data!['url'] as String;
+    } else {
+      throw ServerException('Invalid response from server');
+    }
+  }
+
+  Future<Uint8List?> pickImageBytes() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.single.bytes != null) {
+      return result.files.single.bytes!;
+    }
+    return null;
+  }
+
   /// Picks an image from the device's gallery
   Future<File?> pickImage() async {
     try {
-      if (kIsWeb) {
-        // For web, use file picker directly
-        final result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-          allowMultiple: false,
-        );
-
-        if (result != null && result.files.single.bytes != null) {
-          // Create a temporary file in memory
-          final bytes = result.files.single.bytes!;
-          return File.fromRawPath(Uint8List.fromList(bytes));
-        }
-        return null;
-      } else {
-        // For mobile, use image_picker
-        final xFile = await _picker.pickImage(
-          source: ImageSource.gallery,
-          imageQuality: 85,
-          maxWidth: 1920, // Limit image size for better performance
-        );
-        return xFile != null ? File(xFile.path) : null;
-      }
+      final xFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1920, // Limit image size for better performance
+      );
+      return xFile != null ? File(xFile.path) : null;
     } catch (e) {
       print('Error picking image: $e');
       return null;

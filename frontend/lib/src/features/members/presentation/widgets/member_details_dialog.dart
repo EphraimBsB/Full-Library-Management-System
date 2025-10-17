@@ -53,8 +53,8 @@ class MemberDetailsDialog extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundImage: member.profileImageUrl != null
-                ? NetworkImage(member.profileImageUrl!)
+            backgroundImage: member.avatarUrl != null
+                ? NetworkImage(member.avatarUrl!)
                 : const AssetImage('assets/default_avatar.png')
                       as ImageProvider,
             onBackgroundImageError: (_, __) {

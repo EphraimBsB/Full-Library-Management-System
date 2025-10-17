@@ -13,7 +13,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
   email: json['email'] as String,
   rollNumber: json['rollNumber'] as String,
   phoneNumber: json['phoneNumber'] as String?,
-  profileImageUrl: json['profileImageUrl'] as String?,
+  avatarUrl: json['avatarUrl'] as String?,
   course: json['course'] as String?,
   degree: json['degree'] as String?,
   dateOfBirth: json['dateOfBirth'] == null
@@ -35,6 +35,9 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
   borrowedBooks: (json['borrowedBooks'] as Map<String, dynamic>?)?.map(
     (k, e) => MapEntry(k, DateTime.parse(e as String)),
   ),
+  role: json['role'] == null
+      ? null
+      : UserRole.fromJson(json['role'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
@@ -44,7 +47,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
   'email': instance.email,
   'rollNumber': instance.rollNumber,
   'phoneNumber': instance.phoneNumber,
-  'profileImageUrl': instance.profileImageUrl,
+  'avatarUrl': instance.avatarUrl,
   'course': instance.course,
   'degree': instance.degree,
   'dateOfBirth': instance.dateOfBirth?.toIso8601String(),
@@ -53,6 +56,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
   'isActive': instance.isActive,
   'joinDate': instance.joinDate?.toIso8601String(),
   'expiryDate': instance.expiryDate?.toIso8601String(),
+  'role': instance.role,
   'borrowedBooks': instance.borrowedBooks?.map(
     (k, e) => MapEntry(k, e.toIso8601String()),
   ),

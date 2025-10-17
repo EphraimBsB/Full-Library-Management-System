@@ -1,41 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:management_side/src/features/auth/utils/token_storage.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
-import 'package:management_side/src/features/auth/presentation/providers/auth_state_provider.dart';
-import 'presentation/screens/student_home_screen.dart';
+import 'package:management_side/src/features/student/core/theme/routes.dart'
+    as student_routes;
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize token storage
-  final token = await tokenStorage.getToken();
+//   // Initialize token storage
+//   final token = await tokenStorage.getToken();
 
-  runApp(ProviderScope(child: StudentApp(initialAuthState: token != null)));
-}
+//   runApp(ProviderScope(child: StudentApp(initialAuthState: token != null)));
+// }
 
-class StudentApp extends ConsumerWidget {
+class StudentApp extends ConsumerStatefulWidget {
   final bool initialAuthState;
 
   const StudentApp({super.key, required this.initialAuthState});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Watch auth state changes
-    final authState = ref.watch(authStateProvider);
-    final isAuthenticated = authState.authResponse != null;
+  ConsumerState<StudentApp> createState() => _StudentAppState();
+}
 
-    // If user logs out, navigate to login screen
-    if (!isAuthenticated && initialAuthState) {
-      // WidgetsBinding.instance.addPostFrameCallback((_) {
-      //   Navigator.of(
-      //     context,
-      //   ).pushNamedAndRemoveUntil('/login', (route) => false);
-      // });
-    }
+class _StudentAppState extends ConsumerState<StudentApp> {
+  late final GoRouter _router = student_routes.StudentRoutes.router;
 
-    return MaterialApp(
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
       title: 'ISBAT LMS - Student Portal',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -45,13 +39,17 @@ class StudentApp extends ConsumerWidget {
           brightness: Brightness.light,
         ),
         textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
           elevation: 0,
           centerTitle: false,
           titleSpacing: 24,
-          toolbarHeight: 80,
+          iconTheme: const IconThemeData(color: AppTheme.textPrimaryColor),
+          titleTextStyle: const TextStyle(
+            color: AppTheme.textPrimaryColor,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -82,8 +80,7 @@ class StudentApp extends ConsumerWidget {
           ),
         ),
       ),
-      // Use a builder to handle initial route
-      home: const StudentHomeScreen(),
+      routerConfig: _router,
     );
   }
 }

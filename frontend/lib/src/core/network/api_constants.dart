@@ -1,6 +1,6 @@
 class ApiConstants {
   // Base URL for the API
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = 'http://192.168.2.30:3000/api/v1';
 
   // Endpoints
   static const String login = '/auth/login';

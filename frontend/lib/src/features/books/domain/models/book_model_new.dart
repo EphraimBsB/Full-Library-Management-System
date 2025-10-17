@@ -21,8 +21,8 @@ class BookModel {
   final String? description;
   @JsonKey(name: 'coverImageUrl')
   final String? coverImageUrl;
-  final List<Category> categories;
-  final List<Subject> subjects;
+  final List<Category>? categories;
+  final List<Subject>? subjects;
   @JsonKey(name: 'type')
   final BookType? type; // Added type object
   @JsonKey(name: 'typeId')
@@ -52,7 +52,7 @@ class BookModel {
   final DateTime? updatedAt;
   @JsonKey(name: 'deletedAt')
   final DateTime? deletedAt;
-  final List<BookCopy> copies;
+  final List<BookCopy>? copies;
   final Map<String, dynamic>? metadata;
 
   const BookModel({
@@ -115,8 +115,10 @@ class BookModel {
       'totalCopies': totalCopies,
       if (description != null) 'description': description,
       if (coverImageUrl != null) 'coverImageUrl': coverImageUrl,
-      'categories': categories.map((c) => {'name': c.name}).toList(),
-      'subjects': subjects.map((s) => {'name': s.name}).toList(),
+      if (categories != null)
+        'categories': categories!.map((c) => {'name': c.name}).toList(),
+      if (subjects != null)
+        'subjects': subjects!.map((s) => {'name': s.name}).toList(),
       if (typeId != null) 'typeId': typeId,
       if (sourceId != null) 'sourceId': sourceId,
       if (ddc != null) 'ddc': ddc,
@@ -124,11 +126,15 @@ class BookModel {
       if (ebookUrl != null) 'ebookUrl': ebookUrl,
       if (location != null) 'location': location,
       if (shelf != null) 'shelf': shelf,
-      'copies': copies
-          .map(
-            (copy) => {'accessNumber': copy.accessNumber, 'notes': copy.notes},
-          )
-          .toList(),
+      if (copies != null)
+        'copies': copies!
+            .map(
+              (copy) => {
+                'accessNumber': copy.accessNumber,
+                'notes': copy.notes,
+              },
+            )
+            .toList(),
     };
   }
 

@@ -174,16 +174,18 @@ class PaginatedResponse<T> {
     try {
       // First, try to get the items from the 'items' field (current backend response format)
       // If 'items' doesn't exist, try 'data' (expected format)
-      final List<dynamic> dataList = 
-          (json['items'] as List<dynamic>?) ?? 
+      final List<dynamic> dataList =
+          (json['items'] as List<dynamic>?) ??
           (json['data'] as List<dynamic>? ?? []);
 
       // Get pagination metadata with fallback values
       final int total = json['total'] ?? 0;
       final int currentPage = json['page'] ?? 1;
-      final int itemsPerPage = json['limit'] ?? (dataList.isNotEmpty ? dataList.length : 10);
-      final int totalPages = json['totalPages'] ?? 
-                           (itemsPerPage > 0 ? (total / itemsPerPage).ceil() : 1);
+      final int itemsPerPage =
+          json['limit'] ?? (dataList.isNotEmpty ? dataList.length : 10);
+      final int totalPages =
+          json['totalPages'] ??
+          (itemsPerPage > 0 ? (total / itemsPerPage).ceil() : 1);
 
       // Convert each item in the data list to the specified type
       final items = dataList.map((item) => fromJsonT(item)).toList();
@@ -200,7 +202,7 @@ class PaginatedResponse<T> {
       print('Error parsing paginated response: $e');
       print('Stack trace: $stackTrace');
       print('Response JSON: $json');
-      
+
       return PaginatedResponse<T>.empty();
     }
   }

@@ -7,8 +7,7 @@ class MembershipRequestCard extends StatelessWidget {
   final MembershipRequest request;
   final VoidCallback? onTap;
 
-  const MembershipRequestCard({Key? key, required this.request, this.onTap})
-    : super(key: key);
+  const MembershipRequestCard({super.key, required this.request, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +46,7 @@ class MembershipRequestCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: theme.primaryColor.withOpacity(0.1),
+                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
                     child: Text(
                       user.firstName.isNotEmpty
                           ? user.firstName[0].toUpperCase()
@@ -75,7 +74,7 @@ class MembershipRequestCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -122,26 +121,6 @@ class MembershipRequestCard extends StatelessWidget {
                 'Requested: ${_formatDate(request.createdAt)}',
                 color: isNewRequest ? theme.primaryColor : null,
               ),
-              // Additional notes if available
-              if (request.notes?.isNotEmpty ?? false) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    request.notes!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.hintColor,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
             ],
           ),
         ),
