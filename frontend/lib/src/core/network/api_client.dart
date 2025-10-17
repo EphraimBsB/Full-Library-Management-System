@@ -50,7 +50,7 @@ class ApiClient {
         requestBody: false,
         responseBody: false,
         responseHeader: false,
-        error: false,
+        error: true,
         compact: true,
         maxWidth: 90,
       ),

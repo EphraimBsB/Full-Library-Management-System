@@ -28,11 +28,11 @@ class _LeftSideBarWidgetState extends ConsumerState<LeftSideBarWidget> {
       'route': AppRoutes.dashboard,
     },
     {'icon': Icons.menu_book, 'label': 'Books', 'route': AppRoutes.books},
-    {
-      'icon': Icons.request_quote,
-      'label': 'Loan Requests',
-      'route': AppRoutes.requests,
-    },
+    // {
+    //   'icon': Icons.request_quote,
+    //   'label': 'Loan Requests',
+    //   'route': AppRoutes.requests,
+    // },
     {'icon': Icons.library_books, 'label': 'Loans', 'route': AppRoutes.loans},
     // {
     //   'icon': Icons.people,
@@ -183,6 +183,8 @@ class _LeftSideBarWidgetState extends ConsumerState<LeftSideBarWidget> {
               ),
             ),
             onTap: () async {
+              //clear all data
+              await tokenStorage.clearAll();
               // Clear the auth token
               await tokenStorage.clearToken();
 

@@ -66,11 +66,12 @@ class _MembershipRequestFormDialogState
       _courseController.text = request.user.course!;
       _degreeController.text = request.user.degree!;
       _notesController.text = request.notes ?? '';
-      _profileImageUrl = request.user.profileImageUrl;
-      _selectedMembershipTypeId = request.membershipTypeId.toString();;
+      _profileImageUrl = request.user.avatarUrl;
+      _selectedMembershipTypeId = request.membershipTypeId.toString();
+      ;
       // _selectedUserRoleId = request.user.userRoleId.toString();
     }
-    
+
     // Load degrees
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(degreesNotifierProvider.notifier).refresh();
@@ -331,10 +332,12 @@ class _MembershipRequestFormDialogState
                   final degreesAsync = ref.watch(degreesNotifierProvider);
                   return degreesAsync.when(
                     data: (degrees) {
-                      final activeDegrees = degrees.where((d) => d.isActive).toList();
-                      
+                      final activeDegrees = degrees
+                          .where((d) => d.isActive)
+                          .toList();
+
                       // Set initial value if not set and we have an initial degree
-                      if (_selectedDegree == null && 
+                      if (_selectedDegree == null &&
                           widget.initialData?.user.degree != null &&
                           activeDegrees.isNotEmpty) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -369,7 +372,8 @@ class _MembershipRequestFormDialogState
                             _degreeController.text = value?.name ?? '';
                           });
                         },
-                        validator: (value) => value == null ? 'Please select a degree' : null,
+                        validator: (value) =>
+                            value == null ? 'Please select a degree' : null,
                       );
                     },
                     loading: () => const LinearProgressIndicator(),

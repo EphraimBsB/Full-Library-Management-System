@@ -95,11 +95,10 @@ class MembershipRequestRepositoryImpl implements MembershipRequestRepository {
       'rollNumber': data['rollNumber'],
       'course': data['course'],
       'degree': data['degree'],
-      if (data['profileImageUrl'] != null)
-        'profileImageUrl': data['profileImageUrl'],
+      if (data['avatarUrl'] != null) 'avatarUrl': data['avatarUrl'],
       if (data['notes'] != null && data['notes'].isNotEmpty)
         'notes': data['notes'],
-      if (data['userRoleId'] != null) 'userRoleId': data['userRoleId'],
+      if (data['roleId'] != null) 'roleId': data['roleId'],
     };
 
     return _handleApiCall<MembershipRequest>(
@@ -147,26 +146,26 @@ class MembershipRequestRepositoryImpl implements MembershipRequestRepository {
   }
 
   @override
-  Future<Either<Failure, MembershipRequest>> approveMembershipRequest(
+  Future<Either<Failure, Map<String, dynamic>>> approveMembershipRequest(
     String requestId, {
     Map<String, dynamic>? data,
   }) {
-    return _handleApiCall<MembershipRequest>(
+    return _handleApiCall<Map<String, dynamic>>(
       () => _apiService.approveMembershipRequest(requestId, data ?? {}),
       operation: 'approveMembershipRequest',
-      transform: (data) => MembershipRequest.fromJson(data),
+      transform: (data) => data,
     );
   }
 
   @override
-  Future<Either<Failure, MembershipRequest>> rejectMembershipRequest(
+  Future<Either<Failure, Map<String, dynamic>>> rejectMembershipRequest(
     String requestId, {
     required String reason,
   }) {
-    return _handleApiCall<MembershipRequest>(
+    return _handleApiCall<Map<String, dynamic>>(
       () => _apiService.rejectMembershipRequest(requestId, {'reason': reason}),
       operation: 'rejectMembershipRequest',
-      transform: (data) => MembershipRequest.fromJson(data),
+      transform: (data) => data,
     );
   }
 

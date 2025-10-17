@@ -326,70 +326,12 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
     return DateFormat('MMM d, y').format(date);
   }
 
-  Future<void> _handleMenuSelection(String value, Membership membership) async {
-    switch (value) {
-      case 'edit':
-        await _showEditMemberDialog(membership);
-        break;
-      case 'delete':
-        await _confirmDeleteMember(membership);
-        break;
-    }
-  }
-
   Future<void> _showEditMemberDialog(Membership membership) async {
     // TODO: Implement edit member dialog
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Edit member functionality coming soon')),
       );
-    }
-  }
-
-  Future<void> _confirmDeleteMember(Membership membership) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Member'),
-        content: Text(
-          'Are you sure you want to delete ${membership.user.fullName}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('DELETE', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      try {
-        await ref
-            .read(memberNotifierProvider.notifier)
-            .deleteMembership(membership.id);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Member deleted successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete member: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
     }
   }
 
@@ -401,19 +343,24 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search members...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 16,
+            child: SizedBox(
+              height: 40,
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(fontSize: 12),
+                decoration: InputDecoration(
+                  hintText: 'Search members...',
+                  hintStyle: const TextStyle(fontSize: 12),
+                  prefixIcon: const Icon(Icons.search, size: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 16,
+                  ),
                 ),
               ),
             ),
@@ -536,14 +483,34 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Library Members'),
+        title: const Text(
+          'Library Members',
+          style: TextStyle(color: Colors.black87),
+        ),
+        backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              showMembershipRequestFormDialog(context);
-            },
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            margin: const EdgeInsets.only(top: 8.0, right: 16.0),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: InkWell(
+              onTap: () {
+                showMembershipRequestFormDialog(context);
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Add New Member'),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.add),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -551,7 +518,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
         children: [
           // Search Bar
           _buildSearchBar(),
-
+          const SizedBox(height: 30),
           // Main Content with RefreshIndicator
           Expanded(
             child: RefreshIndicator(
@@ -573,15 +540,16 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                       ),
                       child: Text(
                         'Pending Membership Requests',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                          fontSize: 14,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                       ),
                     ),
 
-                    // Membership Requests Grid
+                    // Pending Requests Grid
                     membershipRequestsAsync.when(
                       data: (requests) {
                         final pendingRequests = requests
@@ -595,17 +563,18 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                                 'All caught up! No pending requests at the moment.',
                           );
                         }
-                        return Container(
+                        return Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
                           ),
-                          height: 280,
                           child: GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  childAspectRatio: 1.4,
+                                  crossAxisCount: 4,
+                                  childAspectRatio: 1.8,
                                   mainAxisSpacing: 16,
                                   crossAxisSpacing: 16,
                                 ),
@@ -624,7 +593,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                         );
                       },
                       loading: () => const SizedBox(
-                        height: 200,
+                        height: 100,
                         child: Center(child: CircularProgressIndicator()),
                       ),
                       error: (error, stack) => _buildErrorState(
@@ -634,28 +603,22 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                             .refresh(),
                       ),
                     ),
+                    const SizedBox(height: 24.0),
 
-                    // Members Section
+                    // All Members Section
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Library Members',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontSize: 14,
-                                ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.filter_list),
-                            onPressed: _showFilterDialog,
-                            tooltip: 'Filter members',
-                          ),
-                        ],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        'All Library Members',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                       ),
                     ),
 
@@ -684,7 +647,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                                   crossAxisCount: 4,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
-                                  childAspectRatio: 1.4,
+                                  childAspectRatio: 1.9,
                                 ),
                             itemCount: filteredMembers.length,
                             itemBuilder: (context, index) =>
@@ -711,19 +674,6 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddMemberDialog,
-        child: const Icon(Icons.add),
-      ),
     );
-  }
-
-  void _showAddMemberDialog() {
-    // TODO: Implement add member dialog
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add member functionality coming soon')),
-      );
-    }
   }
 }

@@ -5,8 +5,6 @@ import 'dart:io';
 
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/core/utils/file_uploader.dart';
-import 'package:management_side/src/features/books/domain/models/book_copy.dart';
-import 'package:management_side/src/features/books/domain/models/book_details.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_book_types.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_sources.dart';
@@ -83,7 +81,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
     _pubYearController = TextEditingController(
       text: book?.publicationYear.toString() ?? '',
     );
-    _fromController = TextEditingController();
+    _fromController = TextEditingController(text: book?.source?.supplier ?? '');
     _priceController = TextEditingController(
       text: book?.price?.toString() ?? '',
     );
@@ -94,14 +92,10 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
     _locationController = TextEditingController(text: book?.location ?? '');
     _shelfController = TextEditingController(text: book?.shelf ?? '');
     _accessNumbersController = TextEditingController(
-      text: book?.copies.isNotEmpty == true
-          ? book!.copies.map((copy) => copy.accessNumber.toString()).join(', ')
+      text: book?.copies!.isNotEmpty == true
+          ? book!.copies!.map((copy) => copy.accessNumber.toString()).join(', ')
           : '',
     );
-
-    // // Always load book types and sources
-    // ref.read(bookTypesNotifierProvider.notifier).loadBookTypes();
-    // ref.read(sourcesNotifierProvider.notifier).loadSources();
 
     // Initialize selected type and source if editing
     if (book != null) {
@@ -110,20 +104,12 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
     }
 
     // Initialize category and subjects
-    _selectedCategory = book?.categories.isNotEmpty == true
-        ? book!.categories.first is Category
-              ? book.categories.first
-              : Category.fromJson(book.categories.first as Map<String, dynamic>)
+    _selectedCategory = book?.categories != null && book!.categories!.isNotEmpty
+        ? book.categories!.first
         : null;
 
-    _selectedSubjects = book?.subjects.isNotEmpty == true
-        ? book!.subjects
-              .map<Subject>(
-                (s) => s is Subject
-                    ? s
-                    : Subject.fromJson(s as Map<String, dynamic>),
-              )
-              .toList()
+    _selectedSubjects = book?.subjects != null && book!.subjects!.isNotEmpty
+        ? book.subjects!.map<Subject>((s) => s).toList()
         : <Subject>[];
   }
 
@@ -230,7 +216,10 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
 
       final bookRepository = ref.read(bookRepositoryProvider);
       final result = widget.book != null
-          ? await bookRepository.updateBook(BookModel.fromJson(bookData))
+          ? await bookRepository.updateBook(
+              BookModel.fromJson(bookData),
+              widget.book!.id!,
+            )
           : await bookRepository.createBook(BookModel.fromJson(bookData));
 
       if (mounted) {
@@ -610,7 +599,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                                                       context,
                                                                     )
                                                                     .colorScheme
-                                                                    .surfaceVariant,
+                                                                    .surfaceContainerHighest,
                                                             padding:
                                                                 EdgeInsets.zero,
                                                             labelPadding:
@@ -634,7 +623,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                                         backgroundColor:
                                                             Theme.of(context)
                                                                 .colorScheme
-                                                                .surfaceVariant,
+                                                                .surfaceContainerHighest,
                                                         padding:
                                                             EdgeInsets.zero,
                                                         labelPadding:
@@ -727,138 +716,6 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTypeField() {
-    final bookTypesAsync = ref.watch(bookTypesNotifierProvider);
-    return bookTypesAsync.when(
-      data: (bookTypes) {
-        // If no book types are available, show a message
-        if (bookTypes.isEmpty) {
-          return const Text('No book types available');
-        }
-
-        // If editing and type is not set but book has a type, try to find it
-        if (widget.book != null &&
-            _selectedType == null &&
-            widget.book!.type != null) {
-          _selectedType = bookTypes.firstWhere(
-            (type) => type.id == widget.book!.type?.id,
-            orElse: () => bookTypes.firstWhere(
-              (type) => type.name == widget.book!.type?.toString(),
-              orElse: () => bookTypes.first,
-            ),
-          );
-        }
-
-        // If still no type is selected, use the first one by default
-        _selectedType ??= bookTypes.isNotEmpty ? bookTypes.first : null;
-
-        return DropdownButtonFormField<BookType>(
-          value: _selectedType,
-          decoration: const InputDecoration(
-            labelText: 'Book Type *',
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-          isExpanded: true,
-          items: bookTypes.map((type) {
-            return DropdownMenuItem<BookType>(
-              value: type,
-              child: Text(type.name, overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() {
-                _selectedType = value;
-              });
-            }
-          },
-          validator: (value) {
-            if (value == null) {
-              return 'Please select a book type';
-            }
-            return null;
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) {
-        // Log the error for debugging
-        debugPrint('Error loading book types: $error');
-        return Text(
-          'Failed to load book types',
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
-        );
-      },
-    );
-  }
-
-  Widget _buildSourceField() {
-    final sourcesAsync = ref.watch(sourcesNotifierProvider);
-    return sourcesAsync.when(
-      data: (sources) {
-        // If no sources are available, show a message
-        if (sources.isEmpty) {
-          return const Text('No sources available');
-        }
-
-        // If editing and source is not set but book has a source, try to find it
-        if (widget.book != null &&
-            _selectedSource == null &&
-            widget.book!.source != null) {
-          _selectedSource = sources.firstWhere(
-            (source) => source.id == widget.book!.source?.id,
-            orElse: () => sources.firstWhere(
-              (source) => source.name == widget.book!.source?.toString(),
-              orElse: () => sources.first,
-            ),
-          );
-        }
-
-        // If still no source is selected, use the first one by default
-        _selectedSource ??= sources.isNotEmpty ? sources.first : null;
-
-        return DropdownButtonFormField<Source>(
-          value: _selectedSource,
-          decoration: const InputDecoration(
-            labelText: 'Source *',
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-          isExpanded: true,
-          items: sources.map((source) {
-            return DropdownMenuItem<Source>(
-              value: source,
-              child: Text(source.name, overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() {
-                _selectedSource = value;
-              });
-            }
-          },
-          validator: (value) {
-            if (value == null) {
-              return 'Please select a source';
-            }
-            return null;
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) {
-        // Log the error for debugging
-        debugPrint('Error loading sources: $error');
-        return Text(
-          'Failed to load sources',
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
-        );
-      },
     );
   }
 }

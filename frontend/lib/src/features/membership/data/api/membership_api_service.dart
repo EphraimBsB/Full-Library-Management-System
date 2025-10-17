@@ -19,8 +19,8 @@ class ApiResponse<T> {
     return ApiResponse<T>(
       success: json['success'] as bool,
       data: json['data'] != null ? fromJsonT(json['data']) : null,
-      message: json['message'] as String?,
-      count: json['count'] as int?,
+      message: json['message'] != null ? json['message'] as String : null,
+      count: json['count'] != null ? json['count'] as int : null,
     );
   }
 }
@@ -36,7 +36,7 @@ class MembershipRequestResponse {
       requests: List<Map<String, dynamic>>.from(
         json['data'].map((x) => x as Map<String, dynamic>),
       ),
-      count: json['count'] as int?,
+      count: json['count'] != null ? json['count'] as int : null,
     );
   }
 }

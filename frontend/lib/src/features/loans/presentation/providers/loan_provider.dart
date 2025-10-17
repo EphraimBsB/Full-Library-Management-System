@@ -42,26 +42,26 @@ final allLoansProvider = FutureProvider.autoDispose<List<Loan>>((ref) async {
   }
 });
 
-final filteredLoansProvider = FutureProvider.family
+final userLoansProvider = FutureProvider.family
     .autoDispose<List<Loan>, Map<String, dynamic>>((ref, filters) async {
       try {
         final repository = ref.watch(loanRepositoryProvider);
-        final result = await repository.getLoans(
+        final result = await repository.getUserLoans(
+          filters['userId'] as String,
           status: filters['status'] as String?,
-          userId: filters['userId'] as String?,
-          bookId: filters['bookId'] as String?,
-          overdueOnly: filters['overdueOnly'] as bool?,
+          page: filters['page'] as int?,
+          limit: filters['limit'] as int?,
         );
         return result.fold((failure) {
           if (kDebugMode) {
-            log('Error loading filtered loans', error: failure);
+            log('Error loading user loans', error: failure);
           }
           return [];
         }, (loans) => loans);
       } catch (e, stackTrace) {
         if (kDebugMode) {
           log(
-            'Unexpected error in allLoansProvider',
+            'Unexpected error in userLoansProvider',
             error: e,
             stackTrace: stackTrace,
           );

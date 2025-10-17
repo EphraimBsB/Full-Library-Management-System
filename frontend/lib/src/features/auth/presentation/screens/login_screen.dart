@@ -46,6 +46,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ref.read(authStateProvider.notifier).setAuthResponse(authResponse);
             // Save access token to secure storage
             await tokenStorage.saveToken(authResponse.accessToken);
+            // Save user data to secure storage
+            await tokenStorage.saveUserData(authResponse.userData);
             setState(() => _isLoading = false);
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const DashboardScreen()),

@@ -82,7 +82,9 @@ class AuthInterceptor extends Interceptor {
         refreshToken: refreshToken,
       );
 
-      await _tokenStorage.saveRefreshToken(response['refreshToken']);
+      // Save the new tokens
+      await _tokenStorage.saveToken(response.accessToken);
+      await _tokenStorage.saveRefreshToken(response.refreshToken ?? '');
 
       return response.accessToken;
     } catch (e) {
@@ -136,6 +138,6 @@ class AuthInterceptor extends Interceptor {
 
 extension on AuthResponse {
   String operator [](String other) {
-    return userData[other];
+    return other;
   }
 }

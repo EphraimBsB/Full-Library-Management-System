@@ -1,15 +1,15 @@
 /// A generic class that holds paginated data along with pagination metadata
 class PaginatedResponse<T> {
-  /// The list of items in the current page
-  final List<T> items;
+  /// The list of data in the current page
+  final List<T> data;
 
-  /// The total number of items across all pages
+  /// The total number of data across all pages
   final int total;
 
   /// The current page number (1-based)
   final int page;
 
-  /// The number of items per page
+  /// The number of data per page
   final int limit;
 
   /// The total number of pages
@@ -17,7 +17,7 @@ class PaginatedResponse<T> {
 
   /// Creates a new [PaginatedResponse] instance
   const PaginatedResponse({
-    required this.items,
+    required this.data,
     required this.total,
     required this.page,
     required this.limit,
@@ -26,11 +26,11 @@ class PaginatedResponse<T> {
 
   /// Creates a [PaginatedResponse] from JSON data
   factory PaginatedResponse.fromJson(
-    Map<String, dynamic> json, 
+    Map<String, dynamic> json,
     T Function(dynamic) fromJsonT,
   ) {
     return PaginatedResponse<T>(
-      items: (json['items'] as List<dynamic>).map(fromJsonT).toList(),
+      data: (json['data'] as List<dynamic>).map(fromJsonT).toList(),
       total: json['total'] as int,
       page: json['page'] as int,
       limit: json['limit'] as int,
@@ -41,7 +41,7 @@ class PaginatedResponse<T> {
   /// Converts this [PaginatedResponse] to JSON
   Map<String, dynamic> toJson(dynamic Function(T) toJsonT) {
     return {
-      'items': items.map(toJsonT).toList(),
+      'data': data.map(toJsonT).toList(),
       'total': total,
       'page': page,
       'limit': limit,
@@ -51,14 +51,14 @@ class PaginatedResponse<T> {
 
   /// Creates a copy of this [PaginatedResponse] with the given fields replaced
   PaginatedResponse<T> copyWith({
-    List<T>? items,
+    List<T>? data,
     int? total,
     int? page,
     int? limit,
     int? totalPages,
   }) {
     return PaginatedResponse<T>(
-      items: items ?? this.items,
+      data: data ?? this.data,
       total: total ?? this.total,
       page: page ?? this.page,
       limit: limit ?? this.limit,
