@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, DeleteDateColumn } from 'typeorm';
 import { BookCopy } from './book-copy.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Membership } from 'src/membership/entities/membership.entity';
@@ -59,6 +59,9 @@ export class BookLoan {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date | null;
 
   @ManyToOne(() => BookCopy, bookCopy => bookCopy.loans)
   @JoinColumn({ name: 'bookCopyId' })
