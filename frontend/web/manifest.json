@@ -1,11 +1,11 @@
 {
-    "name": "management_side",
-    "short_name": "management_side",
+    "name": "Wonder Knowledge",
+    "short_name": "wk",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Wonder Knowledge",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

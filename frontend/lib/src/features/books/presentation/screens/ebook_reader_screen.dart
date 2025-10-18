@@ -1,49 +1,46 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:management_side/src/features/auth/utils/token_storage.dart';
+import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
+import 'package:management_side/src/features/books/presentation/widgets/note_item.dart';
+import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:http/io_client.dart' as http_io;
 
-class CustomHttpClient {
-  final http.Client _client;
-  final String? _authToken;
-
-  CustomHttpClient(this._client, this._authToken);
-
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (_authToken != null) {
-      request.headers['Authorization'] = 'Bearer $_authToken';
-    }
-    return _client.send(request);
-  }
-
-  void close() {
-    _client.close();
-  }
-}
-
-class EbookReaderScreen extends StatefulWidget {
+class EbookReaderScreen extends ConsumerStatefulWidget {
   final String bookTitle;
   final String ebookUrl;
+  final int bookId;
 
   const EbookReaderScreen({
     super.key,
     required this.bookTitle,
     required this.ebookUrl,
+    required this.bookId,
   });
 
   @override
-  _EbookReaderScreenState createState() => _EbookReaderScreenState();
+  ConsumerState<EbookReaderScreen> createState() => _EbookReaderScreenState();
 }
 
-class _EbookReaderScreenState extends State<EbookReaderScreen> {
+class _EbookReaderScreenState extends ConsumerState<EbookReaderScreen> {
   final PdfViewerController _pdfViewerController = PdfViewerController();
   final TextEditingController _noteController = TextEditingController();
-  final List<Map<String, dynamic>> _notes = [];
+  // final List<Map<String, dynamic>> _notes = [];
   bool _isNoteVisible = false;
+
   int? _currentPageNumber;
+
+  late Future<Uint8List> _pdfFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _pdfFuture = _loadPdfWithAuth(widget.ebookUrl); // ✅ only once
+  }
 
   @override
   void dispose() {
@@ -52,16 +49,40 @@ class _EbookReaderScreenState extends State<EbookReaderScreen> {
     super.dispose();
   }
 
-  void _addNote() {
-    if (_noteController.text.isNotEmpty && _currentPageNumber != null) {
-      setState(() {
-        _notes.add({
-          'page': _currentPageNumber! + 1, // +1 because pages are 0-indexed
-          'text': _noteController.text,
-          'dateTime': DateTime.now(),
-        });
-        _noteController.clear();
-      });
+  void _addNote() async {
+    print('Creating note: $_currentPageNumber');
+    if (_noteController.text.isEmpty || _currentPageNumber == null) {
+      if (_currentPageNumber == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please wait for the PDF to load')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final note = BookNote(
+        bookId: widget.bookId,
+        pageNumber: _currentPageNumber!,
+        content: _noteController.text,
+        isPublic: false,
+      );
+
+      await ref.read(createBookNoteProvider(note).future);
+
+      // Clear the text field and close the dialog
+      _noteController.clear();
+      if (mounted) {
+        // Navigator.pop(context);
+        //refresh the notes
+        ref.invalidate(bookNotesProvider(widget.bookId));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create note: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -75,7 +96,9 @@ class _EbookReaderScreenState extends State<EbookReaderScreen> {
           maxLines: 4,
           decoration: const InputDecoration(
             hintText: 'Type your note here...',
-            border: OutlineInputBorder(),
+            border: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.black),
+            ),
           ),
         ),
         actions: [
@@ -93,6 +116,27 @@ class _EbookReaderScreenState extends State<EbookReaderScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showNoteDialogWithSelectedText(String selectedText) async {
+    _noteController.text = selectedText;
+    _showNoteDialog();
+  }
+
+  void _highlightPageTemporarily(int pageNumber) async {
+    // Show a temporary overlay color flash
+    OverlayEntry? overlay;
+
+    overlay = OverlayEntry(
+      builder: (context) => Positioned.fill(
+        child: Container(color: Colors.yellow.withOpacity(0.2)),
+      ),
+    );
+
+    Overlay.of(context).insert(overlay!);
+
+    await Future.delayed(const Duration(milliseconds: 400));
+    overlay?.remove();
   }
 
   Future<Uint8List> _loadPdfWithAuth(String url) async {
@@ -126,10 +170,19 @@ class _EbookReaderScreenState extends State<EbookReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final notes = ref.watch(bookNotesProvider(widget.bookId));
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.bookTitle, style: const TextStyle(fontSize: 20)),
         actions: [
+          if (_currentPageNumber != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Text(
+                'Page $_currentPageNumber',
+                style: const TextStyle(fontSize: 12, color: Colors.white),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.bookmark_add),
             onPressed: _showNoteDialog,
@@ -147,37 +200,40 @@ class _EbookReaderScreenState extends State<EbookReaderScreen> {
           // PDF Viewer
           Expanded(
             child: FutureBuilder<Uint8List>(
-              future: _loadPdfWithAuth(widget.ebookUrl),
+              future: _pdfFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
                   if (snapshot.hasData) {
-                    return SfPdfViewer.network(
-                      widget.ebookUrl,
+                    return SfPdfViewer.memory(
+                      snapshot.data!,
                       controller: _pdfViewerController,
+                      enableTextSelection: true,
+                      canShowTextSelectionMenu: true,
+                      onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+                        if (_currentPageNumber == null) {
+                          // ✅ only update once
+                          setState(() {
+                            _currentPageNumber =
+                                _pdfViewerController.pageNumber;
+                          });
+                        }
+                      },
+                      onPageChanged: (details) {
+                        setState(() {
+                          _currentPageNumber = details.newPageNumber;
+                        });
+                      },
+                      onTextSelectionChanged:
+                          (PdfTextSelectionChangedDetails details) {
+                            if (details.selectedText != null &&
+                                details.selectedText!.isNotEmpty) {
+                              _showAddNoteMenu(details);
+                            }
+                          },
                     );
                   } else if (snapshot.hasError) {
                     return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 60,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Failed to load PDF: ${snapshot.error}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => setState(() {}),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
+                      child: Text('Failed to load PDF: ${snapshot.error}'),
                     );
                   }
                 }
@@ -207,29 +263,37 @@ class _EbookReaderScreenState extends State<EbookReaderScreen> {
                       ),
                     ),
                   ),
-                  if (_notes.isNotEmpty)
+                  if (notes.value?.isNotEmpty ?? false)
                     Expanded(
                       child: ListView.builder(
-                        itemCount: _notes.length,
+                        itemCount: notes.value?.length ?? 0,
                         itemBuilder: (context, index) {
-                          final note = _notes[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8.0),
-                            child: ListTile(
-                              title: Text(note['text']),
-                              subtitle: Text(
-                                'Page ${note['page']} • ${note['dateTime'].toString().substring(0, 16)}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, size: 20),
-                                onPressed: () {
-                                  setState(() {
-                                    _notes.removeAt(index);
-                                  });
-                                },
-                              ),
-                            ),
+                          final note = notes.value![index];
+                          return NoteItem(
+                            note: note,
+                            onDelete: () async {
+                              try {
+                                await ref.read(
+                                  deleteBookNoteProvider(note.id!).future,
+                                );
+                                // Invalidate the provider to refresh the list
+                                ref.invalidate(
+                                  bookNotesProvider(widget.bookId),
+                                );
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Failed to delete note'),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            onTap: () {
+                              _pdfViewerController.jumpToPage(note.pageNumber!);
+                              _highlightPageTemporarily(note.pageNumber!);
+                            },
                           );
                         },
                       ),
@@ -248,5 +312,67 @@ class _EbookReaderScreenState extends State<EbookReaderScreen> {
         ],
       ),
     );
+  }
+
+  void _showAddNoteMenu(PdfTextSelectionChangedDetails details) {
+    if (!mounted) return;
+
+    final overlay = Overlay.of(context);
+    if (overlay == null) return;
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final Offset globalPosition = renderBox.localToGlobal(Offset.zero);
+
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: (details.globalSelectedRegion?.top ?? globalPosition.dy) - 40,
+        left: details.globalSelectedRegion?.left ?? 50,
+        child: Material(
+          color: Colors.transparent,
+          child: GestureDetector(
+            onTap: () async {
+              final selectedText = details.selectedText ?? '';
+              _pdfViewerController.clearSelection();
+
+              if (overlayEntry.mounted) {
+                try {
+                  overlayEntry.remove();
+                } catch (_) {}
+              }
+
+              await _showNoteDialogWithSelectedText(selectedText);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade700,
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, blurRadius: 4),
+                ],
+              ),
+              child: const Text(
+                '➕ Add to Notes',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    // Remove after 3 seconds (safely)
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && overlayEntry.mounted) {
+        try {
+          overlayEntry.remove();
+        } catch (_) {}
+      }
+    });
   }
 }

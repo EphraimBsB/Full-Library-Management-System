@@ -85,23 +85,3 @@ final userNotesProvider = FutureProvider.family<List<BookNote>, String>((
     rethrow;
   }
 });
-
-// Provider for user favorites
-final userFavoritesProvider = FutureProvider.family<List<BookModel>, String>((
-  ref,
-  userId,
-) async {
-  // TODO: Replace with actual API call to fetch user favorites
-  // Example: return await booksRepository.getUserFavorites(userId);
-  return [];
-});
-
-// Provider for user loans
-final userLoansProvider = FutureProvider.family<List<Loan>, String>((
-  ref,
-  userId,
-) async {
-  // TODO: Replace with actual API call to fetch user loans
-  // Example: return await loansRepository.getUserLoans(userId);
-  return [];
-});

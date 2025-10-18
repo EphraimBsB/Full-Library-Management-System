@@ -12,7 +12,7 @@ part of 'student_api_service.dart';
 
 class _StudentApiService implements StudentApiService {
   _StudentApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://localhost:3000/api/v1';
+    baseUrl ??= 'http://192.168.2.30:3000/api/v1';
   }
 
   final Dio _dio;
