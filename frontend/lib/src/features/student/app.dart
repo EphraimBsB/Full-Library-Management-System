@@ -6,15 +6,6 @@ import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/student/core/theme/routes.dart'
     as student_routes;
 
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-
-//   // Initialize token storage
-//   final token = await tokenStorage.getToken();
-
-//   runApp(ProviderScope(child: StudentApp(initialAuthState: token != null)));
-// }
-
 class StudentApp extends ConsumerStatefulWidget {
   final bool initialAuthState;
 

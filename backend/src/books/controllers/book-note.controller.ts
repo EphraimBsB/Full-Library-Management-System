@@ -77,6 +77,8 @@ export class BookNoteController {
   @ApiResponse({ status: 200, description: 'The note has been successfully updated.', type: BookNoteResponseDto })
   @ApiResponse({ status: 403, description: 'Forbidden - User does not own this note.' })
   @ApiResponse({ status: 404, description: 'Note not found.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token. Please log in' })
   async update(
     @Param('id') id: string,
     @Body() updateBookNoteDto: UpdateBookNoteDto,
