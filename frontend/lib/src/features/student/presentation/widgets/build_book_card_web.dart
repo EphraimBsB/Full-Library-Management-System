@@ -163,6 +163,7 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
                               builder: (context) => EbookReaderScreen(
                                 bookTitle: book.title,
                                 ebookUrl: book.ebookUrl!,
+                                bookId: book.id!,
                               ),
                             ),
                           );

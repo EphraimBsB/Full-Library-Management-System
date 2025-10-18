@@ -7,18 +7,27 @@ part of 'book_notes_model.dart';
 // **************************************************************************
 
 BookNote _$BookNoteFromJson(Map<String, dynamic> json) => BookNote(
-  id: json['id'] as String,
+  id: json['id'] as String?,
   content: json['content'] as String,
   pageNumber: (json['pageNumber'] as num?)?.toInt(),
-  isPublic: json['isPublic'] as bool,
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  updatedAt: DateTime.parse(json['updatedAt'] as String),
-  userId: json['userId'] as String,
-  bookId: (json['bookId'] as num).toInt(),
+  isPublic: json['isPublic'] as bool?,
+  createdAt: json['createdAt'] == null
+      ? null
+      : DateTime.parse(json['createdAt'] as String),
+  updatedAt: json['updatedAt'] == null
+      ? null
+      : DateTime.parse(json['updatedAt'] as String),
+  userId: json['userId'] as String?,
+  bookId: (json['bookId'] as num?)?.toInt(),
   deletedAt: json['deletedAt'] == null
       ? null
       : DateTime.parse(json['deletedAt'] as String),
-  book: BookModel.fromJson(json['book'] as Map<String, dynamic>),
+  book: json['book'] == null
+      ? null
+      : BookModel.fromJson(json['book'] as Map<String, dynamic>),
+  user: json['user'] == null
+      ? null
+      : User.fromJson(json['user'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$BookNoteToJson(BookNote instance) => <String, dynamic>{
@@ -26,10 +35,11 @@ Map<String, dynamic> _$BookNoteToJson(BookNote instance) => <String, dynamic>{
   'content': instance.content,
   'pageNumber': instance.pageNumber,
   'isPublic': instance.isPublic,
-  'createdAt': instance.createdAt.toIso8601String(),
-  'updatedAt': instance.updatedAt.toIso8601String(),
+  'createdAt': instance.createdAt?.toIso8601String(),
+  'updatedAt': instance.updatedAt?.toIso8601String(),
   'userId': instance.userId,
   'bookId': instance.bookId,
   'deletedAt': instance.deletedAt?.toIso8601String(),
   'book': instance.book,
+  'user': instance.user,
 };

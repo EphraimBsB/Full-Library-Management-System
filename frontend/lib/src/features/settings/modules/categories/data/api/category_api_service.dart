@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:management_side/src/core/network/api_constants.dart';
+import 'package:management_side/src/features/settings/modules/categories/domain/models/category_model.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'category_api_service.g.dart';

@@ -6,6 +6,7 @@ import 'package:management_side/src/features/books/data/api/book_api_service.dar
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/domain/repositories/book_repository.dart';
+import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 
 class BookRepositoryImpl extends BaseRepository implements BookRepository {
   late final BookApiService _apiService;
@@ -124,6 +125,46 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
     return handleApiCall<BookDetails>(
       () => _apiService.getBookDetails(id),
       errorMessage: 'Failed to load book details',
+    );
+  }
+
+  @override
+  Future<Result<List<BookNote>>> getBookNotes(int bookId) {
+    return handleApiCall<List<BookNote>>(
+      () => _apiService.getBookNotes(bookId),
+      errorMessage: 'Failed to load book notes',
+    );
+  }
+
+  @override
+  Future<Result<BookNote>> createBookNote(BookNote note) {
+    return handleApiCall<BookNote>(
+      () => _apiService.createBookNote(note.toJson()),
+      errorMessage: 'Failed to create book note',
+    );
+  }
+
+  @override
+  Future<Result<void>> deleteBookNote(String id) {
+    return handleApiCall(
+      () => _apiService.deleteBookNote(id),
+      errorMessage: 'Failed to delete book note',
+    );
+  }
+
+  @override
+  Future<Result<BookNote>> getBookNote(String id) {
+    return handleApiCall<BookNote>(
+      () => _apiService.getBookNote(id),
+      errorMessage: 'Failed to load book note',
+    );
+  }
+
+  @override
+  Future<Result<BookNote>> updateBookNote(BookNote note, String id) {
+    return handleApiCall<BookNote>(
+      () => _apiService.updateBookNote(id, note.toJson()),
+      errorMessage: 'Failed to update book note',
     );
   }
 }

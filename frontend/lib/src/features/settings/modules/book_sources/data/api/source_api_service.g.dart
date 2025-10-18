@@ -12,7 +12,7 @@ part of 'source_api_service.dart';
 
 class _SourceApiService implements SourceApiService {
   _SourceApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://localhost:3000/api/v1';
+    baseUrl ??= 'http://192.168.2.30:3000/api/v1';
   }
 
   final Dio _dio;
@@ -107,7 +107,7 @@ class _SourceApiService implements SourceApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
+            MapEntry(k, Source.fromJson(v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -141,7 +141,7 @@ class _SourceApiService implements SourceApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
+            MapEntry(k, Source.fromJson(v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

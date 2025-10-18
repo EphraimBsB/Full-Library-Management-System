@@ -74,14 +74,14 @@ class _NoteCard extends StatelessWidget {
                   height: 80,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
-                    image: note.book.coverImageUrl != null
+                    image: note.book!.coverImageUrl != null
                         ? DecorationImage(
-                            image: NetworkImage(note.book.coverImageUrl!),
+                            image: NetworkImage(note.book!.coverImageUrl!),
                             fit: BoxFit.cover,
                           )
                         : null,
                   ),
-                  child: note.book.coverImageUrl == null
+                  child: note.book!.coverImageUrl == null
                       ? const Icon(Icons.book, size: 30)
                       : null,
                 ),
@@ -93,7 +93,7 @@ class _NoteCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        note.book.title,
+                        note.book!.title,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -102,7 +102,7 @@ class _NoteCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'by ${note.book.author}',
+                        'by ${note.book!.author}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -128,24 +128,24 @@ class _NoteCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: note.isPublic ? Colors.blue[50] : Colors.grey[100],
+                    color: note.isPublic! ? Colors.blue[50] : Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        note.isPublic ? Icons.public : Icons.lock_outline,
+                        note.isPublic! ? Icons.public : Icons.lock_outline,
                         size: 14,
-                        color: note.isPublic
+                        color: note.isPublic!
                             ? Colors.blue[700]
                             : Colors.grey[600],
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        note.isPublic ? 'Public' : 'Private',
+                        note.isPublic! ? 'Public' : 'Private',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: note.isPublic
+                          color: note.isPublic!
                               ? Colors.blue[700]
                               : Colors.grey[600],
                           fontWeight: FontWeight.w500,
@@ -169,7 +169,7 @@ class _NoteCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${_formatDate(note.updatedAt)}',
+                  _formatDate(note.updatedAt!),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -186,7 +186,7 @@ class _NoteCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, size: 20),
-                      onPressed: () => _deleteNote(context, note.id),
+                      onPressed: () => _deleteNote(context, note.id!),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       iconSize: 20,

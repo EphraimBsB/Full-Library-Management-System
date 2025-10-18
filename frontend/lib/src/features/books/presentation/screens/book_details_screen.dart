@@ -665,6 +665,7 @@ class BookDetailsDialog extends ConsumerWidget {
                           builder: (context) => EbookReaderScreen(
                             bookTitle: book.title,
                             ebookUrl: book.ebookUrl!,
+                            bookId: book.id!,
                           ),
                         ),
                       );

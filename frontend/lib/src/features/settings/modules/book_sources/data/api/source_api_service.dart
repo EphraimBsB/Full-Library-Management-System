@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:management_side/src/core/network/api_constants.dart';
+import 'package:management_side/src/features/settings/modules/book_sources/domain/models/source_model.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'source_api_service.g.dart';
