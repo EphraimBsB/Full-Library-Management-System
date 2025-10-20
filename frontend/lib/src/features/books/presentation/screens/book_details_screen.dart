@@ -13,6 +13,7 @@ import 'package:management_side/src/core/widgets/loading_view.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/books/presentation/screens/book_form_dialog.dart';
 import 'package:management_side/src/features/books/presentation/screens/ebook_reader_screen.dart';
+import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 
 /// Shows a dialog with book details
 Future<void> showBookDetailsDialog({
@@ -87,11 +88,11 @@ class BookDetailsDialog extends ConsumerWidget {
     BookModel book,
   ) async {
     try {
-      final updatedBook = showBookFormDialog(context: context, book: book);
+      showBookFormDialog(context: context, book: book);
 
       if (context.mounted) {
         // Invalidate the cache to force a refresh
-        ref.invalidate(bookDetailsProvider(bookId));
+        ref.invalidate(dashboardSummaryProvider);
       }
     } catch (e) {
       if (context.mounted) {
@@ -134,6 +135,9 @@ class BookDetailsDialog extends ConsumerWidget {
   Widget _buildBookInfoRow(BuildContext context, BookModel book) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
+    final availableCopies = book.copies!
+        .where((copy) => copy.status == 'AVAILABLE')
+        .length;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,13 +197,14 @@ class BookDetailsDialog extends ConsumerWidget {
               const SizedBox(height: 8),
 
               // Rating
-              if (book.rating != null && book.rating! > 0)
+              if (book.metadata != null &&
+                  book.metadata!['averageRating']! >= 0)
                 Row(
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 20),
                     const SizedBox(width: 4),
                     Text(
-                      book.rating!.toStringAsFixed(1),
+                      book.metadata!['averageRating']!.toStringAsFixed(1),
                       style: textTheme.bodySmall?.copyWith(
                         color: Colors.amber[800],
                         fontWeight: FontWeight.bold,
@@ -207,7 +212,7 @@ class BookDetailsDialog extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '(${book.rating!.toStringAsFixed(1)} out of 5.0)',
+                      '(${book.metadata!['views']} views)',
                       style: textTheme.bodySmall?.copyWith(
                         color: Colors.grey[600],
                       ),
@@ -223,7 +228,7 @@ class BookDetailsDialog extends ConsumerWidget {
               _buildInfoRow('Published', book.publicationYear.toString()),
               if (book.edition != null) _buildInfoRow('Edition', book.edition!),
               _buildInfoRow('Total Copies', book.totalCopies.toString()),
-              _buildInfoRow('Available', book.availableCopies.toString()),
+              _buildInfoRow('Available', availableCopies.toString()),
               _buildInfoRow('Type', book.type!.name),
 
               // Categories
@@ -300,7 +305,7 @@ class BookDetailsDialog extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Total copies: ${book.totalCopies} • Available: ${book.availableCopies!} • On loan: ${book.totalCopies - book.availableCopies!}',
+            'Total copies: ${book.totalCopies} • Available: ${book.availableCopies!} • Borrow Count: ${book.metadata!["borrowCount"]}',
             style: textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
           ),
 
@@ -316,6 +321,7 @@ class BookDetailsDialog extends ConsumerWidget {
                   labelColor: theme.primaryColor,
                   unselectedLabelColor: Colors.grey[600],
                   indicatorColor: theme.primaryColor,
+                  dividerColor: Colors.grey[200],
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -334,7 +340,10 @@ class BookDetailsDialog extends ConsumerWidget {
                     children: [
                       // Book Copies Tab
                       bookDetails.book.copies!.isNotEmpty
-                          ? _buildBookCopiesList(bookDetails.book.copies!)
+                          ? _buildBookCopiesList(
+                              bookDetails.book.copies!,
+                              bookDetails.currentBorrows,
+                            )
                           : _buildEmptyState('No copies available', Icons.book),
 
                       // Currently Borrowed By Tab
@@ -494,7 +503,10 @@ class BookDetailsDialog extends ConsumerWidget {
     );
   }
 
-  Widget _buildBookCopiesList(List<BookCopy> copies) {
+  Widget _buildBookCopiesList(
+    List<BookCopy> copies,
+    List<CurrentBorrow> borrows,
+  ) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -502,12 +514,19 @@ class BookDetailsDialog extends ConsumerWidget {
         crossAxisCount: 6, // Number of items per row
         crossAxisSpacing: 12, // Spacing between columns
         mainAxisSpacing: 12, // Spacing between rows
-        childAspectRatio: 1.5, // Width / height ratio
+        childAspectRatio: 1.3, // Width / height ratio
       ),
       itemCount: copies.length,
       itemBuilder: (context, index) {
         final copy = copies[index];
         final isAvailable = copy.status == 'AVAILABLE';
+        final isBorrowed = copy.status == 'BORROWED';
+        final borrower = isBorrowed
+            ? borrows.cast<CurrentBorrow?>().firstWhere(
+                (borrow) => borrow?.copyId == copy.id,
+                orElse: () => null,
+              )
+            : null;
 
         return Card(
           elevation: 0,
@@ -572,19 +591,17 @@ class BookDetailsDialog extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  // Add more details if needed
-                  // if (copy.location != null) ...[
-                  //   const SizedBox(height: 8),
-                  //   Text(
-                  //     'Shelf: ${copy.location}',
-                  //     style: const TextStyle(
-                  //       fontSize: 11,
-                  //       color: Colors.grey,
-                  //     ),
-                  //     maxLines: 1,
-                  //     overflow: TextOverflow.ellipsis,
-                  //   ),
-                  // ],
+                  const SizedBox(height: 8),
+                  // borrower name if copy is borrowed
+                  if (isBorrowed && borrower != null)
+                    Text(
+                      'by: ${borrower.borrower.name}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -727,11 +744,6 @@ class BookDetailsDialog extends ConsumerWidget {
     final bookDetailsAsync = ref.watch(bookDetailsProvider(bookId));
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-
-    print(
-      "Book Image cover Url: ${bookDetailsAsync.value?.book.coverImageUrl}",
-    );
-    print("Book Ebook Url: ${bookDetailsAsync.value?.book.ebookUrl}");
 
     return bookDetailsAsync.when(
       loading: () =>

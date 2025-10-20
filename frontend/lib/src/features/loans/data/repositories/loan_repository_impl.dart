@@ -10,14 +10,14 @@ import 'package:management_side/src/features/loans/domain/repositories/loan_repo
 
 class NotFoundFailure extends Failure {
   const NotFoundFailure(String message) : super(message);
-  
+
   @override
   List<Object> get props => [message];
 }
 
 class UnauthorizedFailure extends Failure {
   const UnauthorizedFailure(String message) : super(message);
-  
+
   @override
   List<Object> get props => [message];
 }
@@ -75,19 +75,13 @@ class LoanRepositoryImpl implements LoanRepository {
   }
 
   @override
-  Future<Either<Failure, Loan>> returnBook(
-    String id,
-    Map<String, dynamic> returnData,
-  ) async {
-    return _handleApiCall(() => _apiService.returnBook(id, returnData));
+  Future<Either<Failure, Loan>> returnBook(String id) async {
+    return _handleApiCall(() => _apiService.returnBook(id));
   }
 
   @override
-  Future<Either<Failure, Loan>> renewLoan(
-    String id,
-    Map<String, dynamic> renewalData,
-  ) async {
-    return _handleApiCall(() => _apiService.renewLoan(id, renewalData));
+  Future<Either<Failure, Loan>> renewLoan(String id) async {
+    return _handleApiCall(() => _apiService.renewLoan(id));
   }
 
   @override
@@ -126,10 +120,11 @@ class LoanRepositoryImpl implements LoanRepository {
       return Right(result);
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
-      final errorMessage = _getErrorMessageFromResponse(e.response?.data) ?? 
-          e.message ?? 
+      final errorMessage =
+          _getErrorMessageFromResponse(e.response?.data) ??
+          e.message ??
           'An error occurred during $operation';
-      
+
       if (statusCode != null && statusCode >= 500) {
         return Left(ServerFailure('Server error: $errorMessage'));
       } else if (statusCode == 404) {
@@ -142,23 +137,33 @@ class LoanRepositoryImpl implements LoanRepository {
     } on FormatException catch (e) {
       return Left(ServerFailure('Data format error: ${e.message}'));
     } on TypeError catch (e) {
-      return Left(ServerFailure('Type error: ${e.toString()}. Please check the API response format.'));
+      return Left(
+        ServerFailure(
+          'Type error: ${e.toString()}. Please check the API response format.',
+        ),
+      );
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        log('Unexpected error during $operation', error: e, stackTrace: stackTrace);
+        log(
+          'Unexpected error during $operation',
+          error: e,
+          stackTrace: stackTrace,
+        );
       }
-      return Left(ServerFailure('An unexpected error occurred during $operation'));
+      return Left(
+        ServerFailure('An unexpected error occurred during $operation'),
+      );
     }
   }
 
   String? _getErrorMessageFromResponse(dynamic responseData) {
     if (responseData == null) return null;
-    
+
     try {
       if (responseData is Map<String, dynamic>) {
         return responseData['message']?.toString() ??
-               responseData['error']?.toString() ??
-               responseData['errors']?.toString();
+            responseData['error']?.toString() ??
+            responseData['errors']?.toString();
       }
       return responseData.toString();
     } catch (e) {

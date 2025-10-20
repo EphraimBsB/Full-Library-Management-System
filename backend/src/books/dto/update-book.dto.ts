@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 import { CreateCategoryDto } from 'src/sys-configs/categories/dto/create-category.dto';
 import { CreateSubjectDto } from 'src/sys-configs/subjects/dto/create-subject.dto';
+import { BookCopyStatus } from 'src/books/entities/book-copy.entity';
 
 class BookCopiesDto {
   @IsString()
@@ -22,6 +23,10 @@ class BookCopiesDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  // @IsString()
+  // @IsOptional()
+  // status?: BookCopyStatus | BookCopyStatus.AVAILABLE;
 }
 
 export class UpdateBookDto {

@@ -16,6 +16,7 @@ frontend/pubspec.lock
 frontend/.flutter-plugins
 frontend/.flutter-plugins-dependencies
 frontend/.metadata
+frontend/.env
 
 # General
 *.log

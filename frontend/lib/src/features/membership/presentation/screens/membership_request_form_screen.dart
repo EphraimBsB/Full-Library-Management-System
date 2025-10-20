@@ -6,6 +6,8 @@ import 'package:management_side/src/features/membership/domain/models/membership
 import 'package:management_side/src/features/membership/presentation/providers/membership_request_provider.dart';
 import 'package:management_side/src/features/settings/modules/degrees/domain/models/degree_model.dart';
 import 'package:management_side/src/features/settings/modules/degrees/presentation/providers/degree_providers.dart';
+import 'package:management_side/src/features/settings/modules/membership-types/presentation/providers/membership_types_providers.dart';
+import 'package:management_side/src/features/settings/modules/user-roles/presentation/providers/user_roles_providers.dart';
 
 void showMembershipRequestFormDialog(
   BuildContext context, {
@@ -16,7 +18,7 @@ void showMembershipRequestFormDialog(
     builder: (context) => Dialog(
       insetPadding: const EdgeInsets.all(16),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 1000),
+        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 700),
         child: MembershipRequestFormDialog(initialData: initialData),
       ),
     ),
@@ -41,9 +43,9 @@ class _MembershipRequestFormDialogState
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _courseController = TextEditingController();
-  final _degreeController = TextEditingController();
+  final _rollNumberController = TextEditingController();
   final _notesController = TextEditingController();
+  final _degreeController = TextEditingController();
 
   File? _profileImage;
   String? _profileImageUrl;
@@ -63,13 +65,11 @@ class _MembershipRequestFormDialogState
       _lastNameController.text = request.user.lastName;
       _emailController.text = request.user.email;
       _phoneController.text = request.user.phoneNumber!;
-      _courseController.text = request.user.course!;
+      _rollNumberController.text = request.user.rollNumber;
       _degreeController.text = request.user.degree!;
       _notesController.text = request.notes ?? '';
       _profileImageUrl = request.user.avatarUrl;
       _selectedMembershipTypeId = request.membershipTypeId.toString();
-      ;
-      // _selectedUserRoleId = request.user.userRoleId.toString();
     }
 
     // Load degrees
@@ -84,7 +84,7 @@ class _MembershipRequestFormDialogState
     _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _courseController.dispose();
+    _rollNumberController.dispose();
     _degreeController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -118,21 +118,15 @@ class _MembershipRequestFormDialogState
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedMembershipTypeId == null) {
-      setState(() {
-        _errorMessage = 'Please select a membership type';
-      });
+      setState(() => _errorMessage = 'Please select a membership type');
       return;
     }
     if (_selectedUserRoleId == null) {
-      setState(() {
-        _errorMessage = 'Please select a user role';
-      });
+      setState(() => _errorMessage = 'Please select a user role');
       return;
     }
     if (_selectedDegree == null) {
-      setState(() {
-        _errorMessage = 'Please select a degree';
-      });
+      setState(() => _errorMessage = 'Please select a degree');
       return;
     }
 
@@ -143,68 +137,55 @@ class _MembershipRequestFormDialogState
 
     try {
       final repository = ref.read(membershipRequestRepositoryProvider);
+      final data = {
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phoneNumber': _phoneController.text.trim(),
+        'rollNumber': _rollNumberController.text.trim(),
+        'degree': _selectedDegree?.code ?? '',
+        'membershipTypeId': int.parse(_selectedMembershipTypeId!),
+        'avatarUrl': _profileImageUrl,
+        'notes': _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
+        'roleId': int.parse(_selectedUserRoleId!),
+      };
 
-      // Upload profile image if selected but not yet uploaded
-      if (_profileImage != null && _profileImageUrl == null) {
-        try {
-          setState(() => _isUploading = true);
-          _profileImageUrl = await FileUploader.instance.uploadImage(
-            _profileImage!,
+      final result = await repository.createMembershipRequest(data);
+
+      if (!mounted) return;
+
+      result.fold(
+        (failure) {
+          setState(() => _errorMessage = failure.message);
+        },
+        (_) {
+          ref.invalidate(membershipRequestNotifierProvider);
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Membership request submitted successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
-        } catch (e) {
-          setState(() {
-            _errorMessage = 'Failed to upload image: $e';
-            _isSubmitting = false;
-            _isUploading = false;
-          });
-          return;
-        }
-      }
-
-      // final request = MembershipRequest.fromUser(
-      //   id: widget.initialData?.id,
-      //   firstName: _firstNameController.text.trim(),
-      //   lastName: _lastNameController.text.trim(),
-      //   email: _emailController.text.trim(),
-      //   phoneNumber: _phoneController.text.trim(),
-      //   course: _courseController.text.trim(),
-      //   degree: _degreeController.text.trim(),
-      //   membershipTypeId: _selectedMembershipTypeId!,
-      //   profileImageUrl: _profileImageUrl,
-      //   notes: _notesController.text.trim().isNotEmpty
-      //       ? _notesController.text.trim()
-      //       : null,
-      //   userRoleId: int.tryParse(_selectedUserRoleId ?? ''),
-      // );
-
-      // if (widget.initialData == null) {
-      //   await repository.createMembershipRequest(request);
-      //   if (mounted) {
-      //     ScaffoldMessenger.of(context).showSnackBar(
-      //       const SnackBar(content: Text('Membership request submitted')),
-      //     );
-      //     Navigator.of(context).pop();
-      //   }
-      // } else {
-      //   await repository.updateMembershipRequest(request);
-      //   if (mounted) {
-      //     ScaffoldMessenger.of(context).showSnackBar(
-      //       const SnackBar(content: Text('Membership request updated')),
-      //     );
-      //     Navigator.of(context).pop();
-      //   }
-      // }
+        },
+      );
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to submit request: $e';
-        _isSubmitting = false;
-      });
+      setState(() => _errorMessage = 'Failed to submit request: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final membershipTypesAsync = ref.watch(membershipTypesNotifierProvider);
+    final userRolesAsync = ref.watch(userRolesProvider);
+    final degreesAsync = ref.watch(degreesNotifierProvider);
     final isEditing = widget.initialData != null;
 
     return Scaffold(
@@ -318,132 +299,163 @@ class _MembershipRequestFormDialogState
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _courseController,
-                decoration: const InputDecoration(
-                  labelText: 'Course *',
-                  border: OutlineInputBorder(),
-                ),
+                controller: _rollNumberController,
+                decoration: const InputDecoration(labelText: 'Roll Number *'),
                 validator: (value) =>
                     value?.trim().isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-              Consumer(
-                builder: (context, ref, _) {
-                  final degreesAsync = ref.watch(degreesNotifierProvider);
-                  return degreesAsync.when(
-                    data: (degrees) {
-                      final activeDegrees = degrees
-                          .where((d) => d.isActive)
-                          .toList();
+              degreesAsync.when(
+                data: (degrees) {
+                  final activeDegrees = degrees
+                      .where((d) => d.isActive)
+                      .toList();
+                  if (activeDegrees.isEmpty) {
+                    return const Text('No degrees available');
+                  }
 
-                      // Set initial value if not set and we have an initial degree
-                      if (_selectedDegree == null &&
-                          widget.initialData?.user.degree != null &&
-                          activeDegrees.isNotEmpty) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          final initialDegree = activeDegrees.firstWhere(
-                            (d) => d.name == widget.initialData?.user.degree,
-                            orElse: () => activeDegrees.first,
-                          );
-                          if (mounted) {
-                            setState(() {
-                              _selectedDegree = initialDegree;
-                              _degreeController.text = initialDegree.name;
-                            });
-                          }
-                        });
+                  return Autocomplete<Degree>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text == '') {
+                        return const Iterable<Degree>.empty();
                       }
-
-                      return DropdownButtonFormField<Degree>(
-                        value: _selectedDegree,
-                        decoration: const InputDecoration(
-                          labelText: 'Degree *',
-                          border: OutlineInputBorder(),
+                      return activeDegrees.where(
+                        (degree) => degree.name.toLowerCase().contains(
+                          textEditingValue.text.toLowerCase(),
                         ),
-                        items: activeDegrees.map((degree) {
-                          return DropdownMenuItem<Degree>(
-                            value: degree,
-                            child: Text(degree.name),
-                          );
-                        }).toList(),
-                        onChanged: (Degree? value) {
-                          setState(() {
-                            _selectedDegree = value;
-                            _degreeController.text = value?.name ?? '';
-                          });
-                        },
-                        validator: (value) =>
-                            value == null ? 'Please select a degree' : null,
                       );
                     },
-                    loading: () => const LinearProgressIndicator(),
-                    error: (error, _) => Text('Error loading degrees: $error'),
+                    displayStringForOption: (Degree option) => option.name,
+                    fieldViewBuilder:
+                        (
+                          BuildContext context,
+                          TextEditingController textEditingController,
+                          FocusNode focusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          return TextField(
+                            controller: textEditingController,
+                            focusNode: focusNode,
+                            decoration: InputDecoration(
+                              labelText: 'Programs *',
+                              hintText: 'Type to search programs...',
+                              border: const OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(8),
+                                ),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: const Icon(
+                                  Icons.search,
+                                  size: 20,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  // Toggle the dropdown when the icon is pressed
+                                  FocusScope.of(
+                                    context,
+                                  ).requestFocus(focusNode);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                    onSelected: (Degree selection) {
+                      setState(() {
+                        _selectedDegree = selection;
+                        _degreeController.text = selection.name;
+                      });
+                    },
                   );
                 },
+                loading: () => const LinearProgressIndicator(),
+                error: (error, _) => Text('Error loading degrees: $error'),
               ),
               const SizedBox(height: 16),
               // Membership Type Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedMembershipTypeId,
-                items: const [
-                  // TODO: Replace with actual membership types
-                  DropdownMenuItem(
-                    value: '1',
-                    child: Text('Basic (Basic Membership)'),
-                  ),
-                  DropdownMenuItem(
-                    value: '2',
-                    child: Text('Premium (Premium Membership)'),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMembershipTypeId = value;
-                  });
+              membershipTypesAsync.when(
+                data: (types) {
+                  final activeTypes = types.where((t) => t.isActive).toList();
+                  if (activeTypes.isEmpty) {
+                    return const Text('No membership types available');
+                  }
+                  return DropdownButtonFormField<String>(
+                    initialValue: _selectedMembershipTypeId ??= activeTypes
+                        .first
+                        .id
+                        .toString(),
+                    decoration: const InputDecoration(
+                      labelText: 'Membership Type *',
+                    ),
+                    items: activeTypes.map((type) {
+                      return DropdownMenuItem<String>(
+                        value: type.id.toString(),
+                        child: Text(type.name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedMembershipTypeId = value;
+                      });
+                    },
+                    validator: (value) => value == null
+                        ? 'Please select a membership type'
+                        : null,
+                  );
                 },
-                decoration: const InputDecoration(
-                  labelText: 'Membership Type *',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    value == null ? 'Please select a membership type' : null,
+                loading: () => const LinearProgressIndicator(),
+                error: (error, _) =>
+                    Text('Error loading membership types: $error'),
               ),
               const SizedBox(height: 16),
+
               // User Role Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedUserRoleId,
-                items: const [
-                  // TODO: Replace with actual user roles
-                  DropdownMenuItem(
-                    value: '1',
-                    child: Text('Student (Regular student access)'),
-                  ),
-                  DropdownMenuItem(
-                    value: '2',
-                    child: Text('Faculty (Teaching staff access)'),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedUserRoleId = value;
-                  });
+              userRolesAsync.when(
+                data: (roles) {
+                  if (roles.isEmpty) {
+                    return const Text('No user roles available');
+                  }
+
+                  // Filter out admin and librarian roles
+                  final filteredRoles = roles
+                      .where(
+                        (role) => ![
+                          'admin',
+                          'librarian',
+                        ].contains(role.name.toLowerCase()),
+                      )
+                      .toList();
+
+                  if (filteredRoles.isEmpty) {
+                    return const Text('No valid roles available');
+                  }
+
+                  // Add null check and fallback for initialValue
+                  final initialRoleId =
+                      _selectedUserRoleId ?? filteredRoles.first.id.toString();
+
+                  return DropdownButtonFormField<String>(
+                    initialValue: _selectedUserRoleId ?? initialRoleId,
+                    decoration: const InputDecoration(labelText: 'User Role *'),
+                    items: filteredRoles.map((role) {
+                      return DropdownMenuItem<String>(
+                        value: role.id.toString(),
+                        child: Text(role.name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedUserRoleId = value;
+                      });
+                    },
+                    validator: (value) =>
+                        value == null && _selectedUserRoleId == null
+                        ? 'Please select a user role'
+                        : null,
+                  );
                 },
-                decoration: const InputDecoration(
-                  labelText: 'User Role *',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    value == null ? 'Please select a user role' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Additional Notes',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 3,
+                loading: () => const LinearProgressIndicator(),
+                error: (error, _) => Text('Error loading user roles: $error'),
               ),
               const SizedBox(height: 24),
               FilledButton(
@@ -494,7 +506,7 @@ class _MembershipRequestFormDialogState
                               await ref
                                   .read(membershipRequestRepositoryProvider)
                                   .deleteMembershipRequest(
-                                    widget.initialData!.id!,
+                                    widget.initialData!.id,
                                   );
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(

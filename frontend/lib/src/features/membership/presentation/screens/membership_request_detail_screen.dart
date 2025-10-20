@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:management_side/src/features/members/presentation/providers/member_provider.dart';
 import 'package:management_side/src/features/membership/domain/models/membership_request_model.dart';
 import 'package:management_side/src/features/membership/presentation/providers/membership_request_provider.dart';
 
@@ -193,6 +194,8 @@ class MembershipRequestDialog extends ConsumerWidget {
           .read(membershipRequestNotifierProvider.notifier)
           .approveMembershipRequest(requestId);
       if (context.mounted) {
+        ref.invalidate(membershipRequestNotifierProvider);
+        ref.invalidate(memberNotifierProvider);
         scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Membership request approved')),
         );
@@ -251,6 +254,8 @@ class MembershipRequestDialog extends ConsumerWidget {
                         reasonController.text.trim(),
                       );
                   if (context.mounted) {
+                    ref.invalidate(membershipRequestNotifierProvider);
+                    ref.invalidate(memberNotifierProvider);
                     scaffoldMessenger.showSnackBar(
                       const SnackBar(
                         content: Text('Membership request rejected'),
@@ -262,6 +267,8 @@ class MembershipRequestDialog extends ConsumerWidget {
                   }
                 } catch (e) {
                   if (context.mounted) {
+                    ref.invalidate(membershipRequestNotifierProvider);
+                    ref.invalidate(memberNotifierProvider);
                     scaffoldMessenger.showSnackBar(
                       SnackBar(content: Text('Failed to reject request: $e')),
                     );

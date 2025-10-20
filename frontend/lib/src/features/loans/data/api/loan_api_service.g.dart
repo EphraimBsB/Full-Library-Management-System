@@ -134,7 +134,7 @@ class _LoanApiService implements LoanApiService {
   }
 
   @override
-  Future<Loan> updateLoan(String id, Map<String, dynamic> updates) async {
+  Future<Loan> updateLoan(String loanId, Map<String, dynamic> updates) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -149,7 +149,7 @@ class _LoanApiService implements LoanApiService {
           )
           .compose(
             _dio.options,
-            '/loans/${id}',
+            '/loans/${loanId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -167,7 +167,7 @@ class _LoanApiService implements LoanApiService {
   }
 
   @override
-  Future<void> deleteLoan(String id) async {
+  Future<void> deleteLoan(String loanId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -181,7 +181,7 @@ class _LoanApiService implements LoanApiService {
           )
           .compose(
             _dio.options,
-            '/loans/${id}',
+            '/loans/${loanId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -191,12 +191,11 @@ class _LoanApiService implements LoanApiService {
   }
 
   @override
-  Future<Loan> returnBook(String id, Map<String, dynamic> returnData) async {
+  Future<Loan> returnBook(String loanId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(returnData);
+    const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<Loan>(
       Options(
             method: 'POST',
@@ -206,7 +205,7 @@ class _LoanApiService implements LoanApiService {
           )
           .compose(
             _dio.options,
-            '/loans/${id}/return',
+            '/loans/return/${loanId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -224,12 +223,11 @@ class _LoanApiService implements LoanApiService {
   }
 
   @override
-  Future<Loan> renewLoan(String id, Map<String, dynamic> renewalData) async {
+  Future<Loan> renewLoan(String loanId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(renewalData);
+    const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<Loan>(
       Options(
             method: 'POST',
@@ -239,7 +237,7 @@ class _LoanApiService implements LoanApiService {
           )
           .compose(
             _dio.options,
-            '/loans/${id}/renew',
+            '/loans/renew/${loanId}',
             queryParameters: queryParameters,
             data: _data,
           )

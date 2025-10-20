@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/features/books/presentation/screens/book_list_screen.dart';
+import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 import 'package:management_side/src/features/dashboard/presentation/widgets/center_main_body.dart';
 import 'package:management_side/src/features/dashboard/presentation/widgets/left_side_bar.dart';
 import 'package:management_side/src/features/dashboard/presentation/widgets/right_side_bar.dart';
@@ -66,6 +67,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.invalidate(dashboardSummaryProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: Row(

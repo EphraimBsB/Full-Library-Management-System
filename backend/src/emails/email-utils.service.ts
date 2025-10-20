@@ -83,7 +83,7 @@ export class EmailUtilsService {
       await this.emailService.sendEmail(
         user.email,
         `Reminder: Return ${book.title} by ${dueDate.toLocaleDateString()}`,
-        'return-reminder',
+        'due-reminder',
         {
           userName: `${user.firstName} ${user.lastName}`,
           bookTitle: book.title,
@@ -184,6 +184,60 @@ export class EmailUtilsService {
         `Error scheduling return reminder for loan ${loanId}: ${error.message}`,
         error.stack
       );
+    }
+  }
+
+  async sendReturnConfirmationEmail(
+    user: User,
+    book: Book,
+    dueDate: Date,
+    issueDate: Date,
+    loanId: string
+  ): Promise<void> {
+    try {
+      await this.emailService.sendEmail(
+        user.email,
+        `Return Confirmation: ${book.title}`,
+        'return-confirmation',
+        {
+          userName: `${user.firstName} ${user.lastName}`,
+          bookTitle: book.title,
+          bookAuthor: book.author,
+          issueDate: issueDate.toLocaleDateString(),
+          dueDate: dueDate.toLocaleDateString(),
+          loanId,
+          supportEmail: 'library@example.com',
+        }
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send return confirmation email: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  async sendRequestRejectedEmail(
+    user: User,
+    book: Book,
+    reason: string,
+    rejectedById: string
+  ): Promise<void> {
+    try {
+      await this.emailService.sendEmail(
+        user.email,
+        `Request Rejected: ${book.title}`,
+        'rejected',
+        {
+          userName: `${user.firstName} ${user.lastName}`,
+          bookTitle: book.title,
+          bookAuthor: book.author,
+          reason,
+          rejectedById,
+          supportEmail: 'library@example.com',
+        }
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send request rejected email: ${error.message}`, error.stack);
+      throw error;
     }
   }
 }

@@ -16,7 +16,7 @@ export class BookMetadata {
   ratingCount: number;
 
   @Column({ type: 'int', default: 0 })
-  downloadCount: number;
+  borrowCount: number;
 
   @Column({ type: 'int', default: 0 })
   favoriteCount: number;

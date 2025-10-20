@@ -118,7 +118,7 @@ class _BookRequestApiService implements BookRequestApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, BookRequest.fromJson(v as Map<String, dynamic>)),
+            MapEntry(k, (v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

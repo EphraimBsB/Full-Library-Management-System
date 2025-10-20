@@ -1,13 +1,14 @@
 // import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:io';
 
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/core/utils/file_uploader.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_book_types.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_media_input.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_sources.dart';
+import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 import 'package:management_side/src/features/settings/modules/book_sources/domain/models/source_model.dart';
 import 'package:management_side/src/features/settings/modules/book_types/domain/models/book_type_model.dart';
 import 'package:management_side/src/features/settings/modules/book_types/presentation/providers/book/book_type_providers.dart';
@@ -51,8 +52,6 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
   late TextEditingController _accessNumbersController;
 
   // Track file upload state
-  bool _isUploading = false;
-  bool _isSubmitting = false;
 
   // Selected book type and source
   BookType? _selectedType;
@@ -104,20 +103,18 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
     }
 
     // Initialize category and subjects
-    _selectedCategory = book?.categories != null && book!.categories!.isNotEmpty
-        ? book.categories!.first
-        : null;
+    _selectedCategorys =
+        book?.categories != null && book!.categories!.isNotEmpty
+        ? book.categories!.map<Category>((s) => s).toList()
+        : <Category>[];
 
     _selectedSubjects = book?.subjects != null && book!.subjects!.isNotEmpty
         ? book.subjects!.map<Subject>((s) => s).toList()
         : <Subject>[];
   }
 
-  File? _pickedImage;
-  File? _pickedEbook;
-
   // Dropdown values
-  Category? _selectedCategory;
+  List<Category> _selectedCategorys = [];
   List<Subject> _selectedSubjects = [];
 
   @override
@@ -144,14 +141,12 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedCategory == null) {
+    if (_selectedCategorys.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select a category')));
       return;
     }
-
-    setState(() => _isSubmitting = true);
 
     try {
       final bookData = {
@@ -176,9 +171,11 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
         'coverImageUrl': _imageUrlController.text.trim().isNotEmpty
             ? _imageUrlController.text.trim()
             : null,
-        'categories': [
-          {'name': _selectedCategory!.name}, // Only include name for categories
-        ],
+        'categories': _selectedCategorys
+            .map(
+              (category) => {'name': category.name},
+            ) // Only include name for categories
+            .toList(),
         'subjects': _selectedSubjects
             .map(
               (subject) => {'name': subject.name},
@@ -224,7 +221,9 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
 
       if (mounted) {
         if (result.isSuccess) {
-          await ref.refresh(allBooksProvider.future);
+          ref.invalidate(dashboardSummaryProvider);
+          // ref.invalidate(dashboardSummaryStatsProvider);
+          // ref.invalidate(recentBooksProvider);
           if (mounted) {
             Navigator.of(context).pop(true);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -256,9 +255,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+      if (mounted) {}
     }
   }
 
@@ -281,12 +278,9 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
       final file = await FileUploader.instance.pickImage();
       if (file == null) return;
 
-      setState(() => _isUploading = true);
-
       final imageUrl = await FileUploader.instance.uploadImage(file);
       setState(() {
         _imageUrlController.text = imageUrl;
-        _pickedImage = file;
       });
     } catch (e) {
       if (mounted) {
@@ -295,9 +289,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
         ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
       }
     } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
+      if (mounted) {}
     }
   }
 
@@ -306,12 +298,9 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
       final file = await FileUploader.instance.pickDocument();
       if (file == null) return;
 
-      setState(() => _isUploading = true);
-
       final ebookUrl = await FileUploader.instance.uploadDocument(file);
       setState(() {
         _ebookUrlController.text = ebookUrl;
-        _pickedEbook = file;
       });
     } catch (e) {
       if (mounted) {
@@ -320,9 +309,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
         ).showSnackBar(SnackBar(content: Text('Failed to upload ebook: $e')));
       }
     } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
+      if (mounted) {}
     }
   }
 
@@ -411,38 +398,52 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                   hint: 'Edition',
                                 ),
                                 const SizedBox(height: 8),
-                                buildCategoryField(
+                                buildCategoriesField(
                                   categories,
-                                  _selectedCategory,
-                                  (value) =>
-                                      setState(() => _selectedCategory = value),
+                                  _selectedCategorys,
+                                  (category) {
+                                    setState(() {
+                                      if (!_selectedCategorys.any(
+                                        (s) => s.id == category!.id,
+                                      )) {
+                                        _selectedCategorys.add(category!);
+                                      }
+                                    });
+                                  },
+                                  (category) {
+                                    setState(() {
+                                      _selectedCategorys.removeWhere(
+                                        (s) => s.id == category!.id,
+                                      );
+                                    });
+                                  },
                                 ),
                                 const SizedBox(height: 8),
                                 buildSubjectsField(
                                   subjects,
                                   _selectedSubjects,
-                                  (value) => setState(
-                                    () => _selectedSubjects.add(value!),
-                                  ),
-                                  (value) => setState(
-                                    () => _selectedSubjects.remove(value),
-                                  ),
+                                  (subject) {
+                                    setState(() {
+                                      if (!_selectedSubjects.any(
+                                        (s) => s.id == subject!.id,
+                                      )) {
+                                        _selectedSubjects.add(subject!);
+                                      }
+                                    });
+                                  },
+                                  (subject) {
+                                    setState(() {
+                                      _selectedSubjects.removeWhere(
+                                        (s) => s.id == subject!.id,
+                                      );
+                                    });
+                                  },
                                 ),
-                                // _buildMultiSelectDropdown(
-                                //   selectedItems: _selectedSubjects,
-                                //   items: commonSubjects,
-                                //   hint: 'Select Subjects',
-                                //   onChanged: (value) {
-                                //     setState(() {
-                                //       _selectedSubjects = value;
-                                //     });
-                                //   },
-                                // ),
                                 buildSectionHeader('Description'),
                                 buildTextField(
                                   controller: _descriptionController,
                                   hint: 'Book description...',
-                                  maxLines: 8,
+                                  maxLines: 9,
                                 ),
 
                                 const SizedBox(height: 8),
@@ -488,8 +489,11 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                 buildSourcesField(
                                   sources,
                                   _selectedSource,
-                                  (value) =>
-                                      setState(() => _selectedSource = value),
+                                  (value) => setState(() {
+                                    _selectedSource = value;
+                                    _fromController.text =
+                                        value?.supplier ?? '';
+                                  }),
                                 ),
                                 const SizedBox(height: 8),
                                 buildTextField(
@@ -653,34 +657,28 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                 ),
                                 buildSectionHeader('Media'),
                                 const SizedBox(height: 4),
-                                TextFormField(
+                                buildMediaInput(
                                   controller: _imageUrlController,
-                                  decoration: InputDecoration(
-                                    hintText: 'Image URL or select file',
-                                    border: const OutlineInputBorder(),
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.all(12),
-                                    suffixIcon: IconButton(
-                                      icon: const Icon(Icons.upload_file),
-                                      onPressed: _pickAndUploadImage,
-                                      tooltip: 'Upload image',
-                                    ),
-                                  ),
+                                  hintText: 'Image URL or select file',
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Image URL is required';
+                                    }
+                                    return null;
+                                  },
+                                  onPickAndUpload: _pickAndUploadImage,
                                 ),
                                 const SizedBox(height: 8),
-                                TextFormField(
+                                buildMediaInput(
                                   controller: _ebookUrlController,
-                                  decoration: InputDecoration(
-                                    hintText: 'E-book file (PDF/EPUB)',
-                                    border: const OutlineInputBorder(),
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.all(12),
-                                    suffixIcon: IconButton(
-                                      icon: const Icon(Icons.upload_file),
-                                      onPressed: _pickAndUploadEbook,
-                                      tooltip: 'Select e-book file',
-                                    ),
-                                  ),
+                                  hintText: 'E-book file (PDF/EPUB)',
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'E-book file is required';
+                                    }
+                                    return null;
+                                  },
+                                  onPickAndUpload: _pickAndUploadEbook,
                                 ),
                               ],
                             ),
@@ -723,6 +721,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
 void showBookFormDialog({required BuildContext context, BookModel? book}) {
   showDialog(
     context: context,
+    barrierDismissible: false,
     builder: (context) => BookFormDialog(book: book),
   );
 }

@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
+import 'package:management_side/src/features/loans/presentation/providers/loan_provider.dart';
 import 'package:management_side/src/features/requests/domain/models/book_request_model.dart';
 import 'package:management_side/src/features/requests/presentation/providers/book_request_provider.dart';
+import 'package:management_side/src/features/requests/presentation/providers/pending_requests_provider.dart';
 import 'package:management_side/src/features/requests/presentation/widgets/show_confirmation_dialog.dart';
 
 class RequestDetailsDialog extends ConsumerStatefulWidget {
@@ -121,10 +123,17 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
   Future<void> _handleApprove() async {
     if (_selectedCopyId == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a copy to approve this request'),
-            backgroundColor: Colors.orange,
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Selection Required'),
+            content: const Text('Please select a copy to approve this request'),
+            actions: [
+              TextButton(
+                onPressed: Navigator.of(context).pop,
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
@@ -153,7 +162,7 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
       final repository = ref.read(bookRequestRepositoryProvider);
       final result = await repository.approveBookRequest(
         requestId: widget.request.id!,
-        preferredCopyId: _selectedCopyId!,
+        preferredCopyId: _selectedCopyId,
         notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text
             : null,
@@ -171,6 +180,9 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
           );
         },
         (response) {
+          ref.invalidate(pendingBookRequestsProvider);
+          ref.invalidate(allLoansProvider);
+
           scaffoldMessenger.showSnackBar(
             const SnackBar(
               content: Text('Request approved successfully'),

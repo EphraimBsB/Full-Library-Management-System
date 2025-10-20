@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:management_side/src/features/requests/domain/models/book_request_model.dart';
+import 'package:management_side/src/features/requests/presentation/screens/request_details_dialog.dart';
 
 class RequestCard extends StatelessWidget {
   final BookRequest request;
@@ -9,94 +10,107 @@ class RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final availableCopies = request.book!['copies']!
+        .where((copy) => copy['status'] == 'AVAILABLE')
+        .length;
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        // width: 280,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 70,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: request.book!['coverImageUrl'] != null
-                      ? CachedNetworkImage(
-                          imageUrl: request.book!['coverImageUrl']!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          placeholder: (context, url) => const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          errorWidget: (context, url, error) =>
-                              const Icon(Icons.book),
-                        )
-                      : const Center(
-                          child: Icon(
-                            Icons.menu_book_rounded,
-                            size: 40,
-                            color: Colors.grey,
-                          ),
+      child: InkWell(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) => RequestDetailsDialog(request: request),
+          );
+        },
+        child: Container(
+          // width: 280,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 70,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      request.book!['title'] ?? 'Unknown Book',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                      'Author',
-                      request.book!['author'] ?? 'Unknown',
+                    child: request.book!['coverImageUrl'] != null
+                        ? CachedNetworkImage(
+                            imageUrl: request.book!['coverImageUrl']!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.book),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.menu_book_rounded,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          request.book!['title'] ?? 'Unknown Book',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        _buildInfoRow(
+                          'Author',
+                          request.book!['author'] ?? 'Unknown',
+                        ),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('DDC', request.book!['ddc'] ?? 'Unknown'),
+                        const SizedBox(height: 8),
+                        _buildInfoRow(
+                          'Available Copies',
+                          availableCopies.toString(),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow('DDC', request.book!['ddc'] ?? 'Unknown'),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                      'Available Copies',
-                      request.book!['availableCopies']?.toString() ?? 'Unknown',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildInfoRow(
-              'Requester',
-              '${request.user!['firstName']} ${request.user!['lastName']}',
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow('Requested', _formatDate(request.createdAt!)),
-            const SizedBox(height: 8),
-            _buildStatusChip(request.status!),
-          ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildInfoRow(
+                'Requester',
+                '${request.user!['firstName']} ${request.user!['lastName']}',
+              ),
+              const SizedBox(height: 8),
+              _buildInfoRow('Requested', _formatDate(request.createdAt!)),
+              const SizedBox(height: 8),
+              _buildStatusChip(request.status!),
+            ],
+          ),
         ),
       ),
     );

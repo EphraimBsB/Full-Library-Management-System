@@ -20,7 +20,7 @@ abstract class BookRequestRepository {
   /// Returns a map containing the loan details if successful, or [Failure] if an error occurs
   Future<Either<Failure, Map<String, dynamic>>> approveBookRequest({
     required String requestId,
-    required String preferredCopyId,
+    String? preferredCopyId,
     String? notes,
   });
 

@@ -68,7 +68,7 @@ export class UsersService {
 
     // Get favorites and notes count
     const [favorites, notes] = await Promise.all([
-      this.bookFavoriteService.getFavoritesCount(parseInt(userId, 10)),
+      this.bookFavoriteService.getUserFavoritesCount(userId),
       this.bookNoteService.getUserNotes(userId)
     ]);
 

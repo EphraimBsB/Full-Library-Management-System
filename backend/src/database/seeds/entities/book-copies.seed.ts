@@ -23,7 +23,7 @@ export class BookCopiesSeed implements ISeeder {
   }
 
   private generateAccessNumber(bookId: string, copyNumber: number): string {
-    return `AC-${bookId.padStart(5, '0')}-${copyNumber.toString().padStart(3, '0')}`;
+    return `${copyNumber.toString().padStart(3, '0')}`;
   }
 
   private generateCopyData(

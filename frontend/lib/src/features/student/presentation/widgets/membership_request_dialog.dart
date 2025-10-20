@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
@@ -382,31 +381,64 @@ class _MembershipRequestDialogState
                           if (activeDegrees.isEmpty) {
                             return const Text('No degrees available');
                           }
-                          return DropdownButtonFormField<Degree>(
-                            initialValue: _selectedDegree ??= activeDegrees
-                                .firstWhere(
-                                  (d) =>
-                                      widget.initialData?.user.degree == d.name,
-                                  orElse: () => activeDegrees.first,
-                                ),
-                            decoration: const InputDecoration(
-                              labelText: 'Degree *',
-                              prefixIcon: Icon(Icons.school_outlined),
-                            ),
-                            items: activeDegrees.map((degree) {
-                              return DropdownMenuItem<Degree>(
-                                value: degree,
-                                child: Text(degree.name),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
+                          return Autocomplete<Degree>(
+                            optionsBuilder:
+                                (TextEditingValue textEditingValue) {
+                                  if (textEditingValue.text == '') {
+                                    return const Iterable<Degree>.empty();
+                                  }
+                                  return activeDegrees.where(
+                                    (degree) =>
+                                        degree.name.toLowerCase().contains(
+                                          textEditingValue.text.toLowerCase(),
+                                        ),
+                                  );
+                                },
+                            displayStringForOption: (Degree option) =>
+                                option.name,
+                            fieldViewBuilder:
+                                (
+                                  BuildContext context,
+                                  TextEditingController textEditingController,
+                                  FocusNode focusNode,
+                                  VoidCallback onFieldSubmitted,
+                                ) {
+                                  return TextField(
+                                    controller: textEditingController,
+                                    focusNode: focusNode,
+                                    decoration: InputDecoration(
+                                      labelText: 'Programs *',
+                                      hintText: 'Type to search programs...',
+                                      border: const OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(8),
+                                        ),
+                                      ),
+                                      prefixIcon: const Icon(
+                                        Icons.school_outlined,
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: const Icon(
+                                          Icons.search,
+                                          size: 16,
+                                          color: Colors.grey,
+                                        ),
+                                        onPressed: () {
+                                          // Toggle the dropdown when the icon is pressed
+                                          FocusScope.of(
+                                            context,
+                                          ).requestFocus(focusNode);
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                            onSelected: (Degree selection) {
                               setState(() {
-                                _selectedDegree = value;
-                                _degreeController.text = value?.name ?? '';
+                                _selectedDegree = selection;
+                                _degreeController.text = selection.name;
                               });
                             },
-                            validator: (value) =>
-                                value == null ? 'Please select a degree' : null,
                           );
                         },
                         loading: () => const LinearProgressIndicator(),

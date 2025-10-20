@@ -21,8 +21,8 @@ class MembershipRequestRepositoryImpl implements MembershipRequestRepository {
     try {
       final response = await apiCall();
 
-      if (response.success == true && response.data != null) {
-        final data = response.data!;
+      if (response.success == true || response.data != null) {
+        final data = response.data ?? {};
         if (transform != null) {
           return Right(transform(data));
         } else if (T == dynamic) {
@@ -153,7 +153,9 @@ class MembershipRequestRepositoryImpl implements MembershipRequestRepository {
     return _handleApiCall<Map<String, dynamic>>(
       () => _apiService.approveMembershipRequest(requestId, data ?? {}),
       operation: 'approveMembershipRequest',
-      transform: (data) => data,
+      transform: (data) =>
+          (data is Map ? Map<String, dynamic>.from(data) : {})
+            ..addAll({'message': 'Request approved successfully'}),
     );
   }
 
@@ -165,7 +167,9 @@ class MembershipRequestRepositoryImpl implements MembershipRequestRepository {
     return _handleApiCall<Map<String, dynamic>>(
       () => _apiService.rejectMembershipRequest(requestId, {'reason': reason}),
       operation: 'rejectMembershipRequest',
-      transform: (data) => data,
+      transform: (data) =>
+          (data is Map ? Map<String, dynamic>.from(data) : {})
+            ..addAll({'message': 'Request rejected successfully'}),
     );
   }
 
