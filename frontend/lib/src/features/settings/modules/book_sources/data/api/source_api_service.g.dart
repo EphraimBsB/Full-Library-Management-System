@@ -107,7 +107,7 @@ class _SourceApiService implements SourceApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, Source.fromJson(v as Map<String, dynamic>)),
+            MapEntry(k, (v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -141,7 +141,7 @@ class _SourceApiService implements SourceApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, Source.fromJson(v as Map<String, dynamic>)),
+            MapEntry(k, (v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, DataSource } from 'typeorm';
+import { Repository, In, DataSource, EntityManager } from 'typeorm';
 import { QueueEntry, QueueStatus } from '../entities/queue-entry.entity';
 import { Book } from '../entities/book.entity';
 import { BookCopy, BookCopyStatus } from '../entities/book-copy.entity';
@@ -31,41 +31,54 @@ export class QueueService {
     private readonly emailUtilsService: EmailUtilsService,
   ) { }
 
-  async addToQueue(bookId: string, userId: string): Promise<QueueEntry> {
-    const book = await this.bookRepository.findOne({ where: { id: parseInt(bookId) } });
-    if (!book) {
-      throw new NotFoundException('Book not found');
-    }
+  async addToQueue(
+  bookId: string,
+  userId: string,
+  manager?: EntityManager
+): Promise<QueueEntry> {
+  // Use either the provided transaction manager or default repositories
+  const bookRepo = manager ? manager.getRepository(Book) : this.bookRepository;
+  const queueRepo = manager ? manager.getRepository(QueueEntry) : this.queueEntryRepository;
 
-    // Check if user is already in the queue for this book
-    const existingEntry = await this.queueEntryRepository.findOne({
-      where: {
-        book: { id: parseInt(bookId) },
-        user: { id: userId },
-        status: In([QueueStatus.WAITING, QueueStatus.FULFILLED]),
-      },
-    });
+  // 1. Check if book exists
+  const book = await bookRepo.findOne({ where: { id: parseInt(bookId) } });
+  if (!book) {
+    throw new NotFoundException('Book not found');
+  }
 
-    if (existingEntry) {
-      throw new ConflictException('You are already in the queue for this book');
-    }
-
-    const queueCount = await this.queueEntryRepository.count({
-      where: { book: { id: parseInt(bookId) } },
-    });
-
-    const queueEntry = this.queueEntryRepository.create({
+  // 2. Check if user is already in queue for this book
+  const existingEntry = await queueRepo.findOne({
+    where: {
       book: { id: parseInt(bookId) },
       user: { id: userId },
-      status: QueueStatus.WAITING,
-      position: queueCount + 1,
-    });
+      status: In([QueueStatus.WAITING, QueueStatus.FULFILLED]),
+    },
+  });
 
-    // Update book's queue count
-    await this.bookRepository.increment({ id: parseInt(bookId) }, 'queueCount', 1);
-
-    return this.queueEntryRepository.save(queueEntry);
+  if (existingEntry) {
+    throw new ConflictException('You are already in the queue for this book');
   }
+
+  // 3. Get queue position
+  const queueCount = await queueRepo.count({
+    where: { book: { id: parseInt(bookId) } },
+  });
+
+  // 4. Create queue entry
+  const queueEntry = queueRepo.create({
+    book: { id: parseInt(bookId) },
+    user: { id: userId },
+    status: QueueStatus.WAITING,
+    position: queueCount + 1,
+  });
+
+  // 5. Increment book’s queue count
+  await bookRepo.increment({ id: parseInt(bookId) }, 'queueCount', 1);
+
+  // 6. Save entry
+  return await queueRepo.save(queueEntry);
+}
+
 
   async getQueuePosition(entryId: string): Promise<{ position: number; total: number }> {
     const entry = await this.queueEntryRepository.findOne({

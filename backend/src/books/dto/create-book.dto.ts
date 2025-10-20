@@ -35,7 +35,7 @@ export class CreateBookDto {
 
   @IsOptional()
   @IsString()
-  @IsISBN()
+  // @IsISBN()
   isbn?: string;
 
   @IsOptional()

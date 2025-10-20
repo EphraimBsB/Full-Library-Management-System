@@ -298,8 +298,8 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
                           ),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                childAspectRatio: 1.7,
+                                crossAxisCount: 3,
+                                childAspectRatio: 1.5,
                                 crossAxisSpacing: 16,
                                 mainAxisSpacing: 16,
                                 // mainAxisExtent: 200,
@@ -359,7 +359,7 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
                       ),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
+                            crossAxisCount: 3,
                             childAspectRatio: 1.2,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,

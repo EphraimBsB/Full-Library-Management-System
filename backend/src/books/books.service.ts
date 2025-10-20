@@ -79,6 +79,12 @@ export class BooksService {
         }
       }
 
+      //create metadata
+      const metadata = {
+        averageRating: createBookDto.rating,
+        totalRatings: 1
+      };
+
       // Create book entity
       const bookData = {
         ...createBookDto,
@@ -89,7 +95,8 @@ export class BooksService {
         availableCopies: 0,
         totalCopies: 0,
         // Explicitly exclude relations that might be in the DTO but shouldn't be in the entity
-        copies: undefined
+        copies: undefined,
+        metadata: metadata
       };
 
       // Create and save the book in one step
@@ -241,11 +248,34 @@ export class BooksService {
 
       // Update copies if provided
       if (copies) {
-        const copiesData = copies.map(copy => ({
-          ...copy,
-          accessNumber: copy.accessNumber || '' // Ensure accessNumber is not undefined
-        }));
-        await this.updateBookCopies(book, copiesData, queryRunner);
+        // Get current access numbers
+        const currentAccessNumbers = (await queryRunner.manager.find(BookCopy, {
+          where: { book: { id } },
+          select: ['accessNumber']
+        })).map(copy => copy.accessNumber);
+
+        // Filter out existing copies and prepare new ones
+        const newCopies = copies
+          .filter(copy => !currentAccessNumbers.includes(copy.accessNumber || ''))
+          .map(copy => ({
+            ...copy,
+            accessNumber: copy.accessNumber || '',
+            book: { id },
+            status: BookCopyStatus.AVAILABLE
+          }));
+
+        // Add new copies
+        if (newCopies.length > 0) {
+          await queryRunner.manager.save(BookCopy, newCopies);
+        }
+
+        // Update counts
+        const updatedCopies = await queryRunner.manager.find(BookCopy, {
+          where: { book: { id } }
+        });
+
+        book.availableCopies = updatedCopies.filter(c => c.status === BookCopyStatus.AVAILABLE).length;
+        book.totalCopies = updatedCopies.length;
       }
 
       const updatedBook = await queryRunner.manager.save(book);

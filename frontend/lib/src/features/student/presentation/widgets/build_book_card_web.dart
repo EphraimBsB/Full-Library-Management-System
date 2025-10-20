@@ -11,6 +11,9 @@ import 'package:management_side/src/features/requests/presentation/providers/boo
 import 'package:management_side/src/features/student/presentation/widgets/borrow_request_dialog.dart';
 
 Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
+  final availableCopies = book.copies!
+      .where((copy) => copy.status == 'AVAILABLE')
+      .length;
   return Container(
     // margin: const EdgeInsets.only(bottom: 20),
     decoration: BoxDecoration(
@@ -117,20 +120,20 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: book.availableCopies! > 0
+                        color: availableCopies > 0
                             ? Colors.green[50]
                             : Colors.orange[50],
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
-                          color: book.availableCopies! > 0
+                          color: availableCopies > 0
                               ? Colors.green[100]!
                               : Colors.orange[100]!,
                         ),
                       ),
                       child: Text(
-                        book.availableCopies! > 0 ? 'Available' : 'Borrowed',
+                        availableCopies > 0 ? 'Available' : 'Borrowed',
                         style: TextStyle(
-                          color: book.availableCopies! > 0
+                          color: availableCopies > 0
                               ? Colors.green[800]
                               : Colors.orange[800],
                           fontSize: 10,
@@ -256,7 +259,9 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: availableCopies > 0
+                              ? AppTheme.primaryColor
+                              : Colors.grey,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
@@ -264,11 +269,18 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
                           ),
                           elevation: 0,
                         ),
-                        icon: const Icon(
-                          Icons.add_shopping_cart_outlined,
+                        icon: Icon(
+                          availableCopies > 0
+                              ? Icons.add_shopping_cart_outlined
+                              : Icons.add_to_queue,
                           size: 18,
                         ),
-                        label: const Text('Borrow'),
+                        label: availableCopies > 0
+                            ? const Text('Borrow')
+                            : const Text(
+                                'Join Queue',
+                                style: TextStyle(fontSize: 12),
+                              ),
                       ),
                     ),
                   ],

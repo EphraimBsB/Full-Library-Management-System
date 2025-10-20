@@ -13,35 +13,58 @@ Widget buildSubjectsField(
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Subjects *', style: TextStyle(fontSize: 14)),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade400),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<Subject>(
-                isExpanded: true,
-                hint: const Text('Select subjects'),
-                value: null,
-                items: subjects
-                    .where((subject) => !selectedSubjects.contains(subject))
-                    .map((subject) {
-                      return DropdownMenuItem<Subject>(
-                        value: subject,
-                        child: Text(subject.name),
-                      );
-                    })
-                    .toList(),
-                onChanged: (subject) {
-                  if (subject != null) {
-                    onChanged(subject);
-                  }
-                },
+          DropdownButtonFormField<Subject>(
+            initialValue: null,
+            decoration: InputDecoration(
+              hintText: 'Select a subject',
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8)),
               ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue, width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              errorStyle: const TextStyle(fontSize: 12),
+              errorMaxLines: 2,
             ),
+            items: [
+              DropdownMenuItem<Subject>(
+                value: null,
+                child: Text(
+                  'Select a subject',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              ...subjects.map(
+                (subject) => DropdownMenuItem<Subject>(
+                  value: subject,
+                  child: Text(
+                    subject.name,
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ),
+            ],
+            onChanged: onChanged,
+            validator: (value) {
+              if (value == null && selectedSubjects.isEmpty) {
+                return 'Please select a subject';
+              }
+              return null;
+            },
           ),
           if (selectedSubjects.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -50,7 +73,10 @@ Widget buildSubjectsField(
               runSpacing: 8,
               children: selectedSubjects.map((subject) {
                 return Chip(
-                  label: Text(subject.name),
+                  label: Text(
+                    subject.name,
+                    style: TextStyle(color: Colors.black),
+                  ),
                   onDeleted: () => onDelete(subject),
                 );
               }).toList(),
@@ -67,7 +93,13 @@ Widget buildSubjectsField(
         ],
       );
     },
-    loading: () => const CircularProgressIndicator(),
+    loading: () => Container(
+      height: 40,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey),
+      ),
+    ),
     error: (error, stack) => Text('Error loading subjects: $error'),
   );
 }

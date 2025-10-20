@@ -6,7 +6,7 @@ import { BookLoan } from './book-loan.entity';
 
 export enum BookRequestStatus {
   PENDING = 'PENDING',
-
+  QUEUED = 'QUEUED',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',

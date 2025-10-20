@@ -46,10 +46,10 @@ class ApiClient {
     // Add interceptors
     _dio.interceptors.add(
       PrettyDioLogger(
-        requestHeader: false,
-        requestBody: false,
-        responseBody: false,
-        responseHeader: false,
+        requestHeader: true,
+        requestBody: true,
+        responseBody: true,
+        responseHeader: true,
         error: true,
         compact: true,
         maxWidth: 90,

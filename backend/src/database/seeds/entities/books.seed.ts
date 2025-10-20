@@ -33,7 +33,7 @@ interface BookData {
     views: number;
     averageRating: number;
     ratingCount: number;
-    downloadCount: number;
+    borrowCount: number;
     favoriteCount: number;
     lastAccessedAt: Date;
   };
@@ -147,7 +147,7 @@ export class BooksSeed implements ISeeder {
           views: faker.number.int({ min: 0, max: 1000 }),
           averageRating: parseFloat(faker.number.float({ min: 1, max: 5 }).toFixed(1)),
           ratingCount: faker.number.int({ min: 0, max: 200 }),
-          downloadCount: faker.number.int({ min: 0, max: 500 }),
+          borrowCount: faker.number.int({ min: 0, max: 500 }),
           favoriteCount: faker.number.int({ min: 0, max: 100 }),
           lastAccessedAt: faker.date.recent()
         },
@@ -184,7 +184,7 @@ export class BooksSeed implements ISeeder {
           views: 1200,
           averageRating: 4.7,
           ratingCount: 245,
-          downloadCount: 180,
+          borrowCount: 180,
           favoriteCount: 128,
           lastAccessedAt: new Date()
         }
@@ -204,7 +204,7 @@ export class BooksSeed implements ISeeder {
         views: 0,
         averageRating: 0,
         ratingCount: 0,
-        downloadCount: 0,
+        borrowCount: 0,
         favoriteCount: 0,
         lastAccessedAt: new Date()
       },

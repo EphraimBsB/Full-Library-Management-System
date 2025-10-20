@@ -58,8 +58,7 @@ Widget buildBookCard(BookModel book, {void Function()? onTap}) {
               ),
               // Rating in top right corner
               if (book.metadata != null &&
-                  book.metadata!['averageRating'] != null &&
-                  book.metadata!['averageRating']! > 0)
+                  book.metadata!['averageRating'] != null)
                 Positioned(
                   top: 8,
                   right: 8,

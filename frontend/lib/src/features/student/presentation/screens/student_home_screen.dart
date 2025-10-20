@@ -86,6 +86,8 @@ class StudentHomeScreen extends ConsumerWidget {
                     // Handle logout
                     await tokenStorage.clearAll();
                     if (context.mounted) {
+                      ref.invalidate(allBooksProvider);
+                      ref.invalidate(currentUserProvider);
                       context.go('/');
                     }
                   }

@@ -22,7 +22,7 @@ abstract class LoanRepository {
 
   /// Update an existing loan
   Future<Either<Failure, Loan>> updateLoan(
-    String id, 
+    String id,
     Map<String, dynamic> updates,
   );
 
@@ -30,22 +30,13 @@ abstract class LoanRepository {
   Future<Either<Failure, Unit>> deleteLoan(String id);
 
   /// Return a borrowed book
-  Future<Either<Failure, Loan>> returnBook(
-    String id, 
-    Map<String, dynamic> returnData,
-  );
+  Future<Either<Failure, Loan>> returnBook(String id);
 
   /// Renew a loan
-  Future<Either<Failure, Loan>> renewLoan(
-    String id, 
-    Map<String, dynamic> renewalData,
-  );
+  Future<Either<Failure, Loan>> renewLoan(String id);
 
   /// Get overdue loans
-  Future<Either<Failure, List<Loan>>> getOverdueLoans({
-    int? page,
-    int? limit,
-  });
+  Future<Either<Failure, List<Loan>>> getOverdueLoans({int? page, int? limit});
 
   /// Get loans for a specific user
   Future<Either<Failure, List<Loan>>> getUserLoans(

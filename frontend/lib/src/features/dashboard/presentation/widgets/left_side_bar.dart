@@ -165,7 +165,9 @@ class _LeftSideBarWidgetState extends ConsumerState<LeftSideBarWidget> {
                 fontWeight: FontWeight.normal,
               ),
             ),
-            onTap: () {},
+            onTap: () {
+              // Navigator.of(context).pushNamed(AppRoutes.settings);
+            },
           ),
           ListTile(
             contentPadding: const EdgeInsets.symmetric(

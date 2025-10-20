@@ -108,8 +108,7 @@ class _MembershipTypeApiService implements MembershipTypeApiService {
     late Map<String, dynamic> _value;
     try {
       _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, MembershipType.fromJson(v as Map<String, dynamic>)),
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -142,8 +141,7 @@ class _MembershipTypeApiService implements MembershipTypeApiService {
     late Map<String, dynamic> _value;
     try {
       _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, MembershipType.fromJson(v as Map<String, dynamic>)),
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

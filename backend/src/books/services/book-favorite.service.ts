@@ -80,6 +80,13 @@ export class BookFavoriteService {
     });
   }
 
+  async getUserFavoritesCount(userId: string): Promise<number> {
+    return this.bookFavoriteRepository.count({
+      where: { userId },
+      withDeleted: false,
+    });
+  }
+
   private async updateBookFavoritesCount(bookId: number): Promise<void> {
     const count = await this.getFavoritesCount(bookId);
     

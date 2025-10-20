@@ -106,8 +106,7 @@ class _DegreeApiService implements DegreeApiService {
     late Map<String, dynamic> _value;
     try {
       _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, Degree.fromJson(v as Map<String, dynamic>)),
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -140,8 +139,7 @@ class _DegreeApiService implements DegreeApiService {
     late Map<String, dynamic> _value;
     try {
       _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, Degree.fromJson(v as Map<String, dynamic>)),
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

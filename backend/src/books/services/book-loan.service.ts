@@ -23,6 +23,8 @@ import type { ConfigType } from '@nestjs/config';
 import loanConfig from '../config/loan.config';
 import { EmailUtilsService } from '../../emails/email-utils.service';
 import { MembershipService } from '../../membership/membership.service';
+import { BookMetadata } from '../entities/book-metadata.entity';
+import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
 
 @Injectable()
 export class BookLoanService {
@@ -39,6 +41,8 @@ export class BookLoanService {
     private dataSource: DataSource,
     private readonly emailUtilsService: EmailUtilsService,
     private readonly membershipService: MembershipService,
+    @InjectRepository(MembershipType)
+    private readonly membershipTypeRepository: Repository<MembershipType>,
     @Inject(loanConfig.KEY)
     private readonly loanConfig: {
       maxLoansPerUser: number;
@@ -130,7 +134,7 @@ export class BookLoanService {
         status: In([LoanStatus.ACTIVE, LoanStatus.OVERDUE]),
         bookCopy: { book: { id: Number(bookId) } },
       },
-      relations: ['bookCopy', 'bookCopy.book'],
+      relations: ['bookCopy', 'bookCopy.book', 'bookCopy.book.metadata'],
     });
 
     if (existingLoan) {
@@ -151,6 +155,7 @@ export class BookLoanService {
       transactionalEntityManager.findOne(Book, {
         where: { id: Number(bookId) },
         select: ['id', 'title', 'author'],
+        relations: ['metadata'],
       }),
     ]);
 
@@ -175,6 +180,18 @@ export class BookLoanService {
     // 8️⃣ Update book copy status
     availableCopy.status = BookCopyStatus.BORROWED;
     await transactionalEntityManager.save(BookCopy, availableCopy);
+
+    // 2. Update the book's available copies
+    // if (book.availableCopies > 0) {
+    //   book.availableCopies -= 1;
+    //   await transactionalEntityManager.save(Book, book);
+    // } 
+
+    // 3. Update the metadata
+    if (book.metadata) {
+      book.metadata.borrowCount = (book.metadata.borrowCount || 0) + 1;
+      await transactionalEntityManager.save(BookMetadata, book.metadata);
+    }
 
     // 9️⃣ Link loan to request (if any)
     if (requestId) {
@@ -223,7 +240,7 @@ export class BookLoanService {
       // 1. Find the loan with a lock to prevent concurrent modifications
       const loan = await transactionalEntityManager.findOne(BookLoan, {
         where: { id: loanId },
-        relations: ['bookCopy', 'user'],
+        relations: ['bookCopy', 'user', 'bookCopy.book'],
         lock: { mode: 'pessimistic_write' }
       });
 
@@ -240,14 +257,27 @@ export class BookLoanService {
       loan.returnedBy = returnedById;
       loan.status = LoanStatus.RETURNED;
 
-      // 3. Update book copy status
+      // 3. Update book copy status and available copies
       const bookCopy = await transactionalEntityManager.findOne(BookCopy, {
-        where: { id: loan.bookCopy.id }
+        where: { id: loan.bookCopy.id },
+        relations: ['book']
       });
 
       if (bookCopy) {
+        // Update copy status
         bookCopy.status = BookCopyStatus.AVAILABLE;
         await transactionalEntityManager.save(BookCopy, bookCopy);
+
+        // Update book's available copies and metadata
+        // if (bookCopy.book) {
+        //   await transactionalEntityManager.update(
+        //     Book,
+        //     { id: bookCopy.book.id },
+        //     {
+        //       availableCopies: () => 'availableCopies + 1',
+        //     }
+        //   );
+        // }
       }
 
       // 4. Save the updated loan
@@ -259,6 +289,22 @@ export class BookLoanService {
           .catch(error => {
             this.logger.error(`Error processing queue after returning book ${loanId}:`, error);
           });
+      }
+
+      //6. Send email notification to user
+      try {
+        this.emailUtilsService.sendReturnConfirmationEmail(
+          loan.user,
+          loan.bookCopy.book,
+          loan.returnedAt,
+          loan.borrowedAt,
+          loan.id
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to send return confirmation for loan ${loan.id}: ${error.message}`,
+          error.stack
+        );
       }
 
       // 6. Send return confirmation email in the background
@@ -277,75 +323,65 @@ export class BookLoanService {
    * Renews a book loan if allowed
    */
   async renewLoan(loanId: string, userId: string): Promise<BookLoan> {
-    // Check membership status first
-    const activeMembership = await this.membershipService.findActiveMembership(userId);
-    if (!activeMembership) {
-      throw new BadRequestException('Active membership is required to renew books');
+  const activeMembership = await this.membershipService.findActiveMembership(userId);
+  if (!activeMembership) {
+    throw new BadRequestException('Active membership is required to renew books');
+  }
+
+  return this.dataSource.transaction(async (transactionalEntityManager) => {
+    const loan = await transactionalEntityManager.findOne(BookLoan, {
+      where: { id: loanId },
+      relations: ['user', 'bookCopy', 'bookCopy.book'],
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (!loan) throw new NotFoundException('Loan not found');
+    if (loan.user.id !== userId) throw new ConflictException('You can only renew your own loans');
+    if (loan.status !== LoanStatus.ACTIVE) throw new ConflictException('Only active loans can be renewed');
+
+    const hasPendingRequests = await this.bookRequestRepository.count({
+      where: {
+        book: { id: loan.bookCopy.book.id },
+        status: BookRequestStatus.PENDING,
+        user: { id: Not(userId) },
+      },
+    }) > 0;
+
+    if (hasPendingRequests) {
+      throw new ConflictException('This book has been requested by another user and cannot be renewed');
     }
 
-    return this.dataSource.transaction(async (transactionalEntityManager) => {
-      // 1. Find the loan with a lock to prevent concurrent renewals
-      const loan = await transactionalEntityManager.findOne(BookLoan, {
-        where: { id: loanId },
-        relations: ['user', 'bookCopy', 'bookCopy.book'],
-        lock: { mode: 'pessimistic_write' }
-      });
-
-      if (!loan) {
-        throw new NotFoundException('Loan not found');
-      }
-
-      if (loan.user.id !== userId) {
-        throw new ConflictException('You can only renew your own loans');
-      }
-
-      if (loan.status !== LoanStatus.ACTIVE) {
-        throw new ConflictException('Only active loans can be renewed');
-      }
-
-      // 2. Check if the book is requested by another user
-      const hasPendingRequests = await this.bookRequestRepository.count({
-        where: {
-          book: { id: loan.bookCopy.book.id },
-          status: BookRequestStatus.PENDING,
-          userId: Not(userId)
-        }
-      }) > 0;
-
-      if (hasPendingRequests) {
-        throw new ConflictException('This book has been requested by another user and cannot be renewed');
-      }
-
-      // 3. Check renewal limit based on membership
-      const maxRenewals = activeMembership.type.renewalLimit;
-      if (loan.renewalCount >= maxRenewals) {
-        throw new RenewalLimitExceededException(maxRenewals);
-      }
-
-      // 4. Calculate new due date based on membership type
-      const newDueDate = new Date(loan.dueDate);
-      const renewalPeriod = activeMembership.type.maxDurationDays;
-      newDueDate.setDate(newDueDate.getDate() + renewalPeriod);
-
-      // 5. Update loan
-      loan.dueDate = newDueDate;
-      loan.renewalCount += 1;
-      loan.lastRenewedAt = new Date();
-      loan.updatedAt = new Date();
-
-      const updatedLoan = await transactionalEntityManager.save(BookLoan, loan);
-
-      // 5. Send renewal confirmation email in the background
-      this.sendRenewalConfirmation(updatedLoan, newDueDate).catch(error => {
-        this.logger.error(
-          `Failed to send renewal confirmation for loan ${updatedLoan.id}: ${error.message}`,
-          error.stack
-        );
-      });
-
-      return updatedLoan;
+    const membershipType = activeMembership.type ?? await this.membershipTypeRepository.findOne({
+      where: { id: activeMembership.type },
     });
-  }
+
+    const maxRenewals = membershipType?.renewalLimit ?? 0;
+    if (loan.renewalCount >= maxRenewals) {
+      throw new RenewalLimitExceededException(maxRenewals);
+    }
+
+    const baseDate = loan.dueDate > new Date() ? loan.dueDate : new Date();
+    const newDueDate = new Date(baseDate);
+    const renewalPeriod = membershipType?.maxDurationDays ?? 14;
+    newDueDate.setDate(newDueDate.getDate() + renewalPeriod);
+
+    loan.dueDate = newDueDate;
+    loan.renewalCount += 1;
+    loan.lastRenewedAt = new Date();
+    loan.updatedAt = new Date();
+
+    const updatedLoan = await transactionalEntityManager.save(BookLoan, loan);
+
+    this.logger.log(`Loan ${loan.id} renewed by user ${userId} until ${newDueDate.toISOString()}`);
+
+    this.sendRenewalConfirmation(updatedLoan, newDueDate).catch(error =>
+      this.logger.error(`Failed to send renewal confirmation for loan ${updatedLoan.id}: ${error.message}`)
+    );
+
+    return updatedLoan;
+  });
+}
+
 
   /**
    * Gets all active loans for a user

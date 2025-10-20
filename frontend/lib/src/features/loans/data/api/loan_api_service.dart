@@ -35,33 +35,27 @@ abstract class LoanApiService {
   Future<Loan> createLoan(@Body() Map<String, dynamic> loanData);
 
   /// Update a loan
-  @PUT('/loans/{id}')
+  @PUT('/loans/{loanId}')
   @DioResponseType(ResponseType.json)
   Future<Loan> updateLoan(
-    @Path('id') String id,
+    @Path('loanId') String loanId,
     @Body() Map<String, dynamic> updates,
   );
 
   /// Delete a loan
-  @DELETE('/loans/{id}')
+  @DELETE('/loans/{loanId}')
   @DioResponseType(ResponseType.json)
-  Future<void> deleteLoan(@Path('id') String id);
+  Future<void> deleteLoan(@Path('loanId') String loanId);
 
   /// Return a borrowed book
-  @POST('/loans/{id}/return')
+  @POST('/loans/return/{loanId}')
   @DioResponseType(ResponseType.json)
-  Future<Loan> returnBook(
-    @Path('id') String id,
-    @Body() Map<String, dynamic> returnData,
-  );
+  Future<Loan> returnBook(@Path('loanId') String loanId);
 
   /// Renew a loan
-  @POST('/loans/{id}/renew')
+  @POST('/loans/renew/{loanId}')
   @DioResponseType(ResponseType.json)
-  Future<Loan> renewLoan(
-    @Path('id') String id,
-    @Body() Map<String, dynamic> renewalData,
-  );
+  Future<Loan> renewLoan(@Path('loanId') String loanId);
 
   /// Get overdue loans
   @GET('/loans/overdue')

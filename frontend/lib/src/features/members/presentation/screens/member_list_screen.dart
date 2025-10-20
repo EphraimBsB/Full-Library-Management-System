@@ -245,35 +245,6 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                       ),
                     ),
                   ),
-                  // PopupMenuButton<String>(
-                  //   onSelected: (value) =>
-                  //       _handleMenuSelection(value, membership),
-                  //   itemBuilder: (context) => [
-                  //     const PopupMenuItem(
-                  //       value: 'edit',
-                  //       child: Row(
-                  //         children: [
-                  //           Icon(Icons.edit, size: 20, color: Colors.blue),
-                  //           SizedBox(width: 8),
-                  //           Text('Edit Member'),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //     const PopupMenuItem(
-                  //       value: 'delete',
-                  //       child: Row(
-                  //         children: [
-                  //           Icon(Icons.delete, size: 20, color: Colors.red),
-                  //           SizedBox(width: 8),
-                  //           Text(
-                  //             'Delete Member',
-                  //             style: TextStyle(color: Colors.red),
-                  //           ),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -483,6 +454,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
+        centerTitle: false,
         title: const Text(
           'Library Members',
           style: TextStyle(color: Colors.black87),
@@ -505,7 +477,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('Add New Member'),
+                  Text('Add New Member', style: TextStyle(color: Colors.white)),
                   const SizedBox(width: 8),
                   const Icon(Icons.add),
                 ],
@@ -573,10 +545,10 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                             physics: const NeverScrollableScrollPhysics(),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
+                                  crossAxisCount: 3,
                                   childAspectRatio: 1.8,
-                                  mainAxisSpacing: 16,
-                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 10,
+                                  crossAxisSpacing: 10,
                                 ),
                             itemCount: pendingRequests.length,
                             itemBuilder: (context, index) {
@@ -644,9 +616,9 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                             physics: const NeverScrollableScrollPhysics(),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
                                   childAspectRatio: 1.9,
                                 ),
                             itemCount: filteredMembers.length,

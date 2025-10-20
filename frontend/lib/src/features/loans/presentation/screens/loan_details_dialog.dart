@@ -61,30 +61,43 @@ class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
   }
 
   Future<void> _handleReturn() async {
-    if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isReturning = true);
 
     try {
-      final updatedLoan = widget.loan.copyWith(
-        status: LoanStatus.returned,
-        returnedAt: DateTime.now(),
-        notes: _notesController.text,
-        updatedAt: DateTime.now(),
+      final result = await ref
+          .read(loanRepositoryProvider)
+          .returnBook(widget.loan.id);
+
+      result.fold(
+        (failure) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to return book: ${failure.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        (returnedLoan) async {
+          if (mounted) {
+            ref.invalidate(allLoansProvider);
+            ref.invalidate(userLoansProvider);
+            if (widget.onUpdate != null) {
+              await widget.onUpdate!(returnedLoan);
+            }
+            if (mounted) {
+              Navigator.of(context).pop('RETURNED');
+            }
+          }
+        },
       );
-
-      if (widget.onUpdate != null) {
-        await widget.onUpdate!(updatedLoan);
-      }
-
-      if (mounted) {
-        Navigator.of(context).pop('RETURNED');
-      }
     } catch (e) {
       if (mounted) {
+        debugPrint('Error returning book: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to return book: $e'),
+            content: Text('An unexpected error occurred: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -100,24 +113,40 @@ class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
     setState(() => _isRenewing = true);
 
     try {
-      final repository = ref.read(loanRepositoryProvider);
-      final renewedLoan = await repository.renewLoan(widget.loan.id!, {
-        'renewalNotes': _notesController.text.isNotEmpty
-            ? _notesController.text
-            : 'Renewed on ${DateTime.now().toIso8601String()}',
-      });
+      final result = await ref
+          .read(loanRepositoryProvider)
+          .renewLoan(widget.loan.id);
 
-      if (mounted) {
-        if (widget.onUpdate != null) {
-          await widget.onUpdate!(renewedLoan as Loan);
-        }
-        Navigator.of(context).pop('RENEWED');
-      }
+      result.fold(
+        (failure) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to renew book: ${failure.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        (returnedLoan) async {
+          if (mounted) {
+            ref.invalidate(allLoansProvider);
+            ref.invalidate(userLoansProvider);
+            if (widget.onUpdate != null) {
+              await widget.onUpdate!(returnedLoan);
+            }
+            if (mounted) {
+              Navigator.of(context).pop('RENEWED');
+            }
+          }
+        },
+      );
     } catch (e) {
       if (mounted) {
+        debugPrint('Error renewing book: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to renew loan: $e'),
+            content: Text('An unexpected error occurred: $e'),
             backgroundColor: Colors.red,
           ),
         );

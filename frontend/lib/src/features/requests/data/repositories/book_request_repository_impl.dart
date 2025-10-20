@@ -99,7 +99,7 @@ class BookRequestRepositoryImpl implements BookRequestRepository {
   @override
   Future<Either<Failure, Map<String, dynamic>>> approveBookRequest({
     required String requestId,
-    required String preferredCopyId,
+    String? preferredCopyId,
     String? notes,
   }) async {
     try {

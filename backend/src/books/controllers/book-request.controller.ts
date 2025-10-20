@@ -15,7 +15,7 @@ export class BookRequestController {
   constructor(private readonly bookRequestService: BookRequestService) {}
 
   @Post()
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
+  // @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT,)
   @ApiOperation({ summary: 'Create a new book request' })
   @ApiBearerAuth()
   @ApiResponse({ status: 201, description: 'Book request created successfully' })
