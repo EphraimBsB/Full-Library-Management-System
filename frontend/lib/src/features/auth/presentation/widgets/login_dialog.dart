@@ -214,7 +214,7 @@ Future<bool> showLoginDialog(
 }) async {
   final result = await showDialog<bool>(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: true,
     builder: (context) => LoginDialog(message: message),
   );
   return result ?? false;

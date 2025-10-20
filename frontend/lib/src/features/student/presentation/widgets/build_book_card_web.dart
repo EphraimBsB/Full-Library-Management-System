@@ -32,38 +32,74 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Book Cover
-        Container(
-          width: 172,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(8),
-              bottomLeft: Radius.circular(8),
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(8),
-              bottomLeft: Radius.circular(8),
-            ),
-            child: CachedNetworkImage(
-              imageUrl: book.coverImageUrl ?? '',
-              errorWidget: (context, url, error) =>
-                  Image.asset('assets/default_book.jpg', fit: BoxFit.cover),
-              placeholder: (context, url) => Container(
-                color: Colors.grey[100],
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppTheme.primaryColor,
+        Stack(
+          children: [
+            Container(
+              width: 172,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  bottomLeft: Radius.circular(8),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  bottomLeft: Radius.circular(8),
+                ),
+                child: CachedNetworkImage(
+                  imageUrl: book.coverImageUrl ?? '',
+                  errorWidget: (context, url, error) =>
+                      Image.asset('assets/default_book.jpg', fit: BoxFit.cover),
+                  placeholder: (context, url) => Container(
+                    color: Colors.grey[100],
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                      ),
                     ),
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            if (book.ebookUrl != null)
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.infoColor.withValues(alpha: 0.20),
+                    borderRadius: const BorderRadius.all(Radius.circular(4)),
+                    border: Border.all(
+                      color: AppTheme.infoColor.withValues(alpha: 0.50),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.book, size: 12, color: AppTheme.infoColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'EBOOK',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.infoColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              fit: BoxFit.cover,
-            ),
-          ),
+          ],
         ),
 
         // Book Details
@@ -156,34 +192,42 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
                 // read now and borrow now buttons
                 Row(
                   children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // Handle read now action
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EbookReaderScreen(
-                                bookTitle: book.title,
-                                ebookUrl: book.ebookUrl!,
-                                bookId: book.id!,
+                    if (book.ebookUrl != null)
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            // Check authentication before showing borrow dialog
+                            final isAuthenticated = await ensureAuthenticated(
+                              context,
+                              message: 'Please log in to read this book',
+                            );
+
+                            if (!isAuthenticated || !context.mounted) return;
+                            // Handle read now action
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EbookReaderScreen(
+                                  bookTitle: book.title,
+                                  ebookUrl: book.ebookUrl!,
+                                  bookId: book.id!,
+                                ),
                               ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[100],
+                            foregroundColor: AppTheme.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          foregroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            elevation: 0,
                           ),
-                          elevation: 0,
+                          icon: const Icon(Icons.menu_book_outlined, size: 18),
+                          label: const Text('Read'),
                         ),
-                        icon: const Icon(Icons.menu_book_outlined, size: 18),
-                        label: const Text('Read'),
                       ),
-                    ),
 
                     const SizedBox(width: 12),
 

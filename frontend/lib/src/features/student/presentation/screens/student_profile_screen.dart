@@ -6,8 +6,7 @@ import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:management_side/src/features/student/core/theme/routes.dart'
     as student_routes;
-import 'package:management_side/src/features/student/presentation/providers/student_profile_providers.dart'
-    hide userLoansProvider;
+import 'package:management_side/src/features/student/presentation/providers/student_profile_providers.dart';
 import 'package:management_side/src/features/student/presentation/widgets/borrow_history_list.dart';
 import 'package:management_side/src/features/student/presentation/widgets/favorites_list.dart';
 import 'package:management_side/src/features/student/presentation/widgets/notes_list.dart';
