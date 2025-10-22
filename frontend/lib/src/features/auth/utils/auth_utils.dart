@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:management_side/src/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:management_side/src/features/auth/presentation/widgets/login_dialog.dart';
-import 'package:management_side/src/core/widgets/error_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Checks if user is authenticated, shows login dialog if not
@@ -11,8 +10,10 @@ Future<bool> ensureAuthenticated(
   String message = 'Please log in to continue',
   VoidCallback? onAuthenticated,
 }) async {
-  final authState = ProviderScope.containerOf(context, listen: false)
-      .read(authStateProvider);
+  final authState = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(authStateProvider);
 
   // If user is already authenticated
   if (authState.authResponse != null) {
@@ -21,10 +22,7 @@ Future<bool> ensureAuthenticated(
   }
 
   // Show login dialog if not authenticated
-  final result = await showLoginDialog(
-    context,
-    message: message,
-  );
+  final result = await showLoginDialog(context, message: message);
 
   // If login was successful, call the callback
   if (result == true) {
@@ -40,7 +38,9 @@ void showAuthError(BuildContext context, {String? message}) {
     context: context,
     builder: (context) => AlertDialog(
       title: const Text('Authentication Required'),
-      content: Text(message ?? 'You need to be logged in to perform this action.'),
+      content: Text(
+        message ?? 'You need to be logged in to perform this action.',
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
