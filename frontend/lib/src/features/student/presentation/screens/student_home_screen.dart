@@ -8,6 +8,7 @@ import 'package:management_side/src/features/auth/presentation/widgets/login_dia
 import 'package:management_side/src/features/auth/utils/token_storage.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
+import 'package:management_side/src/core/utils/responsive_utils.dart';
 import 'package:management_side/src/features/student/presentation/widgets/build_book_card_web.dart';
 import 'package:management_side/src/features/student/presentation/widgets/membership_request_dialog.dart';
 
@@ -293,19 +294,26 @@ class StudentHomeScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Grid of all books
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 1.8,
-                crossAxisSpacing: 30,
-                mainAxisSpacing: 30,
-              ),
-              itemCount: books.length,
-              itemBuilder: (context, index) {
-                return buildBookCardWeb(books[index], context, ref);
+            // Responsive grid of all books
+            LayoutBuilder(
+              builder: (context, _) {
+                final gridSettings = ResponsiveUtils.getGridSettings(context);
+                
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: gridSettings.crossAxisCount,
+                    childAspectRatio: gridSettings.childAspectRatio,
+                    crossAxisSpacing: gridSettings.spacing,
+                    mainAxisSpacing: gridSettings.spacing,
+                    mainAxisExtent: gridSettings.mainAxisExtent,
+                  ),
+                  itemCount: books.length,
+                  itemBuilder: (context, index) {
+                    return buildBookCardWeb(books[index], context, ref);
+                  },
+                );
               },
             ),
             const SizedBox(height: 40),

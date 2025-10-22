@@ -38,11 +38,33 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Skip if it's a login request to avoid infinite loops
+    if (err.requestOptions.path.endsWith('/auth/login')) {
+      return handler.next(err); // Let the login handler deal with it
+    }
+    
+    // Handle token expiration
     if (err.response?.statusCode == 401 &&
-        err.requestOptions.path != '/auth/refresh-token' &&
+        !err.requestOptions.path.endsWith('/auth/refresh-token') &&
         !_isRefreshing) {
       return _handleTokenExpired(err, handler);
     }
+    
+    // For other 401 errors, ensure we have a proper error message
+    if (err.response?.statusCode == 401) {
+      final responseData = err.response?.data;
+      final errorMessage = responseData is Map
+          ? responseData['message'] ?? 'Authentication failed. Please log in again.'
+          : 'Authentication failed. Please log in again.';
+      
+      return handler.next(DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        error: errorMessage,
+        type: DioExceptionType.badResponse,
+      ));
+    }
+    
     return super.onError(err, handler);
   }
 
@@ -87,6 +109,12 @@ class AuthInterceptor extends Interceptor {
       await _tokenStorage.saveRefreshToken(response.refreshToken ?? '');
 
       return response.accessToken;
+    } on DioException catch (e) {
+      // If refresh token is invalid, clear all auth data
+      if (e.response?.statusCode == 401) {
+        await _tokenStorage.clearAll();
+      }
+      rethrow;
     } catch (e) {
       return null;
     }
@@ -136,8 +164,4 @@ class AuthInterceptor extends Interceptor {
   }
 }
 
-extension on AuthResponse {
-  String operator [](String other) {
-    return other;
-  }
-}
+extension on AuthResponse {}
