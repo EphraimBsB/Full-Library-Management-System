@@ -12,7 +12,7 @@ part of 'storage_service.dart';
 
 class _StorageService implements StorageService {
   _StorageService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://192.168.2.30:3000/api/v1';
+    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
   }
 
   final Dio _dio;
