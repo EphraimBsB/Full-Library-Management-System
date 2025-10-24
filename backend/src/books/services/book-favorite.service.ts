@@ -56,7 +56,7 @@ export class BookFavoriteService {
   async getUserFavorites(userId: string): Promise<Book[]> {
     const favorites = await this.bookFavoriteRepository.find({
       where: { userId },
-      relations: ['book'],
+      relations: ['book', 'book.copies'],
       order: { createdAt: 'DESC' },
     });
 
