@@ -252,9 +252,9 @@ class StudentHomeScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+      // padding: ResponsiveUtils.getOuterPagePadding(context),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 87.0),
+        padding: ResponsiveUtils.getPagePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -298,7 +298,7 @@ class StudentHomeScreen extends ConsumerWidget {
             LayoutBuilder(
               builder: (context, _) {
                 final gridSettings = ResponsiveUtils.getGridSettings(context);
-                
+
                 return GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),

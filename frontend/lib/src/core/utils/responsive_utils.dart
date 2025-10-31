@@ -18,7 +18,7 @@ class ResponsiveUtils {
   // Get responsive grid settings
   static GridSettings getGridSettings(BuildContext context) {
     final screenType = getScreenType(context);
-    
+
     switch (screenType) {
       case ScreenType.mobile:
         return const GridSettings(
@@ -51,24 +51,66 @@ class ResponsiveUtils {
     }
   }
 
+  static EdgeInsets getPagePadding(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 600) {
+      // Mobile
+      return const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0);
+    } else if (width < 1200) {
+      // Tablet
+      return const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0);
+    } else {
+      // Desktop
+      return const EdgeInsets.symmetric(horizontal: 87.0, vertical: 16.0);
+    }
+  }
+
+  static EdgeInsets getOuterPagePadding(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 600) {
+      // Mobile
+      return const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0);
+    } else if (width < 1200) {
+      // Tablet
+      return const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0);
+    } else {
+      // Desktop
+      return const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0);
+    }
+  }
+
+  static EdgeInsets getInnerPagePadding(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 600) {
+      // Mobile
+      return const EdgeInsets.symmetric(horizontal: 16.0);
+    } else if (width < 1200) {
+      // Tablet
+      return const EdgeInsets.symmetric(horizontal: 48.0);
+    } else {
+      // Desktop
+      return const EdgeInsets.symmetric(horizontal: 87.0);
+    }
+  }
+
   // Check if current screen is mobile
-  static bool isMobile(BuildContext context) => 
+  static bool isMobile(BuildContext context) =>
       getScreenType(context) == ScreenType.mobile;
 
   // Check if current screen is tablet
-  static bool isTablet(BuildContext context) => 
+  static bool isTablet(BuildContext context) =>
       getScreenType(context) == ScreenType.tablet;
 
   // Check if current screen is desktop
-  static bool isDesktop(BuildContext context) => 
-      getScreenType(context) == ScreenType.smallDesktop || 
+  static bool isDesktop(BuildContext context) =>
+      getScreenType(context) == ScreenType.smallDesktop ||
       getScreenType(context) == ScreenType.largeDesktop;
 }
 
 // Screen type enum
 enum ScreenType {
-  mobile,     // < 600px
-  tablet,     // 600px - 899px
+  mobile, // < 600px
+  tablet, // 600px - 899px
   smallDesktop, // 900px - 1199px
   largeDesktop, // >= 1200px
 }
