@@ -8,10 +8,10 @@ part of 'user_model.dart';
 
 User _$UserFromJson(Map<String, dynamic> json) => User(
   id: json['id'] as String,
-  firstName: json['firstName'] as String,
-  lastName: json['lastName'] as String,
-  email: json['email'] as String,
-  rollNumber: json['rollNumber'] as String,
+  firstName: json['firstName'] as String?,
+  lastName: json['lastName'] as String?,
+  email: json['email'] as String?,
+  rollNumber: json['rollNumber'] as String?,
   phoneNumber: json['phoneNumber'] as String?,
   avatarUrl: json['avatarUrl'] as String?,
   course: json['course'] as String?,

@@ -12,7 +12,7 @@ part of 'book_subject_api_service.dart';
 
 class _SubjectApiService implements SubjectApiService {
   _SubjectApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://localhost:3000/api/v1';
+    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
   }
 
   final Dio _dio;
@@ -53,8 +53,7 @@ class _SubjectApiService implements SubjectApiService {
     try {
       _value = _result.data!
           .map(
-            (dynamic i) =>
-                Map<String, dynamic>.from(i as Map<String, dynamic>),
+            (dynamic i) => Map<String, dynamic>.from(i as Map<String, dynamic>),
           )
           .toList();
     } on Object catch (e, s) {
