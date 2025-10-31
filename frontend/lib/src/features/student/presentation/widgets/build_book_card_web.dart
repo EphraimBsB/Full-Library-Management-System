@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show WidgetRef;
 import 'package:management_side/src/core/error/failures.dart';
 import 'package:management_side/src/core/theme/app_theme.dart' show AppTheme;
 import 'package:management_side/src/features/auth/utils/auth_utils.dart';
+import 'package:management_side/src/features/books/domain/models/book_copy.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
+import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
 import 'package:management_side/src/features/books/presentation/screens/ebook_reader_screen.dart';
 import 'package:management_side/src/features/requests/presentation/providers/book_request_provider.dart';
 import 'package:management_side/src/features/student/presentation/widgets/borrow_request_dialog.dart';
@@ -192,42 +194,27 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
                 // read now and borrow now buttons
                 Row(
                   children: [
-                    if (book.ebookUrl != null)
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            // Check authentication before showing borrow dialog
-                            final isAuthenticated = await ensureAuthenticated(
-                              context,
-                              message: 'Please log in to read this book',
-                            );
-
-                            if (!isAuthenticated || !context.mounted) return;
-                            // Handle read now action
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => EbookReaderScreen(
-                                  bookTitle: book.title,
-                                  ebookUrl: book.ebookUrl!,
-                                  bookId: book.id!,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[100],
-                            foregroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
-                          icon: const Icon(Icons.menu_book_outlined, size: 18),
-                          label: const Text('Read'),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handleReadAction(
+                          context,
+                          ref,
+                          book,
+                          availableCopies,
                         ),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.menu_book_outlined, size: 18),
+                        label: const Text('Read'),
                       ),
+                    ),
 
                     const SizedBox(width: 12),
 
@@ -303,13 +290,18 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: availableCopies > 0
+                          foregroundColor: availableCopies > 0
                               ? AppTheme.primaryColor
                               : Colors.grey,
-                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.grey[100],
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(
+                              color: availableCopies > 0
+                                  ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                                  : Colors.grey.withValues(alpha: 0.2),
+                            ),
                           ),
                           elevation: 0,
                         ),
@@ -336,6 +328,262 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
       ],
     ),
   );
+}
+
+void _handleReadAction(
+  BuildContext context,
+  WidgetRef ref,
+  BookModel book,
+  int availableCopies,
+) async {
+  final isAuthenticated = await ensureAuthenticated(
+    context,
+    message: 'Please log in to read this book',
+  );
+  if (!isAuthenticated || !context.mounted) return;
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      title: const Text('Choose Reading Option'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.menu_book_outlined),
+            title: const Text('Read Ebook'),
+            subtitle: Text(
+              book.ebookUrl != null ? 'Ebook available' : 'Ebook not available',
+              style: TextStyle(
+                color: book.ebookUrl != null ? Colors.green : Colors.red,
+                fontSize: 12,
+              ),
+            ),
+            onTap: book.ebookUrl != null
+                ? () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EbookReaderScreen(
+                          bookTitle: book.title,
+                          ebookUrl: book.ebookUrl!,
+                          bookId: book.id!,
+                        ),
+                      ),
+                    );
+                  }
+                : null,
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.local_library_outlined),
+            title: const Text('Read in Library'),
+            subtitle: Text(
+              availableCopies > 0 ? 'Available' : 'Not available',
+              style: TextStyle(
+                color: availableCopies > 0 ? Colors.green : Colors.red,
+                fontSize: 12,
+              ),
+            ),
+            onTap: availableCopies > 0
+                ? () {
+                    Navigator.pop(context);
+                    _showCopySelectionDialog(
+                      context,
+                      ref,
+                      book,
+                      availableCopies,
+                    );
+                  }
+                : null,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    ),
+  );
+}
+
+void _showCopySelectionDialog(
+  BuildContext context,
+  WidgetRef ref,
+  BookModel book,
+  int availableCopies,
+) async {
+  // First, fetch the available copies for this book
+  final copiesResult = book.copies ?? [];
+
+  if (copiesResult.isEmpty) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No available copies found')),
+      );
+    }
+    return;
+  }
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      title: const Text('Select Copy'),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.4,
+        height: MediaQuery.of(context).size.height * 0.4,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Check on the side of the book to find the copy you want to read.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4, // Number of items per row
+                  crossAxisSpacing: 12, // Spacing between columns
+                  mainAxisSpacing: 12, // Spacing between rows
+                  childAspectRatio: 1.3, // Width / height ratio
+                ),
+                itemCount: copiesResult.length,
+                itemBuilder: (context, index) {
+                  final BookCopy copy = copiesResult[index];
+                  final isAvailable = copy.status == 'AVAILABLE';
+
+                  return Card(
+                    elevation: 0,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: isAvailable
+                            ? Colors.green[100]!
+                            : Colors.grey[200]!,
+                        width: 1,
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: isAvailable
+                          ? () {
+                              //start reading
+                              final result = ref.read(
+                                startInhouseUsageProvider({
+                                  'bookId': book.id,
+                                  'copyId': copy.id,
+                                }),
+                              );
+                              if (result.value != null && context.mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Book Reading started successfully, \nPlease click complete once finished reading the book to return the copy",
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          : null,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  isAvailable
+                                      ? Icons.check_circle_outline
+                                      : Icons.lock_outline,
+                                  size: 16,
+                                  color: isAvailable
+                                      ? Colors.green
+                                      : Colors.grey,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Copy #${copy.accessNumber}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isAvailable
+                                    ? Colors.green[50]
+                                    : Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                _formatStatus(copy.status),
+                                style: TextStyle(
+                                  color: isAvailable
+                                      ? Colors.green[700]
+                                      : Colors.grey[700],
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    ),
+  );
+}
+
+String _formatStatus(String status) {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'Available';
+    case 'BORROWED':
+      return 'Borrowed';
+    case 'LOST':
+      return 'Lost';
+    case 'DAMAGED':
+      return 'Damaged';
+    case 'IN_REPAIR':
+      return 'In Repair';
+    default:
+      return status;
+  }
 }
 
 void _showSuccessDialog(BuildContext context) {

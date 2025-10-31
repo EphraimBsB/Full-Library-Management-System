@@ -25,6 +25,7 @@ import { QueueEntriesSeed } from './entities/queue-entries.seed';
 import { NotificationsSeed } from './entities/notifications.seed';
 import { BookFavoritesSeed } from './entities/book-favorites.seed';
 import { BookNotesSeed } from './entities/book-notes.seed';
+import { InhouseUsageSeed } from './entities/inhouse-usage.seed';
 
 export class DatabaseSeeder {
   private seeders: ISeeder[] = [];
@@ -55,6 +56,7 @@ export class DatabaseSeeder {
       new QueueEntriesSeed(),
       new BookFavoritesSeed(),
       new BookNotesSeed(),
+      new InhouseUsageSeed(),
       
       // Then notifications
       new NotificationsSeed()

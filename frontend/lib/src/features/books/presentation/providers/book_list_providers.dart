@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
+import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/books/domain/repositories/book_repository.dart';
 import 'package:management_side/src/features/books/data/repositories/book_repository_impl.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
@@ -112,10 +113,7 @@ final updateBookNoteProvider = FutureProvider.family<BookNote, BookNote>((
   bookNote,
 ) async {
   final repository = ref.watch(bookRepositoryProvider);
-  final result = await repository.updateBookNote(
-    bookNote,
-    bookNote.id!,
-  );
+  final result = await repository.updateBookNote(bookNote, bookNote.id!);
   return result.when(
     success: (note) => note,
     failure: (error, stackTrace) {
@@ -151,3 +149,66 @@ final getBookNoteProvider = FutureProvider.family<BookNote, String>((
     },
   );
 });
+
+final selectedStatus = StateProvider<InhouseUsageStatus>(
+  (ref) => InhouseUsageStatus.active,
+);
+
+final inhouseUsagesProvider =
+    FutureProvider.autoDispose<InhouseUsageListResponse>((ref) async {
+      final repository = ref.watch(bookRepositoryProvider);
+      final status = ref.watch(selectedStatus);
+
+      return repository
+          .getAllInhouseUsages(status: status)
+          .then(
+            (result) => result.when(
+              success: (inhouseUsages) => inhouseUsages,
+              failure: (error, stackTrace) {
+                print('Error loading in-house usages: $error');
+                return InhouseUsageListResponse(items: [], total: 0);
+              },
+            ),
+          );
+    });
+
+final startInhouseUsageProvider =
+    FutureProvider.family<InhouseUsage, Map<String, dynamic>>((
+      ref,
+      data,
+    ) async {
+      final repository = ref.watch(bookRepositoryProvider);
+      final result = await repository.startInhouseUsage(data);
+      return result.when(
+        success: (inhouseUsage) => inhouseUsage,
+        failure: (error, stackTrace) {
+          throw error; // Or handle the error as needed
+        },
+      );
+    });
+
+final endInhouseUsageProvider = FutureProvider.family<InhouseUsage, String>((
+  ref,
+  id,
+) async {
+  final repository = ref.watch(bookRepositoryProvider);
+  final result = await repository.endInhouseUsage(id);
+  return result.when(
+    success: (inhouseUsage) => inhouseUsage,
+    failure: (error, stackTrace) {
+      throw error; // Or handle the error as needed
+    },
+  );
+});
+
+final forceEndInhouseUsageProvider =
+    FutureProvider.family<InhouseUsage, String>((ref, id) async {
+      final repository = ref.watch(bookRepositoryProvider);
+      final result = await repository.forceEndInhouseUsage(id);
+      return result.when(
+        success: (inhouseUsage) => inhouseUsage,
+        failure: (error, stackTrace) {
+          throw error; // Or handle the error as needed
+        },
+      );
+    });

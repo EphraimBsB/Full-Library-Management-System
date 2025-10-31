@@ -6,10 +6,10 @@ part 'user_model.g.dart';
 @JsonSerializable()
 class User {
   final String id;
-  final String firstName;
-  final String lastName;
-  final String email;
-  final String rollNumber;
+  final String? firstName;
+  final String? lastName;
+  final String? email;
+  final String? rollNumber;
   final String? phoneNumber;
   final String? avatarUrl;
   final String? course;
@@ -17,7 +17,7 @@ class User {
   final DateTime? dateOfBirth;
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  final bool isActive;
+  final bool? isActive;
   final DateTime? joinDate;
   final DateTime? expiryDate;
   final UserRole? role;
@@ -25,10 +25,10 @@ class User {
 
   const User({
     required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.email,
-    required this.rollNumber,
+    this.firstName,
+    this.lastName,
+    this.email,
+    this.rollNumber,
     this.phoneNumber,
     this.avatarUrl,
     this.course,

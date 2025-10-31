@@ -22,6 +22,7 @@ import { BookMetadata } from 'src/books/entities/book-metadata.entity';
 import { LoanSettings } from 'src/sys-configs/loan-settings/loan-settings.entity';
 import { BookFavorite } from 'src/books/entities/book-favorite.entity';
 import { BookNote } from 'src/books/entities/book-note.entity';
+import { BookInhouseUsage } from 'src/books/entities/book-inhouse-usage.entity';
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -55,6 +56,7 @@ import { BookNote } from 'src/books/entities/book-note.entity';
           UserRole,
           BookMetadata,
           LoanSettings,
+          BookInhouseUsage,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         // logging: configService.get('NODE_ENV') === 'development',

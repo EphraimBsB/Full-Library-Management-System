@@ -61,11 +61,11 @@ class _MembershipRequestFormDialogState
     super.initState();
     if (widget.initialData != null) {
       final request = widget.initialData!;
-      _firstNameController.text = request.user.firstName;
-      _lastNameController.text = request.user.lastName;
-      _emailController.text = request.user.email;
+      _firstNameController.text = request.user.firstName!;
+      _lastNameController.text = request.user.lastName!;
+      _emailController.text = request.user.email!;
       _phoneController.text = request.user.phoneNumber!;
-      _rollNumberController.text = request.user.rollNumber;
+      _rollNumberController.text = request.user.rollNumber!;
       _degreeController.text = request.user.degree!;
       _notesController.text = request.notes ?? '';
       _profileImageUrl = request.user.avatarUrl;

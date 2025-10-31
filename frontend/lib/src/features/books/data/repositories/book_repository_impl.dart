@@ -5,6 +5,7 @@ import 'package:management_side/src/core/utils/result.dart';
 import 'package:management_side/src/features/books/data/api/book_api_service.dart';
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
+import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/books/domain/repositories/book_repository.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 
@@ -165,6 +166,59 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
     return handleApiCall<BookNote>(
       () => _apiService.updateBookNote(id, note.toJson()),
       errorMessage: 'Failed to update book note',
+    );
+  }
+
+  @override
+  Future<Result<InhouseUsageListResponse>> getAllInhouseUsages({
+    InhouseUsageStatus? status,
+  }) {
+    return handleApiCall<InhouseUsageListResponse>(
+      () => _apiService.getAllInhouseUsages(status: status?.name),
+      errorMessage: 'Failed to load in-house usages',
+    );
+  }
+
+  // @override
+  // Future<Result<List<InhouseUsage>>> getActiveInhouseUsages() {
+  //   return handleApiCall<List<InhouseUsage>>(
+  //     () => _apiService.getActiveInhouseUsages(),
+  //     errorMessage: 'Failed to load active in-house usages',
+  //   );
+  // }
+
+  // @override
+  // Future<Result<List<InhouseUsage>>> getHistoryInhouseUsages() {
+  //   return handleApiCall<List<InhouseUsage>>(
+  //     () => _apiService.getHistoryInhouseUsages(),
+  //     errorMessage: 'Failed to load history in-house usages',
+  //   );
+  // }
+
+  @override
+  Future<Result<InhouseUsage>> startInhouseUsage(Map<String, dynamic> data) {
+    print('=== START IN-HOUSE USAGE REQUEST ===');
+    print('Endpoint: POST /books/inhouse-usage/start');
+    print('Request Data: ${data.toString()}');
+    return handleApiCall<InhouseUsage>(
+      () => _apiService.startInhouseUsage(data),
+      errorMessage: 'Failed to start in-house usage',
+    );
+  }
+
+  @override
+  Future<Result<InhouseUsage>> endInhouseUsage(String id) {
+    return handleApiCall<InhouseUsage>(
+      () => _apiService.endInhouseUsage(id),
+      errorMessage: 'Failed to end in-house usage',
+    );
+  }
+
+  @override
+  Future<Result<InhouseUsage>> forceEndInhouseUsage(String id) {
+    return handleApiCall<InhouseUsage>(
+      () => _apiService.forceEndInhouseUsage(id),
+      errorMessage: 'Failed to force end in-house usage',
     );
   }
 }

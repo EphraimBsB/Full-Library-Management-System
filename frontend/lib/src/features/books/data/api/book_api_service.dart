@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:management_side/src/core/data/base_repository.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
+import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:management_side/src/core/network/api_constants.dart';
@@ -70,4 +71,24 @@ abstract class BookApiService {
     @Path('id') String id,
     @Body() Map<String, dynamic> note,
   );
+
+  @GET('/books/inhouse-usage/all')
+  Future<InhouseUsageListResponse> getAllInhouseUsages({
+    @Query('status') String? status,
+  });
+
+  @GET('/books/inhouse-usage/active')
+  Future<List<InhouseUsage>> getActiveInhouseUsages();
+
+  @GET('/books/inhouse-usage/history')
+  Future<List<InhouseUsage>> getHistoryInhouseUsages();
+
+  @POST('/books/inhouse-usage/start')
+  Future<InhouseUsage> startInhouseUsage(@Body() Map<String, dynamic> data);
+
+  @POST('/books/inhouse-usage/{id}/end')
+  Future<InhouseUsage> endInhouseUsage(@Path('id') String id);
+
+  @POST('/books/inhouse-usage/{id}/force-end')
+  Future<InhouseUsage> forceEndInhouseUsage(@Path('id') String id);
 }
