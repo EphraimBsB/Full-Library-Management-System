@@ -48,8 +48,8 @@ class MembershipRequestCard extends StatelessWidget {
                     radius: 20,
                     backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
                     child: Text(
-                      user.firstName.isNotEmpty
-                          ? user.firstName[0].toUpperCase()
+                      user.firstName!.isNotEmpty
+                          ? user.firstName![0].toUpperCase()
                           : '?',
                       style: TextStyle(
                         color: theme.primaryColor,
@@ -60,7 +60,7 @@ class MembershipRequestCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      '${user.firstName} ${user.lastName}'.trim(),
+                      '${user.firstName!} ${user.lastName!}'.trim(),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -90,7 +90,7 @@ class MembershipRequestCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               // Email
-              _buildInfoRow(Icons.email, user.email),
+              _buildInfoRow(Icons.email, user.email!),
               const SizedBox(height: 8),
               // Phone number if available
               if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) ...[
@@ -103,7 +103,7 @@ class MembershipRequestCard extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               // Roll number
-              if (user.rollNumber.isNotEmpty) ...[
+              if (user.rollNumber!.isNotEmpty) ...[
                 _buildInfoRow(
                   Icons.confirmation_number,
                   'Roll No: ${user.rollNumber}',

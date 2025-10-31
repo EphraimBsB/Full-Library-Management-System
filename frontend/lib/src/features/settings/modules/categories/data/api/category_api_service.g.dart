@@ -12,7 +12,7 @@ part of 'category_api_service.dart';
 
 class _CategoryApiService implements CategoryApiService {
   _CategoryApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
+    baseUrl ??= 'http://localhost:3000/api/v1';
   }
 
   final Dio _dio;
@@ -108,8 +108,7 @@ class _CategoryApiService implements CategoryApiService {
     late Map<String, dynamic> _value;
     try {
       _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -142,8 +141,7 @@ class _CategoryApiService implements CategoryApiService {
     late Map<String, dynamic> _value;
     try {
       _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

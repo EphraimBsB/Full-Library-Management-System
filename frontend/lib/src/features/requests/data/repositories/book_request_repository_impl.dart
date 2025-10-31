@@ -40,7 +40,7 @@ class BookRequestRepositoryImpl implements BookRequestRepository {
     try {
       final dio = Dio(
         BaseOptions(
-          baseUrl: 'http://localhost:3000/api/v1',
+          baseUrl: 'https://ilims.isbatuniversity.ac.ug/api/v1',
           headers: {
             'Content-Type': 'application/json',
             'accept': 'application/json',

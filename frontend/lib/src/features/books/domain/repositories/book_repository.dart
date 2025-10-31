@@ -3,6 +3,7 @@ import 'package:management_side/src/core/utils/result.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart'
     as model;
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
+import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 
 /// Interface for book repository operations
@@ -60,4 +61,18 @@ abstract class BookRepository {
 
   /// Update an existing note
   Future<Result<BookNote>> updateBookNote(BookNote note, String id);
+
+  /// Get all in-house usages
+  Future<Result<InhouseUsageListResponse>> getAllInhouseUsages({
+    InhouseUsageStatus? status,
+  });
+
+  /// Start an in-house usage
+  Future<Result<InhouseUsage>> startInhouseUsage(Map<String, dynamic> data);
+
+  /// End an in-house usage
+  Future<Result<InhouseUsage>> endInhouseUsage(String id);
+
+  /// Force end an in-house usage
+  Future<Result<InhouseUsage>> forceEndInhouseUsage(String id);
 }

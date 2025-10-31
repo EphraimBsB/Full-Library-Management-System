@@ -47,8 +47,8 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
       final user = member.user;
       final matchesSearch =
           user.fullName.toLowerCase().contains(_searchQuery) ||
-          user.email.toLowerCase().contains(_searchQuery) ||
-          user.rollNumber.toLowerCase().contains(_searchQuery);
+          user.email!.toLowerCase().contains(_searchQuery) ||
+          user.rollNumber!.toLowerCase().contains(_searchQuery);
 
       final matchesFilter =
           _selectedFilter == 'all' ||
@@ -248,7 +248,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              _buildInfoRow(Icons.email, user.email),
+              _buildInfoRow(Icons.email, user.email!),
               const SizedBox(height: 8),
               if (user.phoneNumber != null) ...[
                 _buildInfoRow(Icons.phone, user.phoneNumber!),

@@ -74,7 +74,7 @@ class MemberDetailsDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  member.rollNumber,
+                  member.rollNumber!,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.hintColor,
                   ),
@@ -89,7 +89,7 @@ class MemberDetailsDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow(context, 'Email', member.email),
+            _buildDetailRow(context, 'Email', member.email!),
             if (member.phoneNumber != null)
               _buildDetailRow(context, 'Phone', member.phoneNumber!),
             if (member.course != null)
@@ -111,9 +111,9 @@ class MemberDetailsDialog extends StatelessWidget {
             _buildDetailRow(
               context,
               'Status',
-              member.isActive ? 'Active' : 'Inactive',
+              member.isActive! ? 'Active' : 'Inactive',
               isHighlighted: true,
-              highlightColor: member.isActive ? Colors.green : Colors.grey,
+              highlightColor: member.isActive! ? Colors.green : Colors.grey,
             ),
             if (member.expiryDate != null)
               _buildDetailRow(
@@ -121,7 +121,7 @@ class MemberDetailsDialog extends StatelessWidget {
                 'Expiry Date',
                 dateFormat.format(member.expiryDate!),
                 isHighlighted: true,
-                highlightColor: member.isActive ? null : Colors.orange,
+                highlightColor: member.isActive! ? null : Colors.orange,
               ),
             if (member.borrowedBooks?.isNotEmpty ?? false) ...[
               const SizedBox(height: 12),

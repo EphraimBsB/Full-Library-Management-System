@@ -39,10 +39,13 @@ import { SourcesModule } from 'src/sys-configs/sources/sources.module';
 import { LoanSettingsModule } from 'src/sys-configs/loan-settings/loan-settings.module';
 import { BookFavorite } from './entities/book-favorite.entity';
 import { BookNote } from './entities/book-note.entity';
+import { BookInhouseUsage } from './entities/book-inhouse-usage.entity';
 import { BookFavoriteController } from './controllers/book-favorite.controller';
 import { BookNoteController } from './controllers/book-note.controller';
+import { InhouseUsageController } from './controllers/inhouse-usage.controller';
 import { BookFavoriteService } from './services/book-favorite.service';
 import { BookNoteService } from './services/book-note.service';
+import { InhouseUsageService } from './services/inhouse-usage.service';
 
 @Module({
   imports: [
@@ -57,6 +60,7 @@ import { BookNoteService } from './services/book-note.service';
       BookLoan,
       BookFavorite,
       BookNote,
+      BookInhouseUsage,
       QueueEntry,
       User,
     ]),
@@ -96,6 +100,7 @@ import { BookNoteService } from './services/book-note.service';
     QueueController,
     BookFavoriteController,
     BookNoteController,
+    InhouseUsageController,
   ],
   providers: [
     BooksService,
@@ -104,6 +109,7 @@ import { BookNoteService } from './services/book-note.service';
     QueueService,
     BookFavoriteService,
     BookNoteService,
+    InhouseUsageService,
   ],
   exports: [
     BooksService,
@@ -112,6 +118,7 @@ import { BookNoteService } from './services/book-note.service';
     QueueService,
     BookFavoriteService,
     BookNoteService,
+    InhouseUsageService,
   ],
 })
 export class BooksModule {}
