@@ -65,31 +65,17 @@ class ResponsiveUtils {
     }
   }
 
-  static EdgeInsets getOuterPagePadding(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width < 600) {
-      // Mobile
-      return const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0);
-    } else if (width < 1200) {
-      // Tablet
-      return const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0);
-    } else {
-      // Desktop
-      return const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0);
-    }
-  }
-
-  static EdgeInsets getInnerPagePadding(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width < 600) {
-      // Mobile
-      return const EdgeInsets.symmetric(horizontal: 16.0);
-    } else if (width < 1200) {
-      // Tablet
-      return const EdgeInsets.symmetric(horizontal: 48.0);
-    } else {
-      // Desktop
-      return const EdgeInsets.symmetric(horizontal: 87.0);
+  static double getBookCoverWidth(BuildContext context) {
+    final screenType = getScreenType(context);
+    switch (screenType) {
+      case ScreenType.mobile:
+        return 100.0; // Smaller for mobile
+      case ScreenType.tablet:
+        return 130.0; // Medium for tablet
+      case ScreenType.smallDesktop:
+        return 150.0; // Larger for small desktop
+      case ScreenType.largeDesktop:
+        return 172.0; // Original size for large desktop
     }
   }
 

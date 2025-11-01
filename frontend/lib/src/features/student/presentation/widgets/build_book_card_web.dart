@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show WidgetRef;
 import 'package:management_side/src/core/error/failures.dart';
 import 'package:management_side/src/core/theme/app_theme.dart' show AppTheme;
+import 'package:management_side/src/core/utils/responsive_utils.dart';
 import 'package:management_side/src/features/auth/utils/auth_utils.dart';
 import 'package:management_side/src/features/books/domain/models/book_copy.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
@@ -37,7 +38,7 @@ Widget buildBookCardWeb(BookModel book, BuildContext context, WidgetRef ref) {
         Stack(
           children: [
             Container(
-              width: 172,
+              width: ResponsiveUtils.getBookCoverWidth(context),
               height: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(
