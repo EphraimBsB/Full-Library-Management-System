@@ -117,6 +117,12 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Name',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -131,6 +137,12 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Code',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -145,6 +157,12 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Description',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 maxLines: 3,
               ),

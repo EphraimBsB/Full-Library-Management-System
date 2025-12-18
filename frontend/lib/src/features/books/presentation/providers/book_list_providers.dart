@@ -172,8 +172,26 @@ final inhouseUsagesProvider =
           );
     });
 
+final historyInhouseUsagesProvider =
+    FutureProvider.autoDispose<InhouseUsageListResponse>((ref) async {
+      final repository = ref.watch(bookRepositoryProvider);
+      final status = ref.watch(selectedStatus);
+
+      return repository
+          .getHistoryInhouseUsages(status: status)
+          .then(
+            (result) => result.when(
+              success: (inhouseUsages) => inhouseUsages,
+              failure: (error, stackTrace) {
+                print('Error loading history in-house usages: $error');
+                return InhouseUsageListResponse(items: [], total: 0);
+              },
+            ),
+          );
+    });
+
 final startInhouseUsageProvider =
-    FutureProvider.family<InhouseUsage, Map<String, dynamic>>((
+    FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((
       ref,
       data,
     ) async {
@@ -182,27 +200,26 @@ final startInhouseUsageProvider =
       return result.when(
         success: (inhouseUsage) => inhouseUsage,
         failure: (error, stackTrace) {
+          print('Error starting in-house usage: $error');
           throw error; // Or handle the error as needed
         },
       );
     });
 
-final endInhouseUsageProvider = FutureProvider.family<InhouseUsage, String>((
-  ref,
-  id,
-) async {
-  final repository = ref.watch(bookRepositoryProvider);
-  final result = await repository.endInhouseUsage(id);
-  return result.when(
-    success: (inhouseUsage) => inhouseUsage,
-    failure: (error, stackTrace) {
-      throw error; // Or handle the error as needed
-    },
-  );
-});
+final endInhouseUsageProvider =
+    FutureProvider.family<Map<String, dynamic>, String>((ref, id) async {
+      final repository = ref.watch(bookRepositoryProvider);
+      final result = await repository.endInhouseUsage(id);
+      return result.when(
+        success: (inhouseUsage) => inhouseUsage,
+        failure: (error, stackTrace) {
+          throw error; // Or handle the error as needed
+        },
+      );
+    });
 
 final forceEndInhouseUsageProvider =
-    FutureProvider.family<InhouseUsage, String>((ref, id) async {
+    FutureProvider.family<Map<String, dynamic>, String>((ref, id) async {
       final repository = ref.watch(bookRepositoryProvider);
       final result = await repository.forceEndInhouseUsage(id);
       return result.when(

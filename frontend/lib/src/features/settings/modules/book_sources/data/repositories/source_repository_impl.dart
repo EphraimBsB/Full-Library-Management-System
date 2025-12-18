@@ -58,27 +58,36 @@ class SourceRepositoryImpl implements SourceRepository {
   @override
   Future<Either<Failure, Source>> createSource(Source source) async {
     try {
-      final response = await _apiService.createSource(source.toJson());
-      return Right(Source.fromJson(response));
+      // Convert to DTO format
+      final sourceDto = {
+        'name': source.name,
+        if (source.supplier != null) 'supplier': source.supplier,
+        if (source.dateAcquired != null) 'dateAcquired': source.dateAcquired,
+      };
+      final response = await _apiService.createSource(sourceDto);
+      return Right(Source.fromJson(response as Map<String, dynamic>));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to create source: ${e.toString()}'));
     }
   }
 
   @override
   Future<Either<Failure, Source>> updateSource(Source source) async {
     try {
-      final response = await _apiService.updateSource(
-        source.id!,
-        source.toJson(),
-      );
-      return Right(Source.fromJson(response));
+      // Convert to DTO format
+      final sourceDto = {
+        'name': source.name,
+        if (source.supplier != null) 'supplier': source.supplier,
+        if (source.dateAcquired != null) 'dateAcquired': source.dateAcquired,
+      };
+      final response = await _apiService.updateSource(source.id!, sourceDto);
+      return Right(Source.fromJson(response as Map<String, dynamic>));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to update source: ${e.toString()}'));
     }
   }
 

@@ -23,9 +23,10 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
     int limit = 24,
     String? search,
     String? category,
-    String? status,
     String? type,
-    String? sort,
+    int? minAvailable,
+    String? sortBy,
+    String? sortOrder,
   }) {
     return handleApiCall<PaginatedResponse<BookModel>>(
       () => _apiService.getBooks(
@@ -33,9 +34,10 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
         limit: limit,
         search: search,
         category: category,
-        status: status,
         type: type,
-        sort: sort,
+        minAvailable: minAvailable,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       ),
       errorMessage: 'Failed to load books',
     );
@@ -179,44 +181,50 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
     );
   }
 
-  // @override
-  // Future<Result<List<InhouseUsage>>> getActiveInhouseUsages() {
-  //   return handleApiCall<List<InhouseUsage>>(
-  //     () => _apiService.getActiveInhouseUsages(),
-  //     errorMessage: 'Failed to load active in-house usages',
-  //   );
-  // }
-
-  // @override
-  // Future<Result<List<InhouseUsage>>> getHistoryInhouseUsages() {
-  //   return handleApiCall<List<InhouseUsage>>(
-  //     () => _apiService.getHistoryInhouseUsages(),
-  //     errorMessage: 'Failed to load history in-house usages',
-  //   );
-  // }
-
   @override
-  Future<Result<InhouseUsage>> startInhouseUsage(Map<String, dynamic> data) {
-    print('=== START IN-HOUSE USAGE REQUEST ===');
-    print('Endpoint: POST /books/inhouse-usage/start');
-    print('Request Data: ${data.toString()}');
-    return handleApiCall<InhouseUsage>(
-      () => _apiService.startInhouseUsage(data),
-      errorMessage: 'Failed to start in-house usage',
+  Future<Result<InhouseUsageListResponse>> getHistoryInhouseUsages({
+    InhouseUsageStatus? status,
+  }) {
+    return handleApiCall<InhouseUsageListResponse>(
+      () => _apiService.getHistoryInhouseUsages(status: status?.name),
+      errorMessage: 'Failed to load history in-house usages',
     );
   }
 
   @override
-  Future<Result<InhouseUsage>> endInhouseUsage(String id) {
-    return handleApiCall<InhouseUsage>(
+  Future<Result<Map<String, dynamic>>> startInhouseUsage(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      print('=== START IN-HOUSE USAGE REQUEST ===');
+      print('Endpoint: POST /books/inhouse-usage/start');
+      print('Request Data: $data');
+
+      final response = await _apiService.startInhouseUsage(data);
+      print('Response Data: $response');
+      return Success(response);
+    } on DioException catch (e) {
+      print('DioError: ${e.message}');
+      print('Status Code: ${e.response?.statusCode}');
+      print('Response Data: ${e.response?.data}');
+      return Failure(e, e.stackTrace);
+    } catch (e, stackTrace) {
+      print('Unexpected error: $e');
+      return Failure(e, stackTrace);
+    }
+  }
+
+  @override
+  Future<Result<Map<String, dynamic>>> endInhouseUsage(String id) {
+    return handleApiCall<Map<String, dynamic>>(
       () => _apiService.endInhouseUsage(id),
       errorMessage: 'Failed to end in-house usage',
     );
   }
 
   @override
-  Future<Result<InhouseUsage>> forceEndInhouseUsage(String id) {
-    return handleApiCall<InhouseUsage>(
+  Future<Result<Map<String, dynamic>>> forceEndInhouseUsage(String id) {
+    return handleApiCall<Map<String, dynamic>>(
       () => _apiService.forceEndInhouseUsage(id),
       errorMessage: 'Failed to force end in-house usage',
     );

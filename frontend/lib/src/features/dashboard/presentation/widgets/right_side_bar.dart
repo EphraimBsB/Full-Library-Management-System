@@ -202,7 +202,16 @@ class RightSideBarWidget extends ConsumerWidget {
                               ),
                               // Status badge
                               Positioned(
-                                top: 0,
+                                top:
+                                    inhouseUsage.status ==
+                                        InhouseUsageStatus.active
+                                    ? 0
+                                    : null,
+                                bottom:
+                                    inhouseUsage.status ==
+                                        InhouseUsageStatus.active
+                                    ? null
+                                    : 0,
                                 right: 0,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -240,15 +249,45 @@ class RightSideBarWidget extends ConsumerWidget {
                                   bottom: 0,
                                   right: 0,
                                   child: InkWell(
-                                    onTap: () {
+                                    onTap: () async {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text(
+                                            'Confirm Force End',
+                                          ),
+                                          content: Text(
+                                            'Are you sure you want to force end the session for ${inhouseUsage.copy['book']['title']}?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor:
+                                                    AppTheme.errorColor,
+                                              ),
+                                              child: const Text('Force End'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (confirmed != true) return;
+
                                       final result = ref.read(
                                         forceEndInhouseUsageProvider(
                                           inhouseUsage.id,
                                         ),
                                       );
+
                                       result.when(
                                         data: (data) {
-                                          //Show snackbar
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -256,11 +295,12 @@ class RightSideBarWidget extends ConsumerWidget {
                                               content: Text(
                                                 'The session for ${inhouseUsage.copy['book']['title']} has been ended successfully',
                                               ),
+                                              backgroundColor: Colors.green,
                                             ),
                                           );
+                                          ref.invalidate(inhouseUsagesProvider);
                                         },
                                         error: (error, stackTrace) {
-                                          //Show snackbar
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -268,16 +308,19 @@ class RightSideBarWidget extends ConsumerWidget {
                                               content: Text(
                                                 'Error: ${error.toString()}',
                                               ),
+                                              backgroundColor: Colors.red,
                                             ),
                                           );
                                         },
                                         loading: () {
-                                          //Show snackbar
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
-                                            SnackBar(
-                                              content: Text('Loading...'),
+                                            const SnackBar(
+                                              content: Text(
+                                                'Ending session...',
+                                              ),
+                                              backgroundColor: Colors.blue,
                                             ),
                                           );
                                         },
@@ -443,7 +486,7 @@ MapEntry<Color, Color> _getStatusColors(InhouseUsageStatus status) {
         Color(0xFFEEF4FF), // background
         Color(0xFF004EEB), // text
       );
-    case InhouseUsageStatus.forceEnded:
+    case InhouseUsageStatus.force_ended:
       return const MapEntry(
         Color(0xFFFEF3F2), // background
         Color(0xFFB42318), // text

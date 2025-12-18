@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:management_side/src/core/error/exceptions.dart';
 import 'package:management_side/src/core/error/failures.dart';
+import 'package:management_side/src/core/data/pagination.dart';
 import 'package:management_side/src/core/network/network_info.dart';
 import 'package:management_side/src/features/members/data/api/member_api_service.dart';
 import 'package:management_side/src/features/members/domain/models/membership_model.dart';
@@ -16,7 +17,7 @@ class MemberRepositoryImpl implements MemberRepository {
   MemberRepositoryImpl({required this.apiService, required this.networkInfo});
 
   @override
-  Future<Either<Failure, List<Membership>>> getMemberships({
+  Future<Either<Failure, PaginatedResponse<Membership>>> getMemberships({
     String? status,
     int? page,
     int? limit,

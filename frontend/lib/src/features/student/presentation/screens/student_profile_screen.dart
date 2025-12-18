@@ -11,6 +11,7 @@ import 'package:management_side/src/features/student/presentation/widgets/borrow
 import 'package:management_side/src/features/student/presentation/widgets/favorites_list.dart';
 import 'package:management_side/src/features/student/presentation/widgets/notes_list.dart';
 import 'package:management_side/src/features/student/presentation/widgets/profile_summary_card.dart';
+import 'package:management_side/src/features/student/presentation/widgets/reading_history.dart';
 
 class StudentProfileScreen extends ConsumerStatefulWidget {
   const StudentProfileScreen({super.key});
@@ -24,7 +25,13 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
-  final _tabs = const ['Profile', 'Borrowing', 'Favorites', 'Notes'];
+  final _tabs = const [
+    'Profile',
+    'Reading History',
+    'Borrowing',
+    'Favorites',
+    'Notes',
+  ];
 
   @override
   void initState() {
@@ -81,6 +88,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen>
           controller: _tabController,
           children: [
             _buildProfileTab(user),
+            ReadingHistoryList(),
             BorrowHistoryList(userId: user['id']),
             FavoritesList(userId: user['id']),
             NotesList(userId: user['id']),

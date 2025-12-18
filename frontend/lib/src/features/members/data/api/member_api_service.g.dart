@@ -20,7 +20,7 @@ class _MemberApiService implements MemberApiService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<Membership>> getMemberships({
+  Future<PaginatedResponse<Membership>> getMemberships({
     String? status,
     int? page,
     int? limit,
@@ -34,7 +34,7 @@ class _MemberApiService implements MemberApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<Membership>>(
+    final _options = _setStreamType<PaginatedResponse<Membership>>(
       Options(
             method: 'GET',
             headers: _headers,
@@ -49,12 +49,13 @@ class _MemberApiService implements MemberApiService {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<Membership> _value;
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late PaginatedResponse<Membership> _value;
     try {
-      _value = _result.data!
-          .map((dynamic i) => Membership.fromJson(i as Map<String, dynamic>))
-          .toList();
+      _value = PaginatedResponse<Membership>.fromJson(
+        _result.data!,
+        (json) => Membership.fromJson(json as Map<String, dynamic>),
+      );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

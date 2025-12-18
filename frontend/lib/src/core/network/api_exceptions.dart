@@ -13,20 +13,20 @@ class ApiException implements Exception {
 
 /// 400 Bad Request
 class BadRequestException extends ApiException {
-  BadRequestException({String? message, dynamic data})
-    : super(message: message ?? 'Bad request', statusCode: 400, data: data);
+  BadRequestException({String? message, super.data})
+    : super(message: message ?? 'Bad request', statusCode: 400);
 }
 
 /// 401 Unauthorized
 class UnauthorizedException extends ApiException {
-  UnauthorizedException({String? message, dynamic data})
-    : super(message: message ?? 'Unauthorized', statusCode: 401, data: data);
+  UnauthorizedException({String? message, super.data})
+    : super(message: message ?? 'Unauthorized', statusCode: 401);
 }
 
 /// 403 Forbidden
 class ForbiddenException extends ApiException {
-  ForbiddenException({String? message, dynamic data})
-    : super(message: message ?? 'Forbidden', statusCode: 403, data: data);
+  ForbiddenException({String? message, super.data})
+    : super(message: message ?? 'Forbidden', statusCode: 403);
 }
 
 /// 404 Not Found

@@ -111,6 +111,12 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Name',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -125,6 +131,12 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Supplier',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 maxLines: 3,
               ),

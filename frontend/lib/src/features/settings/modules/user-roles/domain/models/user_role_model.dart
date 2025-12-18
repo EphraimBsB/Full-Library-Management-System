@@ -39,7 +39,16 @@ class UserRole extends Equatable {
   factory UserRole.fromJson(Map<String, dynamic> json) =>
       _$UserRoleFromJson(json);
 
-  Map<String, dynamic> toJson() => _$UserRoleToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      if (description != null) 'description': description,
+      'permissions': permissions,
+      'isActive': isActive,
+      if (createdAt != null) 'createdAt': createdAt?.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
 
   UserRole copyWith({
     int? id,

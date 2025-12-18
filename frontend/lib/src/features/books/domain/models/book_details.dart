@@ -31,6 +31,21 @@ class BookDetails {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'book': book.toJson(),
+      'current_borrows': currentBorrows
+          .map((borrow) => borrow.toJson())
+          .toList(),
+      'borrow_history': borrowHistory
+          .map((history) => history.toJson())
+          .toList(),
+      'queue_requests': queueRequests
+          .map((request) => request.toJson())
+          .toList(),
+    };
+  }
 }
 
 class Book {

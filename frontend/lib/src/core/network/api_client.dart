@@ -4,6 +4,7 @@ import 'package:management_side/src/features/auth/utils/token_storage.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'api_constants.dart';
 import 'api_exceptions.dart';
+import 'cache_interceptor.dart';
 import 'dart:developer' as developer;
 
 class ApiClient {
@@ -43,7 +44,11 @@ class ApiClient {
     );
 
     _dio.interceptors.add(AuthInterceptor(tokenStorage, _dio));
-    // Add interceptors
+
+    // Add cache interceptor
+    _dio.interceptors.add(CacheInterceptor());
+
+    // Add logging interceptor
     _dio.interceptors.add(
       PrettyDioLogger(
         requestHeader: true,

@@ -21,12 +21,10 @@ abstract class DegreeApiService {
   Future<dynamic> getDegree(@Path('id') int id);
 
   @POST('/degrees')
-  Future<Map<String, dynamic>> createDegree(
-    @Body() Map<String, dynamic> degree,
-  );
+  Future<Degree> createDegree(@Body() Map<String, dynamic> degree);
 
   @PUT('/degrees/{id}')
-  Future<Map<String, dynamic>> updateDegree(
+  Future<Degree> updateDegree(
     @Path('id') int id,
     @Body() Map<String, dynamic> degree,
   );

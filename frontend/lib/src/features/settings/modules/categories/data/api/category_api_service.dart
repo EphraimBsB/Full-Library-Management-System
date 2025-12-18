@@ -21,12 +21,10 @@ abstract class CategoryApiService {
   Future<dynamic> getCategory(@Path('id') int id);
 
   @POST('/categories')
-  Future<Map<String, dynamic>> createCategory(
-    @Body() Map<String, dynamic> category,
-  );
+  Future<Category> createCategory(@Body() Map<String, dynamic> category);
 
   @PUT('/categories/{id}')
-  Future<Map<String, dynamic>> updateCategory(
+  Future<Category> updateCategory(
     @Path('id') int id,
     @Body() Map<String, dynamic> category,
   );

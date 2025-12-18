@@ -22,4 +22,14 @@ class Borrower {
       phone: json['phone'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user_id': userId,
+      'name': name,
+      'roll_number': rollNumber,
+      'email': email,
+      'phone': phone,
+    };
+  }
 }

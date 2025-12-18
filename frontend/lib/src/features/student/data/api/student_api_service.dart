@@ -12,6 +12,11 @@ part 'student_api_service.g.dart';
 abstract class StudentApiService {
   factory StudentApiService(Dio dio, {String baseUrl}) = _StudentApiService;
 
+  @GET('/student-details')
+  Future<Map<String, dynamic>> getStudentDetails(
+    @Query('rollno') String rollNumber,
+  );
+
   @GET('/users/{userId}/profile-summary')
   Future<ProfileSummaryModel> getProfileSummary(@Path('userId') String userId);
 

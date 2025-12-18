@@ -13,7 +13,8 @@ abstract class AuthApiService {
   @POST('/auth/login')
   @FormUrlEncoded()
   Future<AuthResponse> login({
-    @Field('email') required String email,
+    @Field('email') String? email,
+    @Field('rollNumber') String? rollNumber,
     @Field('password') required String password,
   });
 

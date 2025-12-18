@@ -15,9 +15,16 @@ class AuthRepositoryImpl extends BaseRepository implements AuthRepository {
     : _apiService = AuthApiService(dio ?? ApiClient().dio);
 
   @override
-  Future<Result<AuthResponse>> login(String email, String password) async {
+  Future<Result<AuthResponse>> login(String identifier, String password) async {
+    // Check if identifier is an email or roll number
+    final isEmail = RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(identifier);
+
     return handleApiCall<AuthResponse>(
-      () => _apiService.login(email: email, password: password),
+      () => _apiService.login(
+        email: isEmail ? identifier : null,
+        rollNumber: isEmail ? null : identifier,
+        password: password,
+      ),
       errorMessage: 'Login failed. Please check your credentials.',
     );
   }

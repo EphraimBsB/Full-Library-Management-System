@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:management_side/src/core/error/failures.dart';
+import 'package:management_side/src/core/data/pagination.dart';
 import 'package:management_side/src/features/loans/data/api/loan_api_service.dart';
 import 'package:management_side/src/features/loans/domain/models/loan_model.dart';
 import 'package:management_side/src/features/loans/domain/repositories/loan_repository.dart';
@@ -28,7 +29,7 @@ class LoanRepositoryImpl implements LoanRepository {
   const LoanRepositoryImpl(this._apiService);
 
   @override
-  Future<Either<Failure, List<Loan>>> getLoans({
+  Future<Either<Failure, PaginatedResponse<Loan>>> getLoans({
     String? status,
     String? userId,
     String? bookId,

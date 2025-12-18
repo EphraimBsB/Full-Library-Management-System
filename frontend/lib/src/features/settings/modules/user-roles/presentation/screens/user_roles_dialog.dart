@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/domain/models/user_role_model.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/presentation/providers/user_roles_providers.dart';
 
@@ -236,6 +237,12 @@ class _UserRolesScreenState extends ConsumerState<UserRolesScreen> {
             decoration: const InputDecoration(
               labelText: 'Role Name',
               border: OutlineInputBorder(),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+              ),
               prefixIcon: Icon(Icons.badge),
             ),
             validator: (value) {
@@ -251,6 +258,12 @@ class _UserRolesScreenState extends ConsumerState<UserRolesScreen> {
             decoration: const InputDecoration(
               labelText: 'Description (Optional)',
               border: OutlineInputBorder(),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+              ),
               prefixIcon: Icon(Icons.description),
             ),
             maxLines: 3,

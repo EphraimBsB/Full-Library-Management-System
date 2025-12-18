@@ -7,17 +7,43 @@ import 'package:management_side/src/features/auth/presentation/providers/auth_st
 import 'package:management_side/src/features/auth/presentation/widgets/login_dialog.dart';
 import 'package:management_side/src/features/auth/utils/token_storage.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
-import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
+import 'package:management_side/src/features/books/presentation/providers/paginated_books_provider.dart';
 import 'package:management_side/src/core/utils/responsive_utils.dart';
+import 'package:management_side/src/core/widgets/numbered_pagination_widget.dart';
 import 'package:management_side/src/features/student/presentation/widgets/build_book_card_web.dart';
 import 'package:management_side/src/features/student/presentation/widgets/membership_request_dialog.dart';
 
-class StudentHomeScreen extends ConsumerWidget {
+class StudentHomeScreen extends ConsumerStatefulWidget {
   const StudentHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final booksAsync = ref.watch(allBooksProvider);
+  ConsumerState<StudentHomeScreen> createState() => _StudentHomeScreenState();
+}
+
+class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Load initial data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = ref.read(paginatedBooksProvider.notifier);
+      notifier.loadPage(page: 1, limit: 10);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final paginatedState = ref.watch(paginatedBooksProvider);
+    final paginatedData = ref.watch(currentPaginatedBooksProvider);
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -157,18 +183,42 @@ class StudentHomeScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: booksAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (books) => _buildContent(context, books, ref),
-      ),
+      body: paginatedState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : paginatedState.error != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Error loading books. Please try again.\n${paginatedState.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        ref.read(paginatedBooksProvider.notifier).refresh();
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : paginatedState.books.isEmpty
+          ? const Center(child: Text('No books found matching your criteria.'))
+          : _buildPaginatedContent(context, ref, paginatedState, paginatedData),
     );
   }
 
-  Widget _buildContent(
+  Widget _buildPaginatedContent(
     BuildContext context,
-    List<BookModel> books,
     WidgetRef ref,
+    dynamic paginatedState,
+    dynamic paginatedData,
   ) {
     return SingleChildScrollView(
       // padding: ResponsiveUtils.getOuterPagePadding(context),
@@ -228,14 +278,28 @@ class StudentHomeScreen extends ConsumerWidget {
                     mainAxisSpacing: gridSettings.spacing,
                     mainAxisExtent: gridSettings.mainAxisExtent,
                   ),
-                  itemCount: books.length,
+                  itemCount: paginatedState.books.length,
                   itemBuilder: (context, index) {
-                    return buildBookCardWeb(books[index], context, ref);
+                    return buildBookCardWeb(
+                      paginatedState.books[index],
+                      context,
+                      ref,
+                    );
                   },
                 );
               },
             ),
             const SizedBox(height: 40),
+
+            // Pagination controls
+            NumberedPaginationWidget<BookModel>(
+              data: paginatedData,
+              onPageChanged: (page) {
+                ref.read(paginatedBooksProvider.notifier).goToPage(page);
+              },
+              maxVisiblePages: 7,
+              inactiveColor: AppTheme.textSecondaryColor,
+            ),
           ],
         ),
       ),
@@ -243,35 +307,24 @@ class StudentHomeScreen extends ConsumerWidget {
   }
 
   Widget _buildSearchBar(WidgetRef ref) {
-    final searchNotifier = ref.read(searchNotifierProvider);
+    final notifier = ref.read(paginatedBooksProvider.notifier);
 
     return TextField(
       style: const TextStyle(fontSize: 13),
       decoration: InputDecoration(
-        hintText: 'Search for books, authors, or categories...',
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+        hintText: 'Search by title, author, or ISBN',
+        prefixIcon: const Icon(Icons.search),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 30,
-        ),
-        suffixIcon: Container(
-          margin: const EdgeInsets.all(4),
-          decoration: const BoxDecoration(
-            color: AppTheme.primaryColor,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
-            onPressed: () {},
-          ),
-        ),
+        filled: true,
+        fillColor: Colors.grey[100],
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
-      onSubmitted: (value) => searchNotifier(value),
+      onSubmitted: (value) {
+        notifier.applyFilters(search: value.isEmpty ? null : value);
+      },
     );
   }
 
@@ -324,7 +377,7 @@ class StudentHomeScreen extends ConsumerWidget {
         } else if (value == 'logout') {
           await tokenStorage.clearAll();
           if (context.mounted) {
-            ref.invalidate(allBooksProvider);
+            ref.invalidate(paginatedBooksProvider);
             ref.invalidate(currentUserProvider);
             context.go('/');
           }
@@ -446,7 +499,7 @@ class StudentHomeScreen extends ConsumerWidget {
       } else if (value == 'logout') {
         tokenStorage.clearAll();
         if (context.mounted) {
-          ref.invalidate(allBooksProvider);
+          ref.invalidate(paginatedBooksProvider);
           ref.invalidate(currentUserProvider);
           context.go('/');
         }

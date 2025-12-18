@@ -43,7 +43,17 @@ class MembershipType extends Equatable {
   factory MembershipType.fromJson(Map<String, dynamic> json) =>
       _$MembershipTypeFromJson(json);
 
-  Map<String, dynamic> toJson() => _$MembershipTypeToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      if (description != null) 'description': description,
+      'maxBooks': maxBooks,
+      'maxDurationDays': maxDurationDays,
+      'renewalLimit': renewalLimit,
+      'fineRate': fineRate,
+      'isActive': isActive,
+    };
+  }
 
   @override
   List<Object?> get props => [

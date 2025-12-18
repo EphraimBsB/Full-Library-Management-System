@@ -22,6 +22,36 @@ class _StudentApiService implements StudentApiService {
   final ParseErrorLogger? errorLogger;
 
   @override
+  Future<Map<String, dynamic>> getStudentDetails(String rollNumber) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'rollno': rollNumber,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<Map<String, dynamic>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/student-details',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late Map<String, dynamic> _value;
+    try {
+      _value = _result.data!;
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<ProfileSummaryModel> getProfileSummary(String userId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -55,7 +85,11 @@ class _StudentApiService implements StudentApiService {
     int limit = 10,
   }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
+    final queryParameters = <String, dynamic>{
+      r'page': page,
+      r'limit': limit,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<BorrowHistoryResponse<Loan>>(
@@ -73,7 +107,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = BorrowHistoryResponse<Loan>.fromJson(
         _result.data!,
-        (json) => Loan.fromJson(json as Map<String, dynamic>),
+        (json) => Loan.fromJson(json),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -89,7 +123,11 @@ class _StudentApiService implements StudentApiService {
     int limit = 10,
   }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
+    final queryParameters = <String, dynamic>{
+      r'page': page,
+      r'limit': limit,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<BorrowHistoryResponse<BookModel>>(
@@ -107,7 +145,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = BorrowHistoryResponse<BookModel>.fromJson(
         _result.data!,
-        (json) => BookModel.fromJson(json as Map<String, dynamic>),
+        (json) => BookModel.fromJson(json),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -123,7 +161,11 @@ class _StudentApiService implements StudentApiService {
     int limit = 10,
   }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
+    final queryParameters = <String, dynamic>{
+      r'page': page,
+      r'limit': limit,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<BorrowHistoryResponse<BookNote>>(
@@ -141,7 +183,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = BorrowHistoryResponse<BookNote>.fromJson(
         _result.data!,
-        (json) => BookNote.fromJson(json as Map<String, dynamic>),
+        (json) => BookNote.fromJson(json),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

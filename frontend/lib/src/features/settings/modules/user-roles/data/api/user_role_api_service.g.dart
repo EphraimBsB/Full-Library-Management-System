@@ -53,7 +53,8 @@ class _UserRoleApiService implements UserRoleApiService {
     try {
       _value = _result.data!
           .map(
-            (dynamic i) => Map<String, dynamic>.from(i as Map<String, dynamic>),
+            (dynamic i) =>
+                Map<String, dynamic>.from(i as Map<String, dynamic>),
           )
           .toList();
     } on Object catch (e, s) {
@@ -85,15 +86,13 @@ class _UserRoleApiService implements UserRoleApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> createUserRole(
-    Map<String, dynamic> userRole,
-  ) async {
+  Future<UserRole> createUserRole(Map<String, dynamic> userRole) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(userRole);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<UserRole>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -104,11 +103,9 @@ class _UserRoleApiService implements UserRoleApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late UserRole _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
-      );
+      _value = UserRole.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -117,16 +114,13 @@ class _UserRoleApiService implements UserRoleApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> updateUserRole(
-    int id,
-    Map<String, dynamic> userRole,
-  ) async {
+  Future<UserRole> updateUserRole(int id, Map<String, dynamic> userRole) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(userRole);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<UserRole>(
       Options(method: 'PUT', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -137,11 +131,9 @@ class _UserRoleApiService implements UserRoleApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late UserRole _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
-      );
+      _value = UserRole.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

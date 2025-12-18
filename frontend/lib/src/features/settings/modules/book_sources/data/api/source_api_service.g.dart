@@ -86,13 +86,13 @@ class _SourceApiService implements SourceApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> createSource(Map<String, dynamic> source) async {
+  Future<Source> createSource(Map<String, dynamic> source) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(source);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<Source>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -103,12 +103,9 @@ class _SourceApiService implements SourceApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late Source _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
-      );
+      _value = Source.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -117,16 +114,13 @@ class _SourceApiService implements SourceApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> updateSource(
-    int id,
-    Map<String, dynamic> source,
-  ) async {
+  Future<Source> updateSource(int id, Map<String, dynamic> source) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(source);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<Source>(
       Options(method: 'PUT', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -137,12 +131,9 @@ class _SourceApiService implements SourceApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late Source _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
-      );
+      _value = Source.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

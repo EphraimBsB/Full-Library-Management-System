@@ -20,7 +20,7 @@ class _LoanApiService implements LoanApiService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<Loan>> getLoans({
+  Future<PaginatedResponse<Loan>> getLoans({
     String? status,
     String? userId,
     String? bookId,
@@ -40,7 +40,7 @@ class _LoanApiService implements LoanApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<Loan>>(
+    final _options = _setStreamType<PaginatedResponse<Loan>>(
       Options(
             method: 'GET',
             headers: _headers,
@@ -55,12 +55,13 @@ class _LoanApiService implements LoanApiService {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<Loan> _value;
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late PaginatedResponse<Loan> _value;
     try {
-      _value = _result.data!
-          .map((dynamic i) => Loan.fromJson(i as Map<String, dynamic>))
-          .toList();
+      _value = PaginatedResponse<Loan>.fromJson(
+        _result.data!,
+        (json) => Loan.fromJson(json as Map<String, dynamic>),
+      );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
