@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
 import { Membership } from './membership.entity';
@@ -10,6 +10,8 @@ export enum MembershipRequestStatus {
 }
 
 @Entity('membership_requests')
+@Index(['userId', 'status'])
+@Index(['membershipTypeId', 'status'])
 export class MembershipRequest {
   @PrimaryGeneratedColumn('uuid')
   id: string;

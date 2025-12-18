@@ -11,6 +11,7 @@ import { BooksModule } from './books/books.module';
 import { EmailModule } from './emails/email.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { DataImportModule } from './data-import/data-import.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { StorageModule } from './storage/storage.module';
@@ -23,6 +24,7 @@ import { SourcesModule } from './sys-configs/sources/sources.module';
 import { SubjectsModule } from './sys-configs/subjects/subjects.module';
 import { TypesModule } from './sys-configs/types/types.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { StudentsModule } from './auth/students/students.module';
 
 @Module({
   imports: [
@@ -47,10 +49,13 @@ import { DashboardModule } from './dashboard/dashboard.module';
     MembershipTypesModule,
     UserRolesModule,
     DashboardModule,
-ServeStaticModule.forRoot({
+    ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'public'),
       serveRoot: '/uploads',
     }),
+    // Data import module for uploading book Excel files
+    DataImportModule,
+    StudentsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -61,4 +66,4 @@ ServeStaticModule.forRoot({
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

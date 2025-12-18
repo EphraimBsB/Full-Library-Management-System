@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { BookFavorite } from '../entities/book-favorite.entity';
 import { Book } from '../entities/book.entity';
 import { ToggleBookFavoriteDto } from '../dto/book-favorite.dto';
+import { PaginationOptions } from '../../common/interfaces/pagination-options.interface';
 
 @Injectable()
 export class BookFavoriteService {
@@ -63,6 +64,29 @@ export class BookFavoriteService {
     return favorites.map(
       (favorite) => favorite.book,
     );
+  }
+
+  /**
+   * Get user favorites with database-level pagination
+   * Returns the list of books and the total count
+   */
+  async getUserFavoritesPaginated(
+    userId: string,
+    options: PaginationOptions = {},
+  ): Promise<[Book[], number]> {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 10;
+
+    const [favorites, total] = await this.bookFavoriteRepository.findAndCount({
+      where: { userId },
+      relations: ['book', 'book.copies'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const books = favorites.map(fav => fav.book);
+    return [books, total];
   }
 
   async isBookFavorite(userId: string, bookId: number): Promise<boolean> {

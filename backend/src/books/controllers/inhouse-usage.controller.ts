@@ -37,8 +37,9 @@ export class InhouseUsageController {
   async startUsage(
     @Request() req,
     @Body() startUsageDto: StartInhouseUsageDto,
-  ): Promise<InhouseUsageResponseDto> {
-    return this.inhouseUsageService.startUsage(req.user.id, startUsageDto);
+  ): Promise<{ message: string, statusCode: number, usageId: string }> {
+    const result = await this.inhouseUsageService.startUsage(req.user.id, startUsageDto);
+    return { message: "In-library reading started successfully", statusCode: 201, usageId: result.id };
   }
 
   @Post('inhouse-usage/:id/end')
@@ -48,33 +49,23 @@ export class InhouseUsageController {
   async endUsage(
     @Request() req,
     @Param('id', ParseUUIDPipe) usageId: string,
-  ): Promise<InhouseUsageResponseDto> {
-    return this.inhouseUsageService.endUsage(usageId, req.user.id);
+  ): Promise<{ message: string, statusCode: number, usageId: string }> {
+    const result = await this.inhouseUsageService.endUsage(usageId, req.user.id);
+    return { message: "In-library reading ended successfully", statusCode: 200, usageId: result.id };
   }
-
-  // @Delete(':id')
-  // @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
-  // @ApiOperation({ summary: 'Cancel an in-house usage session (Admin/Librarian only)' })
-  // @ApiResponse({ status: 200, description: 'The usage has been cancelled', type: InhouseUsageResponseDto })
-  // @ApiResponse({ status: 404, description: 'Usage not found' })
-  // async cancelUsage(
-  //   @Param('id') id: string,
-  //   @Request() req,
-  // ): Promise<InhouseUsageResponseDto> {
-  //   return this.inhouseUsageService.cancelUsage(id, req.user.id);
-  // }
 
   @Post('inhouse-usage/:id/force-end')
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Force end an active in-house usage session (Admin/Librarian only)' })
   @ApiResponse({ status: 200, description: 'The usage has been force ended', type: InhouseUsageResponseDto })
-  @ApiResponse({ status: 404, description: 'Usage not found' })
-  @ApiResponse({ status: 400, description: 'Usage is not active' })
+  @ApiResponse({ status: 404, description: 'Usage not found', type: InhouseUsageResponseDto })
+  @ApiResponse({ status: 400, description: 'Usage is not active', type: InhouseUsageResponseDto })
   async forceEndUsage(
     @Param('id') id: string,
     @Request() req,
-  ): Promise<InhouseUsageResponseDto> {
-    return this.inhouseUsageService.endUsage(id, req.user.id, true);
+  ): Promise<{ message: string, statusCode: number, usageId: string }> {
+    const result = await this.inhouseUsageService.endUsage(id, req.user.id, true);
+    return { message: "In-library reading force ended successfully", statusCode: 200, usageId: result.id };
   }
 
   @Get('inhouse-usage/all')
@@ -99,16 +90,6 @@ export class InhouseUsageController {
     return this.inhouseUsageService.getAllUsages(limit, offset, status);
   }
 
-  @Get('inhouse-usage/active')
-  @Roles(UserRole.STUDENT, UserRole.FACULTY, UserRole.ADMIN, UserRole.LIBRARIAN)
-  @ApiOperation({ summary: 'Get active in-house usage sessions' })
-  @ApiResponse({ status: 200, description: 'List of active in-house usages', type: [InhouseUsageResponseDto] })
-  async getActiveUsages(
-    @Request() req,
-  ): Promise<InhouseUsageResponseDto[]> {
-    return this.inhouseUsageService.getUserActiveUsages(req.user.id);
-  }
-
   @Get('inhouse-usage/history')
   @Roles(UserRole.STUDENT, UserRole.FACULTY, UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Get in-house usage history' })
@@ -117,8 +98,9 @@ export class InhouseUsageController {
     @Request() req,
     @Query('limit') limit: number = 50,
     @Query('offset') offset: number = 0,
+    @Query('status') status?: InhouseUsageStatus
   ) {
-    return this.inhouseUsageService.getUserUsageHistory(req.user.id, limit, offset);
+    return this.inhouseUsageService.getUserUsageHistory(req.user.id, limit, offset, status);
   }
 
   @Delete('inhouse-usage/:id')

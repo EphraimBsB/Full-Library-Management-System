@@ -14,6 +14,8 @@ import { BookNoteService } from '../books/services/book-note.service';
 import { BookLoan, LoanStatus } from '../books/entities/book-loan.entity';
 import { BookFavorite } from '../books/entities/book-favorite.entity';
 import { BookNote } from '../books/entities/book-note.entity';
+import { MembershipService } from '../membership/membership.service';
+import { MembershipType } from '../sys-configs/membership-types/entities/membership-type.entity';
 
 @Injectable()
 export class UsersService {
@@ -30,6 +32,8 @@ export class UsersService {
     private readonly bookFavoriteService: BookFavoriteService,
     @Inject(forwardRef(() => BookNoteService))
     private readonly bookNoteService: BookNoteService,
+    @Inject(forwardRef(() => MembershipService))
+    private readonly membershipService: MembershipService,
   ) { }
 
   private getSafePaginationOptions(options?: PaginationOptions): Required<PaginationOptions> {
@@ -55,7 +59,7 @@ export class UsersService {
     // Get borrow stats
     const [userLoans, overdueLoans, returnedLoans] = await Promise.all([
       this.bookLoanService.getUserLoans(userId),
-      this.bookLoanService.getOverdueLoans(),
+      this.bookLoanService.getOverdueLoans(userId),
       this.bookLoanRepository.find({
         where: {
           userId,
@@ -73,7 +77,7 @@ export class UsersService {
     ]);
 
     const activeBorrows = userLoans.filter(loan => loan.status === LoanStatus.ACTIVE).length;
-    const overdueBorrows = overdueLoans.filter(loan => loan.userId === userId).length;
+    const overdueBorrows = overdueLoans.length;
     const returnedBorrows = returnedLoans.length;
     const favoritesCount = typeof favorites === 'number' ? favorites : 0;
     const notesCount = Array.isArray(notes) ? notes.length : 0;
@@ -111,18 +115,14 @@ export class UsersService {
     options: PaginationOptions = {}
   ): Promise<PaginatedResponseDto<any>> {
     const safeOptions = this.getSafePaginationOptions(options);
-    const [items, total] = await Promise.all([
-      this.bookLoanService.getUserLoans(userId),
-      this.bookLoanService.getUserLoans(userId).then(loans => loans.length)
-    ]);
-
-    const start = (safeOptions.page - 1) * safeOptions.limit;
-    const end = start + safeOptions.limit;
-    const paginatedItems = items.slice(start, end);
+    const [items, total] = await this.bookLoanService.getUserLoansPaginated(
+      userId,
+      safeOptions,
+    );
 
     const totalPages = Math.ceil(total / safeOptions.limit);
     return {
-      data: paginatedItems,
+      data: items,
       total,
       page: safeOptions.page,
       limit: safeOptions.limit,
@@ -137,17 +137,13 @@ export class UsersService {
     options: PaginationOptions = {}
   ): Promise<PaginatedResponseDto<any>> {
     const safeOptions = this.getSafePaginationOptions(options);
-    const favorites = await this.bookFavoriteService.getUserFavorites(userId);
-    const favoritesList = Array.isArray(favorites) ? favorites : [];
-
-    const start = (safeOptions.page - 1) * safeOptions.limit;
-    const end = start + safeOptions.limit;
-    const paginatedItems = favoritesList.slice(start, end);
-
-    const total = favoritesList.length;
+    const [favoritesList, total] = await this.bookFavoriteService.getUserFavoritesPaginated(
+      userId,
+      safeOptions,
+    );
     const totalPages = Math.ceil(total / safeOptions.limit);
     return {
-      data: paginatedItems,
+      data: favoritesList,
       total,
       page: safeOptions.page,
       limit: safeOptions.limit,
@@ -162,17 +158,13 @@ export class UsersService {
     options: PaginationOptions = {}
   ): Promise<PaginatedResponseDto<any>> {
     const safeOptions = this.getSafePaginationOptions(options);
-    const notes = await this.bookNoteService.getUserNotes(userId);
-    const notesList = Array.isArray(notes) ? notes : [];
-
-    const start = (safeOptions.page - 1) * safeOptions.limit;
-    const end = start + safeOptions.limit;
-    const paginatedItems = notesList.slice(start, end);
-
-    const total = notesList.length;
+    const [notesList, total] = await this.bookNoteService.getUserNotesPaginated(
+      userId,
+      safeOptions,
+    );
     const totalPages = Math.ceil(total / safeOptions.limit);
     return {
-      data: paginatedItems,
+      data: notesList,
       total,
       page: safeOptions.page,
       limit: safeOptions.limit,
@@ -348,11 +340,81 @@ export class UsersService {
     });
   }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.findByEmail(email);
+  async findByRollNumber(rollNumber: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { rollNumber, deletedAt: IsNull() },
+      relations: ['role']
+    });
+  }
+
+  async validateUser(identifier: string, password: string): Promise<User | null> {
+    // Try to find user by email first
+    let user = await this.findByEmail(identifier);
+    
+    // If not found by email, try by roll number
+    if (!user) {
+      user = await this.findByRollNumber(identifier);
+    }
+    
     if (!user) return null;
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     return isPasswordValid ? user : null;
+  }
+
+  async createStudentFromThirdParty(studentDetails: any, password: string): Promise<User> {
+    // Extract name from student details
+    const fullName = studentDetails.name || '';
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Find default student role
+    const studentRole = await this.userRepository.manager
+      .getRepository('UserRole')
+      .findOne({ where: { name: 'Student' } });
+
+    if (!studentRole) {
+      throw new NotFoundException('Student role not found');
+    }
+
+    // Find default student membership type
+    const studentMembershipType = await this.userRepository.manager
+      .getRepository(MembershipType)
+      .findOne({ where: { name: 'Student' } });
+
+    if (!studentMembershipType) {
+      throw new NotFoundException('Student membership type not found');
+    }
+
+    // Create user from student details
+    const user = this.userRepository.create({
+      firstName,
+      lastName,
+      email: `${studentDetails.name}@student.isbatuniversity.ac.ug`, // Generate email from roll number
+      rollNumber: password,
+      phoneNumber: '', // Will be filled later if needed
+      passwordHash: await bcrypt.hash(password, this.saltRounds),
+      role: studentRole,
+      isActive: true,
+      joinDate: new Date(),
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    // Automatically create membership for the student
+    try {
+      await this.membershipService.createMembership(
+        savedUser,
+        studentMembershipType.id.toString(),
+        new Date(),
+      );
+      console.log(`Automatic membership created for student: ${savedUser.email}`);
+    } catch (error) {
+      console.error('Failed to create automatic membership for student:', error);
+      // Don't throw error here - user creation should succeed even if membership creation fails
+    }
+    
+    return savedUser;
   }
 }

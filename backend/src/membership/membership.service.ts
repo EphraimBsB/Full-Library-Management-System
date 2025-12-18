@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Membership } from './entities/membership.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
 import { User } from '../users/entities/user.entity';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { PaginationOptions } from '../common/interfaces/pagination-options.interface';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 export enum MembershipStatus {
   ACTIVE = 'active',
@@ -19,7 +23,16 @@ export class MembershipService {
     private readonly membershipRepository: Repository<Membership>,
     @InjectRepository(MembershipType)
     private readonly membershipTypeRepository: Repository<MembershipType>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
+
+  private async resetCache(): Promise<void> {
+    const store: any = (this.cacheManager as any).store;
+    if (store && typeof store.reset === 'function') {
+      await store.reset();
+    }
+  }
 
   async createMembership(
     user: User,
@@ -46,7 +59,9 @@ export class MembershipService {
       membershipNumber: await this.generateMembershipNumber(membershipType.name),
     });
 
-    return this.membershipRepository.save(membership);
+    const saved = await this.membershipRepository.save(membership);
+    await this.resetCache();
+    return saved;
   }
 
   async findActiveMembership(userId: string): Promise<Membership | null> {
@@ -115,7 +130,14 @@ export class MembershipService {
     return type;
   }
 
-  async findAllMemberships(status?: string, userId?: string): Promise<Membership[]> {
+  async findAllMemberships(
+    status?: string,
+    userId?: string,
+    options: PaginationOptions = {},
+  ): Promise<PaginatedResponseDto<Membership>> {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 10;
+
     const query = this.membershipRepository
       .createQueryBuilder('membership')
       .leftJoinAndSelect('membership.user', 'user')
@@ -130,6 +152,23 @@ export class MembershipService {
       query.andWhere('membership.userId = :userId', { userId });
     }
 
-    return query.getMany();
+    query.orderBy('membership.createdAt', 'DESC');
+
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
+    };
   }
 }

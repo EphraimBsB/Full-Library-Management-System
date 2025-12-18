@@ -1,12 +1,12 @@
 import { Book } from './book.entity';
 import { BookCopy } from './book-copy.entity';
 import { User } from '../../users/entities/user.entity';
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  ManyToOne, 
-  JoinColumn, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   Index,
   UpdateDateColumn
@@ -20,6 +20,8 @@ export enum InhouseUsageStatus {
 }
 
 @Entity('book_inhouse_usage')
+@Index(['status'])
+@Index(['status', 'createdAt'])
 export class BookInhouseUsage {
   @PrimaryGeneratedColumn('uuid')
   id: string;

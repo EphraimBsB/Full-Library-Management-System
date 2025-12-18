@@ -1,8 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn, Index } from 'typeorm';
 import { Book } from './book.entity';
 import { User } from 'src/users/entities/user.entity';
 
 @Entity('book_notes')
+@Index(['userId'])
+@Index(['bookId'])
 export class BookNote {
   @PrimaryGeneratedColumn('uuid')
   id: string;

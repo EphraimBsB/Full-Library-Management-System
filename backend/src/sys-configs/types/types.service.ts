@@ -1,16 +1,31 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { CreateTypeDto } from './dto/create-type.dto';
 import { UpdateTypeDto } from './dto/update-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Type } from './entities/type.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class TypesService {
   constructor(
       @InjectRepository(Type)
       private readonly typeRepository: Repository<Type>,
+      @Inject(CACHE_MANAGER)
+      private readonly cacheManager: Cache,
     ) {}
+
+  private async resetCache(): Promise<void> {
+    const store: any = (this.cacheManager as any).store;
+    if (store && typeof store.reset === 'function') {
+      await store.reset();
+    }
+  }
+
+  private getTypesListCacheKey(): string {
+    return 'types:list:all';
+  }
   
     async create(createTypeDto: CreateTypeDto): Promise<Type> {
       // Check if a book type with the same name already exists
@@ -25,13 +40,27 @@ export class TypesService {
       }
   
       const type = this.typeRepository.create(createTypeDto);
-      return await this.typeRepository.save(type);
+      const saved = await this.typeRepository.save(type);
+      await this.resetCache();
+      return saved;
     }
   
     async findAll(): Promise<Type[]> {
-      return await this.typeRepository.find({
+      const cacheKey = this.getTypesListCacheKey();
+
+      // Check cache first
+      const cachedData = await this.cacheManager.get<Type[]>(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      const types = await this.typeRepository.find({
         order: { name: 'ASC' },
       });
+
+      // Cache the result for 60 seconds
+      await this.cacheManager.set(cacheKey, types, 60);
+      return types;
     }
   
     async findOne(id: number): Promise<Type> {
@@ -73,7 +102,9 @@ export class TypesService {
       }
       
       Object.assign(type, updateTypeDto);
-      return await this.typeRepository.save(type);
+      const updated = await this.typeRepository.save(type);
+      await this.resetCache();
+      return updated;
     }
   
     async remove(id: number): Promise<void> {
@@ -93,5 +124,6 @@ export class TypesService {
       }
   
       await this.typeRepository.remove(type);
+      await this.resetCache();
     }
 }

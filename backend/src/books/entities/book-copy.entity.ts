@@ -1,10 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index } from 'typeorm';
 import { Book } from './book.entity';
 import { BookLoan } from './book-loan.entity';
 
 export enum BookCopyStatus {
   AVAILABLE = 'AVAILABLE',
   BORROWED = 'BORROWED',
+  READING = 'READING',
   LOST = 'LOST',
   DAMAGED = 'DAMAGED',
   IN_REPAIR = 'IN_REPAIR',
@@ -12,6 +13,9 @@ export enum BookCopyStatus {
 }
 
 @Entity('book_copies')
+@Index(['bookId'])
+@Index(['status'])
+@Index(['bookId', 'status'])
 export class BookCopy {
   @PrimaryGeneratedColumn('increment')
   id: number;

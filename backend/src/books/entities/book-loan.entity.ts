@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, DeleteDateColumn, Index } from 'typeorm';
 import { BookCopy } from './book-copy.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Membership } from 'src/membership/entities/membership.entity';
@@ -13,6 +13,10 @@ export enum LoanStatus {
 }
 
 @Entity('book_loans')
+@Index(['userId', 'status'])
+@Index(['status', 'dueDate'])
+@Index(['bookCopyId'])
+@Index(['queueEntryId'])
 export class BookLoan {
   @PrimaryGeneratedColumn('uuid')
   id: string;

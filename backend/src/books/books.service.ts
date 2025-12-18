@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, IsNull, Not, DataSource } from 'typeorm';
 import { Book } from './entities/book.entity';
@@ -10,7 +10,9 @@ import { Source } from 'src/sys-configs/sources/entities/source.entity';
 import { BookCopiesDto, CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BookQueryDto } from './dto/book-query.dto';
-// import { BookQueryDto } from './dto/book-query.dto';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class BooksService {
@@ -27,8 +29,37 @@ export class BooksService {
     private readonly typeRepository: Repository<Type>,
     @InjectRepository(Source)
     private readonly sourceRepository: Repository<Source>,
-    private dataSource: DataSource
+    private dataSource: DataSource,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) { }
+
+  private async resetCache(): Promise<void> {
+    const store: any = (this.cacheManager as any).store;
+    if (store && typeof store.reset === 'function') {
+      await store.reset();
+    }
+  }
+
+  private getBooksListCacheKey(query: BookQueryDto): string {
+    const {
+      page = 1,
+      limit = 10,
+      ...rest
+    } = query;
+    // Normalize query to get stable keys
+    const normalized = { page, limit, ...rest };
+    const serialized = JSON.stringify(normalized);
+    return `books:list:${serialized}`;
+  }
+
+  private getBookDetailCacheKey(id: number): string {
+    return `books:detail:${id}`;
+  }
+
+  private getBookDetailsCacheKey(id: number): string {
+    return `books:details:${id}`;
+  }
 
   // Create a new book with copies
   async create(createBookDto: CreateBookDto): Promise<Book> {
@@ -118,9 +149,13 @@ export class BooksService {
         if (savedBook.length === 0) {
           throw new Error('Failed to create book: No book was saved');
         }
-        return this.getBookWithRelations(savedBook[0].id);
+        const result = await this.getBookWithRelations(savedBook[0].id);
+        await this.resetCache();
+        return result;
       }
-      return this.getBookWithRelations(savedBook.id);
+      const result = await this.getBookWithRelations(savedBook.id);
+      await this.resetCache();
+      return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof ConflictException || error instanceof NotFoundException) {
@@ -133,7 +168,12 @@ export class BooksService {
   }
 
   // Find all books with pagination and filtering
-  async findAll(query: BookQueryDto) {
+  async findAll(query: BookQueryDto): Promise<PaginatedResponseDto<Book>> {
+    const cacheKey = this.getBooksListCacheKey(query);
+    const cached = await this.cacheManager.get<PaginatedResponseDto<Book>>(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const {
       search,
       page = 1,
@@ -184,18 +224,32 @@ export class BooksService {
     // 📄 Pagination
     const [data, total] = await qb.skip(skip).take(limit).getManyAndCount();
 
-    return {
+    const totalPages = Math.ceil(total / limit);
+
+    const response: PaginatedResponseDto<Book> = {
       data,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
     };
+
+    // TTL in seconds for list caches
+    await this.cacheManager.set(cacheKey, response, 60);
+    return response;
   }
 
 
   // Find a book by ID with relations
   async findOne(id: number): Promise<Book> {
+    const cacheKey = this.getBookDetailCacheKey(id);
+    const cached = await this.cacheManager.get<Book>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const book = await this.bookRepository.findOne({
       where: { id, deletedAt: IsNull() },
       relations: ['categories', 'subjects', 'copies', 'type', 'source']
@@ -205,6 +259,8 @@ export class BooksService {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
+    // TTL in seconds for detail caches
+    await this.cacheManager.set(cacheKey, book, 300);
     return book;
   }
 
@@ -280,7 +336,9 @@ export class BooksService {
 
       const updatedBook = await queryRunner.manager.save(book);
       await queryRunner.commitTransaction();
-      return this.getBookWithRelations(updatedBook.id);
+      const result = await this.getBookWithRelations(updatedBook.id);
+      await this.resetCache();
+      return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -313,6 +371,7 @@ export class BooksService {
 
     // Soft delete the book and its copies
     await this.bookRepository.softRemove(book);
+    await this.resetCache();
   }
 
   // Helper method to get or create a category
@@ -432,6 +491,12 @@ export class BooksService {
   }
 
   async getBookDetails(id: number) {
+    const cacheKey = this.getBookDetailsCacheKey(id);
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const book = await this.bookRepository.findOne({
       where: { id, deletedAt: IsNull() },
       relations: ['copies', 'categories', 'subjects', 'type', 'source', 'metadata']

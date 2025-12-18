@@ -12,7 +12,7 @@ import {
   HttpStatus,
   HttpCode,
   UseInterceptors,
-  ClassSerializerInterceptor
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, getSchemaPath } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
@@ -61,7 +61,7 @@ export class BooksController {
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
   async findAll(
     @Query() query: BookQueryDto
-  ): Promise<{ data: Book[]; total: number }> {
+  ): Promise<PaginatedResponseDto<Book>> {
     return this.booksService.findAll(query);
   }
 

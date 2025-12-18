@@ -8,6 +8,8 @@ import { CreateLoanDto } from '../dto/create-loan.dto';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { LoanStatus } from '../entities/book-loan.entity';
 import { DataSource } from 'typeorm';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { PaginationOptions } from '../../common/interfaces/pagination-options.interface';
 
 @Controller('loans')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -22,18 +24,24 @@ export class BookLoanController {
   @ApiQuery({ name: 'status', required: false, enum: LoanStatus })
   @ApiQuery({ name: 'userId', required: false })
   @ApiQuery({ name: 'bookId', required: false })
-  @ApiResponse({ status: 200, description: 'Returns all book loans' })
+  @ApiResponse({ status: 200, description: 'Returns paginated book loans' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   async findAll(
     @Query('status') status?: LoanStatus,
     @Query('userId') userId?: string,
     @Query('bookId') bookId?: string,
-  ) {
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ): Promise<PaginatedResponseDto<any>> {
     return this.bookLoanService.findAll({
       status,
       userId,
       bookId,
+      page,
+      limit,
     });
   }
 
