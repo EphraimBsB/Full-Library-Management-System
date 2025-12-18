@@ -71,6 +71,8 @@ import { InhouseUsageService } from './services/inhouse-usage.service';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         ttl: configService.get<number>('loan.cacheTtl', 300),
+        store: 'redis',
+        redisUrl: configService.get<string>('REDIS_URL', 'redis://localhost:6379'),
       }),
       inject: [ConfigService],
       isGlobal: true,

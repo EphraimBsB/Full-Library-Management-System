@@ -12,7 +12,7 @@ import { Repository, FindOptionsWhere } from 'typeorm';
 import { BookInhouseUsage, InhouseUsageStatus } from '../entities/book-inhouse-usage.entity';
 import { Book } from '../entities/book.entity';
 import { User } from '../../users/entities/user.entity';
-import { BookCopy } from '../entities/book-copy.entity';
+import { BookCopy, BookCopyStatus } from '../entities/book-copy.entity';
 import { StartInhouseUsageDto, InhouseUsageResponseDto } from '../dto/inhouse-usage.dto';
 
 @Injectable()
@@ -71,14 +71,19 @@ export class InhouseUsageService {
     const usage = new BookInhouseUsage();
     usage.book = book;
 
+
     // Create a minimal user object with just the ID
     const user = new User();
     user.id = userId;
     usage.user = user;
 
+    // Update book copy status to READING
     if (copy) {
+      copy.status = BookCopyStatus.READING;
+      await this.bookCopyRepository.save(copy);
       usage.copy = copy;
     }
+
     usage.startedAt = startedAt;
 
     const savedUsage = await this.inhouseUsageRepository.save(usage);
@@ -107,6 +112,12 @@ export class InhouseUsageService {
     usage.durationMinutes = Math.floor((usage.endedAt.getTime() - usage.startedAt.getTime()) / (1000 * 60));
     usage.status = isForced ? InhouseUsageStatus.FORCE_ENDED : InhouseUsageStatus.COMPLETED;
 
+    // Update book copy status to AVAILABLE
+    if (usage.copy) {
+      usage.copy.status = BookCopyStatus.AVAILABLE;
+      await this.bookCopyRepository.save(usage.copy);
+    }
+
     const updatedUsage = await this.inhouseUsageRepository.save(usage);
     return this.mapToResponseDto(updatedUsage);
   }
@@ -132,10 +143,10 @@ export class InhouseUsageService {
       .skip(offset)
       .take(3);
 
-      
-      // Filter for records where startedAt is between today 00:00:00 and tomorrow 00:00:00
-      // .where('inhouseUsage.startedAt >= :startOfDay', { startOfDay: today })
-      // .andWhere('inhouseUsage.startedAt < :endOfDay', { endOfDay: tomorrow })
+
+    // Filter for records where startedAt is between today 00:00:00 and tomorrow 00:00:00
+    // .where('inhouseUsage.startedAt >= :startOfDay', { startOfDay: today })
+    // .andWhere('inhouseUsage.startedAt < :endOfDay', { endOfDay: tomorrow })
 
     if (status) {
       qb.andWhere('inhouseUsage.status = :status', { status });
@@ -145,27 +156,16 @@ export class InhouseUsageService {
     return { items: items.map(usage => this.mapToResponseDto(usage)), total };
   }
 
-  async getUserActiveUsages(userId: string): Promise<InhouseUsageResponseDto[]> {
-    const usages = await this.inhouseUsageRepository.find({
-      where: {
-        user: { id: userId },
-        status: InhouseUsageStatus.ACTIVE
-      },
-      relations: ['copy', 'copy.book', 'user'],
-      order: { startedAt: 'DESC' }
-    });
-    return usages.map(usage => this.mapToResponseDto(usage));
-  }
-
   async getUserUsageHistory(
     userId: string,
     limit: number = 50,
     offset: number = 0,
+    status: InhouseUsageStatus | undefined,
   ): Promise<{ items: InhouseUsageResponseDto[]; total: number }> {
     const [items, total] = await this.inhouseUsageRepository.findAndCount({
       where: {
         user: { id: userId },
-        status: InhouseUsageStatus.COMPLETED
+        status: status || InhouseUsageStatus.COMPLETED
       },
       relations: ['copy', 'copy.book', 'user'],
       order: { endedAt: 'DESC' },

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Inject } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { IsNull, Not } from 'typeorm';
@@ -8,13 +8,32 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginationOptions, PaginatedResponseDto } from 'src/common';
 import { Category } from './entities/category.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
+
+  private async resetCache(): Promise<void> {
+    const store: any = (this.cacheManager as any).store;
+    if (store && typeof store.reset === 'function') {
+      await store.reset();
+    }
+  }
+
+  private getCategoriesListCacheKey(options: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): string {
+    return `categories:list:${JSON.stringify(options)}`;
+  }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     // Check if category with the same name already exists
@@ -27,7 +46,9 @@ export class CategoriesService {
     }
 
     const category = this.categoryRepository.create(createCategoryDto);
-    return this.categoryRepository.save(category);
+    const saved = await this.categoryRepository.save(category);
+    await this.resetCache();
+    return saved;
   }
 
   async findAll({
@@ -35,6 +56,14 @@ export class CategoriesService {
     limit = 10,
     search,
   }: PaginationOptions): Promise<Category[]> {
+    const cacheKey = this.getCategoriesListCacheKey({ page, limit, search });
+
+    // Check cache first
+    const cachedData = await this.cacheManager.get<Category[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
     // const skip = (page - 1) * limit;
     const queryBuilder = this.categoryRepository
       .createQueryBuilder('category');
@@ -48,6 +77,8 @@ export class CategoriesService {
     const [data, total] = await queryBuilder
       .orderBy('category.name', 'ASC').getManyAndCount();
 
+    // Cache the result for 60 seconds
+    await this.cacheManager.set(cacheKey, data, 60);
     return data;
   }
 
@@ -85,7 +116,9 @@ export class CategoriesService {
     }
 
     Object.assign(category, updateCategoryDto);
-    return this.categoryRepository.save(category);
+    const saved = await this.categoryRepository.save(category);
+    await this.resetCache();
+    return saved;
   }
 
   async countBooks(id: number): Promise<number> {
@@ -119,6 +152,7 @@ export class CategoriesService {
     }
 
     await this.categoryRepository.softRemove(category);
+    await this.resetCache();
   }
 
   async findBooksByCategory(

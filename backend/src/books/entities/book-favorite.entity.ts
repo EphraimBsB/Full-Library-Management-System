@@ -1,9 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn, Unique, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn, Unique, Column, Index } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Book } from './book.entity';
 
 @Entity('book_favorites')
 @Unique(['userId', 'bookId']) // Ensure a user can only favorite a book once
+@Index(['userId'])
+@Index(['bookId'])
 export class BookFavorite {
   @PrimaryGeneratedColumn('uuid')
   id: string;

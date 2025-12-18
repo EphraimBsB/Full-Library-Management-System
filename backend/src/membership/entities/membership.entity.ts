@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { BookLoan } from '../../books/entities/book-loan.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
@@ -12,6 +12,10 @@ export enum MembershipStatus {
 }
 
 @Entity('memberships')
+@Index(['userId'])
+@Index(['membershipTypeId'])
+@Index(['status'])
+@Index(['expiryDate'])
 export class Membership {
   @PrimaryGeneratedColumn('uuid')
   id: string;

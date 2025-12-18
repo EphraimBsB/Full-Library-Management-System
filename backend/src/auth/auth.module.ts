@@ -8,10 +8,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { StudentsModule } from './students/students.module';
 
 @Module({
   imports: [
     forwardRef(() => UsersModule),
+    StudentsModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

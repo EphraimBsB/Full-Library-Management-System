@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { BookNote } from '../entities/book-note.entity';
 import { Book } from '../entities/book.entity';
 import { CreateBookNoteDto, UpdateBookNoteDto, BookNoteResponseDto } from '../dto/book-note.dto';
+import { PaginationOptions } from '../../common/interfaces/pagination-options.interface';
 
 @Injectable()
 export class BookNoteService {
@@ -101,6 +102,39 @@ export class BookNoteService {
           bookId: note.bookId,
         }),
     );
+  }
+
+  /**
+   * Get user notes with pagination support
+   * Returns the list of note DTOs and the total count
+   */
+  async getUserNotesPaginated(
+    userId: string,
+    options: PaginationOptions = {},
+  ): Promise<[BookNoteResponseDto[], number]> {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 10;
+
+    const query = this.bookNoteRepository
+      .createQueryBuilder('note')
+      .where('note.userId = :userId', { userId })
+      .leftJoinAndSelect('note.book', 'book')
+      .orderBy('note.updatedAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [notes, total] = await query.getManyAndCount();
+
+    const data = notes.map(
+      (note) =>
+        new BookNoteResponseDto({
+          ...note,
+          userId,
+          bookId: note.bookId,
+        }),
+    );
+
+    return [data, total];
   }
 
   async getBookNotes(bookId: number, userId?: string): Promise<BookNoteResponseDto[]> {

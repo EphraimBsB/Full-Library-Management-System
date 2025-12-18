@@ -25,12 +25,15 @@ import { EmailUtilsService } from '../../emails/email-utils.service';
 import { MembershipService } from '../../membership/membership.service';
 import { BookMetadata } from '../entities/book-metadata.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { PaginationOptions } from '../../common/interfaces/pagination-options.interface';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class BookLoanService {
   private readonly logger = new Logger(BookLoanService.name);
-  private readonly loanPeriodDays = 14; // Default loan period in days
-
+  private readonly loanPeriodDays = 14;
   constructor(
     @InjectRepository(BookLoan)
     private readonly bookLoanRepository: Repository<BookLoan>,
@@ -50,8 +53,42 @@ export class BookLoanService {
       renewalDays: number;
       maxRenewals: number;
       dailyFineAmount: number;
+    },
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
+  ) {}
+
+  private async resetCache(): Promise<void> {
+    const store: any = (this.cacheManager as any).store;
+    if (store && typeof store.reset === 'function') {
+      await store.reset();
     }
-  ) { }
+  }
+
+  private getLoansListCacheKey(options: {
+    status?: LoanStatus;
+    userId?: string;
+    bookId?: string;
+  } & PaginationOptions): string {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 10;
+    const normalized = {
+      status: options.status || null,
+      userId: options.userId || null,
+      bookId: options.bookId || null,
+      page,
+      limit,
+    };
+    return `loans:list:${JSON.stringify(normalized)}`;
+  }
+
+  private getOverdueLoansCacheKey(userId?: string): string {
+    return `loans:overdue:${userId || 'all'}`;
+  }
+
+  private getLoanDetailCacheKey(id: string): string {
+    return `loans:detail:${id}`;
+  }
 
 
   /**
@@ -231,7 +268,9 @@ export class BookLoanService {
       this.logger.warn(`Failed to schedule reminder for loan ${savedLoan.id}: ${err.message}`);
     }
 
-    return savedLoan;
+    const result = savedLoan;
+    await this.resetCache();
+    return result;
   }
 
 
@@ -315,6 +354,7 @@ export class BookLoanService {
         );
       });
 
+      await this.resetCache();
       return updatedLoan;
     });
   }
@@ -398,31 +438,88 @@ export class BookLoanService {
   }
 
   /**
-   * Gets all overdue loans
+   * Gets active loans for a user with pagination support
    */
-  async getOverdueLoans(): Promise<BookLoan[]> {
-    return this.bookLoanRepository.find({
+  async getUserLoansPaginated(
+    userId: string,
+    options: PaginationOptions = {},
+  ): Promise<[BookLoan[], number]> {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 10;
+
+    const [data, total] = await this.bookLoanRepository.findAndCount({
       where: {
+        user: { id: userId },
         status: LoanStatus.ACTIVE,
-        dueDate: LessThan(new Date())
       },
+      relations: ['bookCopy', 'bookCopy.book'],
+      order: { dueDate: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return [data, total];
+  }
+
+  /**
+   * Gets all overdue loans, optionally filtered by user
+   */
+  async getOverdueLoans(userId?: string): Promise<BookLoan[]> {
+    const cacheKey = this.getOverdueLoansCacheKey(userId);
+
+    // Check cache first
+    const cachedData = await this.cacheManager.get<BookLoan[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const where: any = {
+      status: LoanStatus.ACTIVE,
+      dueDate: LessThan(new Date()),
+    };
+
+    if (userId) {
+      where.user = { id: userId };
+    }
+
+    const overdueLoans = await this.bookLoanRepository.find({
+      where,
       relations: ['user', 'bookCopy', 'bookCopy.book'],
       order: { dueDate: 'ASC' },
     });
+
+    // Cache the result for 60 seconds
+    await this.cacheManager.set(cacheKey, overdueLoans, 60);
+    return overdueLoans;
   }
 
   /**
    * Gets a loan by ID
    */
   /**
-   * Find all book loans with optional filters
-   * @param options Optional filters for status, userId, and bookId
+   * Find all book loans with optional filters and pagination
+   * @param options Optional filters for status, userId, and bookId plus pagination
    */
   async findAll(options?: {
     status?: LoanStatus;
     userId?: string;
     bookId?: string;
-  }): Promise<BookLoan[]> {
+  } & PaginationOptions): Promise<PaginatedResponseDto<BookLoan>> {
+    const page = options?.page && options.page > 0 ? options.page : 1;
+    const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+
+    const cacheKey = this.getLoansListCacheKey({
+      status: options?.status,
+      userId: options?.userId,
+      bookId: options?.bookId,
+      page,
+      limit,
+    });
+    const cached = await this.cacheManager.get<PaginatedResponseDto<BookLoan>>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const query = this.bookLoanRepository.createQueryBuilder('loan')
       .leftJoinAndSelect('loan.user', 'user')
       .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
@@ -441,13 +538,41 @@ export class BookLoanService {
       query.andWhere('book.id = :bookId', { bookId: options.bookId });
     }
 
-    return query.orderBy('loan.borrowedAt', 'DESC').getMany();
+    query.orderBy('loan.borrowedAt', 'DESC');
+
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+
+    const response: PaginatedResponseDto<BookLoan> = {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
+    };
+
+    await this.cacheManager.set(cacheKey, response, 60);
+    return response;
   }
 
   /**
    * Gets a loan by ID
    */
   async getBookLoan(bookLoanId: string): Promise<BookLoan> {
+    const cacheKey = this.getLoanDetailCacheKey(bookLoanId);
+
+    // Check cache first
+    const cachedData = await this.cacheManager.get<BookLoan>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
     const loan = await this.bookLoanRepository.findOne({
       where: { id: bookLoanId },
       relations: ['user', 'bookCopy', 'bookCopy.book', 'request']
@@ -457,6 +582,8 @@ export class BookLoanService {
       throw new NotFoundException(`Book loan with ID ${bookLoanId} not found`);
     }
 
+    // Cache the result for 300 seconds (5 minutes)
+    await this.cacheManager.set(cacheKey, loan, 300);
     return loan;
   }
 

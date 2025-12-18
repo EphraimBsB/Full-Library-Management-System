@@ -1,17 +1,36 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationOptions, PaginatedResponseDto } from 'src/common';
 import { Repository, Not } from 'typeorm';
 import { Subject } from './entities/subject.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class SubjectsService {
   constructor(
       @InjectRepository(Subject)
       private readonly subjectRepository: Repository<Subject>,
+      @Inject(CACHE_MANAGER)
+      private readonly cacheManager: Cache,
     ) {}
+
+    private async resetCache(): Promise<void> {
+    const store: any = (this.cacheManager as any).store;
+    if (store && typeof store.reset === 'function') {
+      await store.reset();
+    }
+  }
+
+  private getSubjectsListCacheKey(options: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): string {
+    return `subjects:list:${JSON.stringify(options)}`;
+  }
   
     async create(createSubjectDto: CreateSubjectDto): Promise<Subject> {
       // Check if subject with the same name already exists
@@ -26,7 +45,9 @@ export class SubjectsService {
       }
   
       const subject = this.subjectRepository.create(createSubjectDto);
-      return this.subjectRepository.save(subject);
+      const saved = await this.subjectRepository.save(subject);
+      await this.resetCache();
+      return saved;
     }
   
     async findAll({
@@ -34,6 +55,14 @@ export class SubjectsService {
       limit = 10,
       search,
     }: PaginationOptions): Promise<Subject[]> {
+      const cacheKey = this.getSubjectsListCacheKey({ page, limit, search });
+
+      // Check cache first
+      const cachedData = await this.cacheManager.get<Subject[]>(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+
       const skip = (page - 1) * limit;
       const queryBuilder = this.subjectRepository
         .createQueryBuilder('subject');
@@ -48,6 +77,8 @@ export class SubjectsService {
         .orderBy('subject.name', 'ASC')
         .getManyAndCount();
   
+      // Cache the result for 60 seconds
+      await this.cacheManager.set(cacheKey, data, 60);
       return data;
     }
   
@@ -87,7 +118,9 @@ export class SubjectsService {
       }
   
       Object.assign(subject, updateSubjectDto);
-      return this.subjectRepository.save(subject);
+      const saved = await this.subjectRepository.save(subject);
+      await this.resetCache();
+      return saved;
     }
   
     async remove(id: number): Promise<void> {
@@ -110,6 +143,7 @@ export class SubjectsService {
       }
   
       await this.subjectRepository.softRemove(subject);
+      await this.resetCache();
     }
   
     async countBooks(id: number): Promise<number> {

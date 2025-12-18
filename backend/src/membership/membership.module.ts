@@ -9,12 +9,14 @@ import { MembershipRequestController } from './membership-request.controller';
 import { UsersModule } from '../users/users.module';
 import { BooksModule } from '../books/books.module';
 import { MembershipController } from './membership.controller';
+import { StudentsModule } from '../auth/students/students.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Membership, MembershipRequest, MembershipType]),
     forwardRef(() => UsersModule),
     forwardRef(() => BooksModule),
+    StudentsModule,
   ],
   controllers: [MembershipController, MembershipRequestController],
   providers: [MembershipService, MembershipRequestService],

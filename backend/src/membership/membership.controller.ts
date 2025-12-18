@@ -1,10 +1,12 @@
 import { Controller, Get, UseGuards, Request, Query, Post, Body, Param, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { MembershipService } from './membership.service';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { Membership } from './entities/membership.entity';
 
 @ApiTags('memberships')
 @Controller('memberships')
@@ -14,10 +16,15 @@ export class MembershipController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all memberships' })
-  @ApiResponse({ status: 200, description: 'Get all memberships' })
-  async getMemberships() {
-    return this.membershipService.findAllMemberships();
+  @ApiOperation({ summary: 'Get all memberships (paginated)' })
+  @ApiResponse({ status: 200, description: 'Get paginated memberships' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getMemberships(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ): Promise<PaginatedResponseDto<Membership>> {
+    return this.membershipService.findAllMemberships(undefined, undefined, { page, limit });
   }
 
   @Get('types')
@@ -68,12 +75,16 @@ export class MembershipController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all memberships (Admin/Librarian only)' })
-  @ApiResponse({ status: 200, description: 'List of all memberships' })
+  @ApiOperation({ summary: 'Get all memberships (Admin/Librarian only, paginated)' })
+  @ApiResponse({ status: 200, description: 'Paginated list of all memberships' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   async getAllMemberships(
     @Query('status') status?: string,
     @Query('userId') userId?: string,
-  ) {
-    return this.membershipService.findAllMemberships(status, userId);
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ): Promise<PaginatedResponseDto<Membership>> {
+    return this.membershipService.findAllMemberships(status, userId, { page, limit });
   }
 }

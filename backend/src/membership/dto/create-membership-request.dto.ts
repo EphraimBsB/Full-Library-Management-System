@@ -23,7 +23,8 @@ export class CreateMembershipRequestDto {
   lastName: string;
 
   @ApiProperty({ required: false, description: 'User phone number' })
-  @IsPhoneNumber()
+  // @IsPhoneNumber()
+  @IsString()
   @IsOptional()
   phoneNumber?: string;
 

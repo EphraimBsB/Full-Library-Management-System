@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CacheModule } from '@nestjs/cache-manager';
 import { DashboardService } from './dashboard.service';
 import { DashboardController } from './dashboard.controller';
 import { Book } from '../books/entities/book.entity';
@@ -10,7 +9,6 @@ import { BookLoan } from '../books/entities/book-loan.entity';
 
 @Module({
   imports: [
-    CacheModule.register(),
     TypeOrmModule.forFeature([
       Book,
       User,
