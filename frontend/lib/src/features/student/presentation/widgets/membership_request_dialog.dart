@@ -9,6 +9,7 @@ import 'package:management_side/src/features/settings/modules/degrees/domain/mod
 import 'package:management_side/src/features/settings/modules/degrees/presentation/providers/degree_providers.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/presentation/providers/membership_types_providers.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/presentation/providers/user_roles_providers.dart';
+import 'package:management_side/src/features/student/presentation/providers/student_details_provider.dart';
 
 void showMembershipRequestFormDialog(
   BuildContext context, {
@@ -51,6 +52,7 @@ class _MembershipRequestDialogState
   Degree? _selectedDegree;
   bool _isSubmitting = false;
   bool _isUploading = false;
+  bool _isLoadingStudent = false;
   String? _errorMessage;
 
   @override
@@ -79,6 +81,82 @@ class _MembershipRequestDialogState
     _degreeController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _lookupStudentDetails() async {
+    final rollNumber = _rollNumberController.text.trim();
+    if (rollNumber.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a roll number')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isLoadingStudent = true);
+    _errorMessage = null;
+
+    try {
+      final studentDetails = await ref.read(
+        studentDetailsProvider(rollNumber).future,
+      );
+
+      if (mounted) {
+        _populateFormFromStudentDetails(studentDetails);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Student details found successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      String errorMessage = e.toString();
+
+      // Check if it's a CORS or connection error
+      if (errorMessage.contains('CORS') ||
+          errorMessage.contains('connection error') ||
+          errorMessage.contains('Unable to connect')) {
+        errorMessage =
+            'Unable to connect to student verification service. This may be due to network restrictions. You can still fill out the form manually.';
+      }
+
+      setState(() {
+        _errorMessage = errorMessage;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingStudent = false);
+    }
+  }
+
+  void _populateFormFromStudentDetails(Map<String, dynamic> studentDetails) {
+    final name = studentDetails['name'] as String? ?? '';
+    final programme = studentDetails['programme'] as String? ?? '';
+    final semester = studentDetails['semester'] as String? ?? '';
+
+    // Split name into first and last name
+    final nameParts = name.split(' ');
+    final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+    setState(() {
+      _firstNameController.text = firstName;
+      _lastNameController.text = lastName;
+      _degreeController.text = programme;
+      // You might want to store semester in notes or another field
+      _notesController.text = semester.isNotEmpty ? 'Semester: $semester' : '';
+    });
   }
 
   Future<void> _pickAndUploadImage() async {
@@ -361,14 +439,38 @@ class _MembershipRequestDialogState
                       const SizedBox(height: 16),
 
                       // Roll Number
-                      TextFormField(
-                        controller: _rollNumberController,
-                        decoration: const InputDecoration(
-                          labelText: 'Roll Number *',
-                          prefixIcon: Icon(Icons.numbers_outlined),
-                        ),
-                        validator: (value) =>
-                            value?.trim().isEmpty ?? true ? 'Required' : null,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _rollNumberController,
+                              decoration: const InputDecoration(
+                                labelText: 'Roll Number *',
+                                prefixIcon: Icon(Icons.numbers_outlined),
+                              ),
+                              validator: (value) =>
+                                  value?.trim().isEmpty ?? true
+                                  ? 'Required'
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: _isLoadingStudent
+                                ? null
+                                : _lookupStudentDetails,
+                            icon: _isLoadingStudent
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.search),
+                            tooltip: 'Lookup Student Details',
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
 

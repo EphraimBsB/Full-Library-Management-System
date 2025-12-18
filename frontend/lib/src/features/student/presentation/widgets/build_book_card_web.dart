@@ -418,8 +418,8 @@ void _showCopySelectionDialog(
   BookModel book,
   int availableCopies,
 ) async {
-  // First, fetch the available copies for this book
   final copiesResult = book.copies ?? [];
+  BookCopy? selectedCopy;
 
   if (copiesResult.isEmpty) {
     if (context.mounted) {
@@ -430,142 +430,227 @@ void _showCopySelectionDialog(
     return;
   }
 
-  showDialog(
+  await showDialog(
     context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      title: const Text('Select Copy'),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.4,
-        height: MediaQuery.of(context).size.height * 0.4,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Check on the side of the book to find the copy you want to read.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4, // Number of items per row
-                  crossAxisSpacing: 12, // Spacing between columns
-                  mainAxisSpacing: 12, // Spacing between rows
-                  childAspectRatio: 1.3, // Width / height ratio
-                ),
-                itemCount: copiesResult.length,
-                itemBuilder: (context, index) {
-                  final BookCopy copy = copiesResult[index];
-                  final isAvailable = copy.status == 'AVAILABLE';
-
-                  return Card(
-                    elevation: 0,
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(
+            selectedCopy == null ? 'Select Copy' : 'Confirm Selection',
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.4,
+            height: MediaQuery.of(context).size.height * 0.4,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (selectedCopy == null) ...[
+                  const Text(
+                    'Check on the side of the book to find the copy you want to read.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  const Text(
+                    'Selected Copy:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
                       borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: isAvailable
-                            ? Colors.green[100]!
-                            : Colors.grey[200]!,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.green[100]!),
                     ),
-                    child: InkWell(
-                      onTap: isAvailable
-                          ? () {
-                              //start reading
-                              final result = ref.read(
-                                startInhouseUsageProvider({
-                                  'bookId': book.id,
-                                  'copyId': copy.id,
-                                }),
-                              );
-                              if (result.value != null && context.mounted) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      "Book Reading started successfully, \nPlease click complete once finished reading the book to return the copy",
+                    child: Row(
+                      children: [
+                        Icon(Icons.book, color: Colors.green[700]),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Copy #${selectedCopy!.accessNumber}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Expanded(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.3,
+                        ),
+                    itemCount: copiesResult.length,
+                    itemBuilder: (context, index) {
+                      final BookCopy copy = copiesResult[index];
+                      final isAvailable = copy.status == 'AVAILABLE';
+                      final isSelected = selectedCopy?.id == copy.id;
+
+                      return Card(
+                        elevation: isSelected ? 3 : 0,
+                        color: isSelected ? Colors.blue[50] : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: isSelected
+                                ? Colors.blue[300]!
+                                : isAvailable
+                                ? Colors.green[100]!
+                                : Colors.grey[200]!,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: InkWell(
+                          onTap: isAvailable
+                              ? () {
+                                  setState(() {
+                                    selectedCopy = copy;
+                                  });
+                                }
+                              : null,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      isAvailable
+                                          ? isSelected
+                                                ? Icons.check_circle
+                                                : Icons.check_circle_outline
+                                          : Icons.lock_outline,
+                                      size: 16,
+                                      color: isSelected
+                                          ? Colors.blue
+                                          : isAvailable
+                                          ? Colors.green
+                                          : Colors.grey,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Copy #${copy.accessNumber}',
+                                      style: TextStyle(
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.blue[100]
+                                        : isAvailable
+                                        ? Colors.green[50]
+                                        : Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _formatStatus(copy.status),
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.blue[800]
+                                          : isAvailable
+                                          ? Colors.green[700]
+                                          : Colors.grey[700],
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                );
-                              }
-                            }
-                          : null,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  isAvailable
-                                      ? Icons.check_circle_outline
-                                      : Icons.lock_outline,
-                                  size: 16,
-                                  color: isAvailable
-                                      ? Colors.green
-                                      : Colors.grey,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Copy #${copy.accessNumber}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isAvailable
-                                    ? Colors.green[50]
-                                    : Colors.grey[100],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                _formatStatus(copy.status),
-                                style: TextStyle(
-                                  color: isAvailable
-                                      ? Colors.green[700]
-                                      : Colors.grey[700],
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            if (selectedCopy != null)
+              ElevatedButton(
+                onPressed: () async {
+                  final result = await ref.read(
+                    startInhouseUsageProvider({
+                      'bookId': book.id,
+                      'copyId': selectedCopy!.id,
+                    }).future,
+                  );
+
+                  if (result["statusCode"] != 201) {
+                    await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Error'),
+                        content: Text(
+                          result["message"],
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      barrierColor: AppTheme.errorColor,
+                    );
+                  }
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    if (result != null) {
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Thank You'),
+                          content: const Text(
+                            'Please enjoy your reading!, \nclick finish reading when you are done and return the book to the shelf. or on Librarian\'s desk.',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Finish Reading'),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  );
+                      );
+                    }
+                  }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Confirm Selection'),
               ),
-            ),
           ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-      ],
+        );
+      },
     ),
   );
 }

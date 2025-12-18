@@ -19,9 +19,10 @@ abstract class BookApiService {
     @Query('limit') int limit = 10,
     @Query('search') String? search,
     @Query('category') String? category,
-    @Query('status') String? status,
     @Query('type') String? type,
-    @Query('sort') String? sort,
+    @Query('minAvailable') int? minAvailable,
+    @Query('sortBy') String? sortBy,
+    @Query('sortOrder') String? sortOrder,
   });
 
   @GET('/books/{id}/details')
@@ -77,18 +78,19 @@ abstract class BookApiService {
     @Query('status') String? status,
   });
 
-  @GET('/books/inhouse-usage/active')
-  Future<List<InhouseUsage>> getActiveInhouseUsages();
-
   @GET('/books/inhouse-usage/history')
-  Future<List<InhouseUsage>> getHistoryInhouseUsages();
+  Future<InhouseUsageListResponse> getHistoryInhouseUsages({
+    @Query('status') String? status,
+  });
 
   @POST('/books/inhouse-usage/start')
-  Future<InhouseUsage> startInhouseUsage(@Body() Map<String, dynamic> data);
+  Future<Map<String, dynamic>> startInhouseUsage(
+    @Body() Map<String, dynamic> data,
+  );
 
   @POST('/books/inhouse-usage/{id}/end')
-  Future<InhouseUsage> endInhouseUsage(@Path('id') String id);
+  Future<Map<String, dynamic>> endInhouseUsage(@Path('id') String id);
 
   @POST('/books/inhouse-usage/{id}/force-end')
-  Future<InhouseUsage> forceEndInhouseUsage(@Path('id') String id);
+  Future<Map<String, dynamic>> forceEndInhouseUsage(@Path('id') String id);
 }

@@ -28,4 +28,16 @@ class QueueRequest {
       requestedAt: DateTime.parse(json['requested_at']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'position': position,
+      'user_id': userId,
+      'name': name,
+      'roll_number': rollNumber,
+      'email': email,
+      'phone': phone,
+      'requested_at': requestedAt.toIso8601String(),
+    };
+  }
 }

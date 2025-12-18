@@ -222,20 +222,21 @@ class BookDetailsDialog extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // Basic info
-              _buildInfoRow('ISBN', book.isbn!),
+              _buildInfoRow('ISBN', book.isbn ?? 'N/A'),
               if (book.publisher != null)
-                _buildInfoRow('Publisher', book.publisher!),
+                _buildInfoRow('Publisher', book.publisher ?? 'Unknown'),
               _buildInfoRow('Published', book.publicationYear.toString()),
-              if (book.edition != null) _buildInfoRow('Edition', book.edition!),
+              if (book.edition != null)
+                _buildInfoRow('Edition', book.edition ?? 'Unknown'),
               _buildInfoRow('Total Copies', book.totalCopies.toString()),
               _buildInfoRow('Available', availableCopies.toString()),
-              _buildInfoRow('Type', book.type!.name),
+              _buildInfoRow('Type', book.type?.name ?? 'Unknown'),
 
               // Categories
               if (book.categories != null && book.categories!.isNotEmpty) ...[
                 _buildInfoRow(
                   'Categories',
-                  book.categories!.map((c) => c.name).join(", "),
+                  book.categories!.map((c) => c.name ?? 'Unknown').join(", "),
                 ),
               ],
 
@@ -243,7 +244,7 @@ class BookDetailsDialog extends ConsumerWidget {
               if (book.subjects != null && book.subjects!.isNotEmpty) ...[
                 _buildInfoRow(
                   'Subjects',
-                  book.subjects!.map((s) => s.name).join(", "),
+                  book.subjects!.map((s) => s.name ?? 'Unknown').join(", "),
                 ),
               ],
             ],
@@ -291,7 +292,7 @@ class BookDetailsDialog extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 book.availableCopies! > 0
-                    ? '${book.availableCopies} ${book.availableCopies == 1 ? 'copy' : 'copies'} available for borrowing'
+                    ? '${book.availableCopies ?? 0} ${book.availableCopies == 1 ? 'copy' : 'copies'} available for borrowing'
                     : 'No copies currently available',
                 style: TextStyle(
                   color: book.availableCopies! > 0
@@ -305,7 +306,7 @@ class BookDetailsDialog extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Total copies: ${book.totalCopies} • Available: ${book.availableCopies!} • Borrow Count: ${book.metadata!["borrowCount"]}',
+            'Total copies: ${book.totalCopies ?? 0} • Available: ${book.availableCopies ?? 0} • Borrow Count: ${book.metadata!["borrowCount"] ?? 0}',
             style: textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
           ),
 

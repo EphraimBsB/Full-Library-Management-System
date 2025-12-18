@@ -110,6 +110,12 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Name',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -124,6 +130,12 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Description (Optional)',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 maxLines: 3,
               ),

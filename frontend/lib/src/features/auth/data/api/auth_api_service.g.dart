@@ -23,13 +23,20 @@ class _AuthApiService implements AuthApiService {
 
   @override
   Future<AuthResponse> login({
-    required String email,
+    String? email,
+    String? rollNumber,
     required String password,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = {'email': email, 'password': password};
+    final _data = {
+      'email': email,
+      'rollNumber': rollNumber,
+      'password': password,
+    };
+    _data.removeWhere((k, v) => v == null);
     final _options = _setStreamType<AuthResponse>(
       Options(
             method: 'POST',

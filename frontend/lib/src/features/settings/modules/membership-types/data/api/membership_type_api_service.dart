@@ -22,12 +22,12 @@ abstract class MembershipTypeApiService {
   Future<dynamic> getMembershipType(@Path('id') int id);
 
   @POST('/membership-types')
-  Future<Map<String, dynamic>> createMembershipType(
+  Future<MembershipType> createMembershipType(
     @Body() Map<String, dynamic> membershipType,
   );
 
   @PUT('/membership-types/{id}')
-  Future<Map<String, dynamic>> updateMembershipType(
+  Future<MembershipType> updateMembershipType(
     @Path('id') int id,
     @Body() Map<String, dynamic> membershipType,
   );

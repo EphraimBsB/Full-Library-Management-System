@@ -3,6 +3,7 @@ import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/settings/modules/book_sources/presentation/screens/source_expanded.dart';
 import 'package:management_side/src/features/settings/modules/book_types/presentation/screens/book_type_expanded.dart';
 import 'package:management_side/src/features/settings/modules/categories/presentation/screens/categories_expanded.dart';
+import 'package:management_side/src/features/settings/modules/data_import/presentation/screens/data_import_screen.dart';
 import 'package:management_side/src/features/settings/modules/degrees/presentation/screens/degree_expanded.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/presentation/screens/membership_types_expanded.dart';
 import 'package:management_side/src/features/settings/modules/subjects/presentation/screens/subjects_expanded.dart';
@@ -130,6 +131,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const DegreesExpanded(),
             const UserRolesExpanded(),
             const MembershipTypesExpanded(),
+
+            const SizedBox(height: 24),
+            _buildSectionHeader('Data Management'),
+            _buildSettingItem(
+              icon: Icons.import_export,
+              title: 'Import Data',
+              onTap: () async {
+                await showDialog<bool>(
+                  context: context,
+                  builder: (context) => DataImportScreen(),
+                );
+              },
+            ),
+            _buildSettingItem(
+              icon: Icons.download,
+              title: 'Export Data',
+              onTap: () {
+                // TODO: Implement data export
+              },
+            ),
 
             const SizedBox(height: 24),
             _buildSectionHeader('About'),

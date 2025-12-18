@@ -9,7 +9,7 @@ enum InhouseUsageStatus {
   @JsonValue('completed')
   completed,
   @JsonValue('force_ended')
-  forceEnded,
+  force_ended,
 }
 
 @JsonSerializable()

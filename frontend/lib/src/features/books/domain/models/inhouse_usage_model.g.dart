@@ -34,7 +34,7 @@ Map<String, dynamic> _$InhouseUsageToJson(InhouseUsage instance) =>
 const _$InhouseUsageStatusEnumMap = {
   InhouseUsageStatus.active: 'active',
   InhouseUsageStatus.completed: 'completed',
-  InhouseUsageStatus.forceEnded: 'force_ended',
+  InhouseUsageStatus.force_ended: 'force_ended',
 };
 
 InhouseUsageListResponse _$InhouseUsageListResponseFromJson(

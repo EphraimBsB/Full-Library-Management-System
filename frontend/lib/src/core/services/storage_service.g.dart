@@ -100,7 +100,7 @@ class _StorageService implements StorageService {
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
     late Uint8List _value;
     try {
-      _value = Uint8List.fromList(_result.data! as List<int>);
+      _value = Uint8List.fromList(_result.data!['content'] as List<int>);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

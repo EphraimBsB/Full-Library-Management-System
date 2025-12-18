@@ -1,10 +1,11 @@
 import 'package:dartz/dartz.dart';
 import 'package:management_side/src/core/error/failures.dart';
 import 'package:management_side/src/features/members/domain/models/membership_model.dart';
+import 'package:management_side/src/core/data/pagination.dart';
 
 abstract class MemberRepository {
   /// Get all memberships with optional filtering
-  Future<Either<Failure, List<Membership>>> getMemberships({
+  Future<Either<Failure, PaginatedResponse<Membership>>> getMemberships({
     String? status,
     int? page,
     int? limit,

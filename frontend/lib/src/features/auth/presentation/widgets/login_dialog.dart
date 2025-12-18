@@ -126,18 +126,21 @@ class _LoginDialogState extends ConsumerState<LoginDialog> {
                 children: [
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
+                    decoration: InputDecoration(
+                      labelText: 'Email or Roll Number',
+                      hintText: 'Enter email or roll number',
+                      prefixIcon: Icon(Icons.person_outline),
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.emailAddress,
+                    keyboardType: TextInputType.text,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                        return 'Please enter your email or roll number';
                       }
-                      if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(value)) {
-                        return 'Please enter a valid email';
+                      // Check if it's an email or roll number
+                      if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(value) &&
+                          !RegExp(r'^[A-Za-z0-9]+$').hasMatch(value)) {
+                        return 'Please enter a valid email or roll number';
                       }
                       return null;
                     },

@@ -1,10 +1,10 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'source_model.g.dart';
 
+// In source_model.dart
 @JsonSerializable()
-class Source extends Equatable {
+class Source {
   @JsonKey(name: 'id')
   final int? id;
 
@@ -30,10 +30,15 @@ class Source extends Equatable {
 
   factory Source.fromJson(Map<String, dynamic> json) => _$SourceFromJson(json);
 
-  Map<String, dynamic> toJson() => _$SourceToJson(this);
-
-  @override
-  List<Object?> get props => [id, name, supplier, isActive];
+  Map<String, dynamic> toJson() {
+    final jsonMap = {
+      'name': name,
+      if (supplier != null) 'supplier': supplier,
+      if (dateAcquired != null) 'dateAcquired': dateAcquired,
+      'isActive': isActive,
+    };
+    return jsonMap;
+  }
 
   Source copyWith({
     int? id,

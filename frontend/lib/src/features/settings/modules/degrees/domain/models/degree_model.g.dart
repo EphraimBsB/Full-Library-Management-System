@@ -7,9 +7,9 @@ part of 'degree_model.dart';
 // **************************************************************************
 
 Degree _$DegreeFromJson(Map<String, dynamic> json) => Degree(
-  id: (json['id'] as num).toInt(),
+  id: (json['id'] as num?)?.toInt(),
   name: json['name'] as String,
-  code: json['code'] as String,
+  code: json['code'] as String?,
   description: json['description'] as String?,
   level: json['level'] as String?,
   isActive: json['isActive'] as bool? ?? true,

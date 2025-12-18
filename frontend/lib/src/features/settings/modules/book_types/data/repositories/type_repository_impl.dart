@@ -56,26 +56,36 @@ class BookTypeRepositoryImpl implements BookTypeRepository {
   }
 
   @override
-  Future<Either<Failure, BookType>> createType(BookType type) async {
+  Future<Either<Failure, BookType>> createType(BookType bookType) async {
     try {
-      final response = await _apiService.createType(type.toJson());
-      return Right(BookType.fromJson(response));
+      final bookTypeDto = {
+        'name': bookType.name,
+        if (bookType.description != null) 'description': bookType.description,
+        if (bookType.format != null) 'format': bookType.format,
+      };
+      final response = await _apiService.createType(bookTypeDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to create book type: ${e.toString()}'));
     }
   }
 
   @override
-  Future<Either<Failure, BookType>> updateType(BookType type) async {
+  Future<Either<Failure, BookType>> updateType(BookType bookType) async {
     try {
-      final response = await _apiService.updateType(type.id!, type.toJson());
-      return Right(BookType.fromJson(response));
+      final bookTypeDto = {
+        'name': bookType.name,
+        if (bookType.description != null) 'description': bookType.description,
+        if (bookType.format != null) 'format': bookType.format,
+      };
+      final response = await _apiService.updateType(bookType.id!, bookTypeDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to update book type: ${e.toString()}'));
     }
   }
 

@@ -21,12 +21,10 @@ abstract class SourceApiService {
   Future<dynamic> getSource(@Path('id') int id);
 
   @POST('/sources')
-  Future<Map<String, dynamic>> createSource(
-    @Body() Map<String, dynamic> source,
-  );
+  Future<Source> createSource(@Body() Map<String, dynamic> source);
 
   @PUT('/sources/{id}')
-  Future<Map<String, dynamic>> updateSource(
+  Future<Source> updateSource(
     @Path('id') int id,
     @Body() Map<String, dynamic> source,
   );

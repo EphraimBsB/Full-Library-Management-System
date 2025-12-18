@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:management_side/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:management_side/src/features/books/presentation/screens/book_list_screen.dart';
+import 'package:management_side/src/features/books/presentation/screens/paginated_book_list_screen.dart';
 import 'package:management_side/src/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:management_side/src/features/requests/presentation/screens/requests_list_screen.dart';
 import 'package:management_side/src/features/settings/presentation/screens/settings_screen.dart';
@@ -22,7 +23,9 @@ class AppRoutes {
       case AppRoutes.dashboard:
         return MaterialPageRoute(builder: (_) => const DashboardScreen());
       case AppRoutes.books:
-        return MaterialPageRoute(builder: (_) => const BookListScreen());
+        return MaterialPageRoute(
+          builder: (_) => const PaginatedBookListScreen(),
+        );
       case AppRoutes.requests:
         return MaterialPageRoute(builder: (_) => const RequestsListScreen());
       // case AppRoutes.membershipRequests:

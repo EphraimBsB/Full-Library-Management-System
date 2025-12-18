@@ -1,10 +1,9 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'book_type_model.g.dart';
 
 @JsonSerializable()
-class BookType extends Equatable {
+class BookType {
   @JsonKey(name: 'id')
   final int? id;
 
@@ -31,10 +30,14 @@ class BookType extends Equatable {
   factory BookType.fromJson(Map<String, dynamic> json) =>
       _$BookTypeFromJson(json);
 
-  Map<String, dynamic> toJson() => _$BookTypeToJson(this);
-
-  @override
-  List<Object?> get props => [id, name, description, isActive];
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      if (description != null) 'description': description,
+      if (format != null) 'format': format,
+      'isActive': isActive,
+    };
+  }
 
   BookType copyWith({
     int? id,

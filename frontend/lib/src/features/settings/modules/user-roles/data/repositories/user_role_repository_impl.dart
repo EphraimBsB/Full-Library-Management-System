@@ -26,12 +26,12 @@ class UserRoleRepositoryImpl implements UserRoleRepository {
         search: search,
         isActive: isActive,
       );
-      
+
       // The API returns a direct list of role objects
       final roles = (response as List<dynamic>)
           .map((e) => UserRole.fromJson(e as Map<String, dynamic>))
           .toList();
-          
+
       return Right(roles);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -44,12 +44,12 @@ class UserRoleRepositoryImpl implements UserRoleRepository {
   Future<Either<Failure, UserRole>> getRole(int id) async {
     try {
       final response = await _apiService.getUserRole(id);
-      
+
       // The API returns the role data directly as a JSON object
       if (response == null) {
         return Left(ServerFailure('Role not found'));
       }
-      
+
       // Convert the response to UserRole
       try {
         final userRole = UserRole.fromJson(response as Map<String, dynamic>);
@@ -67,27 +67,34 @@ class UserRoleRepositoryImpl implements UserRoleRepository {
   @override
   Future<Either<Failure, UserRole>> createRole(UserRole role) async {
     try {
-      final response = await _apiService.createUserRole(role.toJson());
-      return Right(UserRole.fromJson(response));
+      final roleDto = {
+        'name': role.name,
+        if (role.description != null) 'description': role.description,
+        'permissions': role.permissions,
+      };
+      final response = await _apiService.createUserRole(roleDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to create user role: $e'));
     }
   }
 
   @override
   Future<Either<Failure, UserRole>> updateRole(UserRole role) async {
     try {
-      final response = await _apiService.updateUserRole(
-        role.id,
-        role.toJson(),
-      );
-      return Right(UserRole.fromJson(response));
+      final roleDto = {
+        'name': role.name,
+        if (role.description != null) 'description': role.description,
+        'permissions': role.permissions,
+      };
+      final response = await _apiService.updateUserRole(role.id!, roleDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to update user role: $e'));
     }
   }
 

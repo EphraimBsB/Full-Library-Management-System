@@ -459,7 +459,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
           'Library Members',
           style: TextStyle(color: Colors.black87),
         ),
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: AppTheme.surfaceColor,
         elevation: 0,
         actions: [
           Container(
@@ -489,8 +489,12 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
       body: Column(
         children: [
           // Search Bar
-          _buildSearchBar(),
-          const SizedBox(height: 30),
+          Container(
+            color: AppTheme.surfaceColor,
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: _buildSearchBar(),
+          ),
+          // const SizedBox(height: 30),
           // Main Content with RefreshIndicator
           Expanded(
             child: RefreshIndicator(

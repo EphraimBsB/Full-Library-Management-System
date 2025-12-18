@@ -58,27 +58,32 @@ class SubjectRepositoryImpl implements SubjectRepository {
   @override
   Future<Either<Failure, Subject>> createSubject(Subject subject) async {
     try {
-      final response = await _apiService.createSubject(subject.toJson());
-      return Right(Subject.fromJson(response));
+      final subjectDto = {
+        'name': subject.name,
+        if (subject.description != null) 'description': subject.description,
+      };
+      final response = await _apiService.createSubject(subjectDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to create subject: $e'));
     }
   }
 
   @override
   Future<Either<Failure, Subject>> updateSubject(Subject subject) async {
     try {
-      final response = await _apiService.updateSubject(
-        subject.id!,
-        subject.toJson(),
-      );
-      return Right(Subject.fromJson(response));
+      final subjectDto = {
+        'name': subject.name,
+        if (subject.description != null) 'description': subject.description,
+      };
+      final response = await _apiService.updateSubject(subject.id!, subjectDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to update subject: $e'));
     }
   }
 

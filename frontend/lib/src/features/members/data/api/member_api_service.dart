@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:management_side/src/core/network/api_constants.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:management_side/src/features/members/domain/models/membership_model.dart';
+import 'package:management_side/src/core/data/pagination.dart';
 
 part 'member_api_service.g.dart';
 
@@ -14,7 +15,7 @@ abstract class MemberApiService {
   /// Get all memberships with optional filtering
   @GET('/memberships')
   @DioResponseType(ResponseType.json)
-  Future<List<Membership>> getMemberships({
+  Future<PaginatedResponse<Membership>> getMemberships({
     @Query('status') String? status,
     @Query('page') int? page,
     @Query('limit') int? limit,

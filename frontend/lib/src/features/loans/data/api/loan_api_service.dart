@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:management_side/src/core/network/api_constants.dart';
 import 'package:management_side/src/features/loans/domain/models/loan_model.dart';
+import 'package:management_side/src/core/data/pagination.dart';
 
 part 'loan_api_service.g.dart';
 
@@ -15,7 +16,7 @@ abstract class LoanApiService {
   /// Get all loans with optional query parameters
   @GET('/loans')
   @DioResponseType(ResponseType.json)
-  Future<List<Loan>> getLoans({
+  Future<PaginatedResponse<Loan>> getLoans({
     @Query('status') String? status,
     @Query('userId') String? userId,
     @Query('bookId') String? bookId,

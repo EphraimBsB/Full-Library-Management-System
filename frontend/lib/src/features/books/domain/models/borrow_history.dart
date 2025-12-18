@@ -24,4 +24,14 @@ class BorrowHistory {
       returnedAt: DateTime.parse(json['returned_at']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'copy_id': copyId,
+      'copy_access_number': copyAccessNumber,
+      'borrower': borrower.toJson(),
+      'borrowed_at': borrowedAt.toIso8601String(),
+      'returned_at': returnedAt.toIso8601String(),
+    };
+  }
 }

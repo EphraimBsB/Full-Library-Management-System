@@ -29,7 +29,7 @@ final allLoansProvider = FutureProvider.autoDispose<List<Loan>>((ref) async {
         log('Error loading loans', error: failure);
       }
       return [];
-    }, (loans) => loans);
+    }, (paginatedResponse) => paginatedResponse.data);
   } catch (e, stackTrace) {
     if (kDebugMode) {
       log(

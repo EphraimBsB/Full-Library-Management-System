@@ -1,11 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:management_side/src/core/error/failures.dart';
 import 'package:management_side/src/features/loans/domain/models/loan_model.dart';
+import 'package:management_side/src/core/data/pagination.dart';
 
 /// Interface for loan data operations
 abstract class LoanRepository {
   /// Get all loans with optional filters
-  Future<Either<Failure, List<Loan>>> getLoans({
+  Future<Either<Failure, PaginatedResponse<Loan>>> getLoans({
     String? status,
     String? userId,
     String? bookId,

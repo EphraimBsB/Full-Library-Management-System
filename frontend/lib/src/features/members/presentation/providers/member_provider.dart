@@ -49,7 +49,7 @@ class MemberNotifier extends StateNotifier<AsyncValue<List<Membership>>> {
       final result = await _repository.getMemberships();
       state = result.fold(
         (failure) => AsyncValue.error(failure, StackTrace.current),
-        (memberships) => AsyncValue.data(memberships),
+        (paginatedResponse) => AsyncValue.data(paginatedResponse.data),
       );
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);

@@ -129,6 +129,12 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Name',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -143,6 +149,12 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Description (Optional)',
                   border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
                 ),
                 maxLines: 3,
               ),
@@ -155,6 +167,16 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
                       decoration: const InputDecoration(
                         labelText: 'Max Books',
                         border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -175,6 +197,16 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
                       decoration: const InputDecoration(
                         labelText: 'Max Days',
                         border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -199,6 +231,16 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
                       decoration: const InputDecoration(
                         labelText: 'Renewal Limit',
                         border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -219,6 +261,16 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
                       decoration: const InputDecoration(
                         labelText: 'Fine Rate',
                         border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,

@@ -46,6 +46,8 @@ dependencies:
   
   # Data Persistence
   shared_preferences: ^2.2.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   
   # HTTP Client
   http: ^1.1.0
@@ -55,6 +57,9 @@ dependencies:
   
   # Image Caching
   cached_network_image: ^3.3.1
+  
+  # Caching
+  flutter_cache_manager: ^3.3.1
   
   # Form Validation
   form_validator: ^2.1.1

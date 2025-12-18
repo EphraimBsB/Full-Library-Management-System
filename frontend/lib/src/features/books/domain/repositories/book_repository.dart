@@ -14,9 +14,10 @@ abstract class BookRepository {
     int limit = 10,
     String? search,
     String? category,
-    String? status,
     String? type,
-    String? sort,
+    int? minAvailable,
+    String? sortBy,
+    String? sortOrder,
   });
 
   /// Get a single book by ID
@@ -67,12 +68,19 @@ abstract class BookRepository {
     InhouseUsageStatus? status,
   });
 
+  /// Get history in-house usages
+  Future<Result<InhouseUsageListResponse>> getHistoryInhouseUsages({
+    InhouseUsageStatus? status,
+  });
+
   /// Start an in-house usage
-  Future<Result<InhouseUsage>> startInhouseUsage(Map<String, dynamic> data);
+  Future<Result<Map<String, dynamic>>> startInhouseUsage(
+    Map<String, dynamic> data,
+  );
 
   /// End an in-house usage
-  Future<Result<InhouseUsage>> endInhouseUsage(String id);
+  Future<Result<Map<String, dynamic>>> endInhouseUsage(String id);
 
   /// Force end an in-house usage
-  Future<Result<InhouseUsage>> forceEndInhouseUsage(String id);
+  Future<Result<Map<String, dynamic>>> forceEndInhouseUsage(String id);
 }

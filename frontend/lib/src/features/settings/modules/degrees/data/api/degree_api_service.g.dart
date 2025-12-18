@@ -53,7 +53,8 @@ class _DegreeApiService implements DegreeApiService {
     try {
       _value = _result.data!
           .map(
-            (dynamic i) => Map<String, dynamic>.from(i as Map<String, dynamic>),
+            (dynamic i) =>
+                Map<String, dynamic>.from(i as Map<String, dynamic>),
           )
           .toList();
     } on Object catch (e, s) {
@@ -85,13 +86,13 @@ class _DegreeApiService implements DegreeApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> createDegree(Map<String, dynamic> degree) async {
+  Future<Degree> createDegree(Map<String, dynamic> degree) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(degree);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<Degree>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -102,11 +103,9 @@ class _DegreeApiService implements DegreeApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late Degree _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
-      );
+      _value = Degree.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -115,16 +114,13 @@ class _DegreeApiService implements DegreeApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> updateDegree(
-    int id,
-    Map<String, dynamic> degree,
-  ) async {
+  Future<Degree> updateDegree(int id, Map<String, dynamic> degree) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(degree);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<Degree>(
       Options(method: 'PUT', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -135,11 +131,9 @@ class _DegreeApiService implements DegreeApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late Degree _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
-      );
+      _value = Degree.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

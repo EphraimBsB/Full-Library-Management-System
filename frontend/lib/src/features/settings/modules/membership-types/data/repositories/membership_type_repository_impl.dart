@@ -24,11 +24,11 @@ class MembershipTypeRepositoryImpl implements MembershipTypeRepository {
         search: search,
         isActive: isActive,
       );
-      
+
       final membershipTypes = (response as List<dynamic>)
           .map((e) => MembershipType.fromJson(e as Map<String, dynamic>))
           .toList();
-          
+
       return Right(membershipTypes);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -41,13 +41,15 @@ class MembershipTypeRepositoryImpl implements MembershipTypeRepository {
   Future<Either<Failure, MembershipType>> getMembershipType(int id) async {
     try {
       final response = await _apiService.getMembershipType(id);
-      
+
       if (response == null) {
         return Left(ServerFailure('Membership type not found'));
       }
-      
+
       try {
-        final membershipType = MembershipType.fromJson(response as Map<String, dynamic>);
+        final membershipType = MembershipType.fromJson(
+          response as Map<String, dynamic>,
+        );
         return Right(membershipType);
       } catch (e) {
         return Left(ServerFailure('Failed to parse membership type data: $e'));
@@ -55,34 +57,53 @@ class MembershipTypeRepositoryImpl implements MembershipTypeRepository {
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('Failed to load membership type: ${e.toString()}'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, MembershipType>> createMembershipType(MembershipType membershipType) async {
-    try {
-      final response = await _apiService.createMembershipType(membershipType.toJson());
-      return Right(MembershipType.fromJson(response));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, MembershipType>> updateMembershipType(MembershipType membershipType) async {
-    try {
-      final response = await _apiService.updateMembershipType(
-        membershipType.id,
-        membershipType.toJson(),
+      return Left(
+        ServerFailure('Failed to load membership type: ${e.toString()}'),
       );
-      return Right(MembershipType.fromJson(response));
+    }
+  }
+
+  @override
+  Future<Either<Failure, MembershipType>> createMembershipType(
+    MembershipType type,
+  ) async {
+    try {
+      final typeDto = {
+        'name': type.name,
+        if (type.description != null) 'description': type.description,
+        'maxBooks': type.maxBooks,
+        'maxDurationDays': type.maxDurationDays,
+        'renewalLimit': type.renewalLimit,
+        'fineRate': type.fineRate,
+      };
+      final response = await _apiService.createMembershipType(typeDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to create membership type: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, MembershipType>> updateMembershipType(
+    MembershipType type,
+  ) async {
+    try {
+      final typeDto = {
+        'name': type.name,
+        if (type.description != null) 'description': type.description,
+        'maxBooks': type.maxBooks,
+        'maxDurationDays': type.maxDurationDays,
+        'renewalLimit': type.renewalLimit,
+        'fineRate': type.fineRate,
+      };
+      final response = await _apiService.updateMembershipType(type.id, typeDto);
+      return Right(response);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Failed to update membership type: $e'));
     }
   }
 
@@ -99,7 +120,10 @@ class MembershipTypeRepositoryImpl implements MembershipTypeRepository {
   }
 
   @override
-  Future<Either<Failure, void>> toggleMembershipTypeStatus(int id, bool isActive) async {
+  Future<Either<Failure, void>> toggleMembershipTypeStatus(
+    int id,
+    bool isActive,
+  ) async {
     try {
       await _apiService.toggleMembershipTypeStatus(id, {'isActive': isActive});
       return const Right(null);

@@ -1,32 +1,31 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'degree_model.g.dart';
 
 @JsonSerializable()
-class Degree extends Equatable {
+class Degree {
   @JsonKey(name: 'id')
-  final int id;
+  final int? id;
 
   @JsonKey(name: 'name')
   final String name;
 
   @JsonKey(name: 'code')
-  final String code;
+  final String? code;
 
   @JsonKey(name: 'description', includeIfNull: true)
   final String? description;
 
-  @JsonKey(name: 'level', includeIfNull: true)
+  @JsonKey(name: 'level')
   final String? level;
 
   @JsonKey(name: 'isActive', defaultValue: true)
   final bool isActive;
 
   const Degree({
-    required this.id,
+    this.id,
     required this.name,
-    required this.code,
+    this.code,
     this.description,
     this.level,
     this.isActive = true,
@@ -34,10 +33,15 @@ class Degree extends Equatable {
 
   factory Degree.fromJson(Map<String, dynamic> json) => _$DegreeFromJson(json);
 
-  Map<String, dynamic> toJson() => _$DegreeToJson(this);
-
-  @override
-  List<Object?> get props => [id, name, code, description, isActive];
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      if (code != null) 'code': code,
+      if (description != null) 'description': description,
+      if (level != null) 'level': level,
+      'isActive': isActive,
+    };
+  }
 
   Degree copyWith({
     int? id,

@@ -21,12 +21,10 @@ abstract class SubjectApiService {
   Future<dynamic> getSubject(@Path('id') int id);
 
   @POST('/subjects')
-  Future<Map<String, dynamic>> createSubject(
-    @Body() Map<String, dynamic> subject,
-  );
+  Future<Subject> createSubject(@Body() Map<String, dynamic> subject);
 
   @PUT('/subjects/{id}')
-  Future<Map<String, dynamic>> updateSubject(
+  Future<Subject> updateSubject(
     @Path('id') int id,
     @Body() Map<String, dynamic> subject,
   );

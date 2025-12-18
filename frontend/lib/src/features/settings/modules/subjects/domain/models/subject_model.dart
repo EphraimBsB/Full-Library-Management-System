@@ -27,7 +27,13 @@ class Subject extends Equatable {
   factory Subject.fromJson(Map<String, dynamic> json) =>
       _$SubjectFromJson(json);
 
-  Map<String, dynamic> toJson() => _$SubjectToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      if (description != null) 'description': description,
+      'isActive': isActive,
+    };
+  }
 
   @override
   List<Object?> get props => [id, name, description, isActive];

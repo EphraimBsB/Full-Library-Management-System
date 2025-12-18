@@ -53,7 +53,8 @@ class _BookTypeApiService implements BookTypeApiService {
     try {
       _value = _result.data!
           .map(
-            (dynamic i) => Map<String, dynamic>.from(i as Map<String, dynamic>),
+            (dynamic i) =>
+                Map<String, dynamic>.from(i as Map<String, dynamic>),
           )
           .toList();
     } on Object catch (e, s) {
@@ -85,13 +86,13 @@ class _BookTypeApiService implements BookTypeApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> createType(Map<String, dynamic> type) async {
+  Future<BookType> createType(Map<String, dynamic> type) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(type);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<BookType>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -102,11 +103,9 @@ class _BookTypeApiService implements BookTypeApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late BookType _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
-      );
+      _value = BookType.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -115,16 +114,13 @@ class _BookTypeApiService implements BookTypeApiService {
   }
 
   @override
-  Future<Map<String, dynamic>> updateType(
-    int id,
-    Map<String, dynamic> type,
-  ) async {
+  Future<BookType> updateType(int id, Map<String, dynamic> type) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(type);
-    final _options = _setStreamType<Map<String, dynamic>>(
+    final _options = _setStreamType<BookType>(
       Options(method: 'PUT', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -135,11 +131,9 @@ class _BookTypeApiService implements BookTypeApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Map<String, dynamic> _value;
+    late BookType _value;
     try {
-      _value = _result.data!.map(
-        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
-      );
+      _value = BookType.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

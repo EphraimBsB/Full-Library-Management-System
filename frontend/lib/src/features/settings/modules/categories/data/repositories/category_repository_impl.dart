@@ -1,4 +1,7 @@
+import 'dart:developer' as dev;
+
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:management_side/src/core/error/exceptions.dart';
 import 'package:management_side/src/core/error/failures.dart';
 import 'package:management_side/src/features/settings/modules/categories/data/api/category_api_service.dart';
@@ -58,10 +61,17 @@ class CategoryRepositoryImpl implements CategoryRepository {
   @override
   Future<Either<Failure, Category>> createCategory(Category category) async {
     try {
-      final response = await _apiService.createCategory(category.toJson());
-      return Right(Category.fromJson(response));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      // Convert to DTO format
+      final categoryDto = {
+        'name': category.name,
+        if (category.description != null) 'description': category.description,
+      };
+
+      final response = await _apiService.createCategory(categoryDto);
+
+      return Right(response);
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.message ?? 'Network error occurred'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -70,11 +80,17 @@ class CategoryRepositoryImpl implements CategoryRepository {
   @override
   Future<Either<Failure, Category>> updateCategory(Category category) async {
     try {
+      // Convert to DTO format
+      final categoryDto = {
+        'name': category.name,
+        if (category.description != null) 'description': category.description,
+      };
+
       final response = await _apiService.updateCategory(
         category.id!,
-        category.toJson(),
+        categoryDto,
       );
-      return Right(Category.fromJson(response));
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

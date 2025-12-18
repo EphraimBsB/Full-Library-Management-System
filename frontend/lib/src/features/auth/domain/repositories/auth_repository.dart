@@ -1,11 +1,12 @@
 import 'package:management_side/src/core/utils/result.dart';
 import 'package:management_side/src/features/auth/domain/models/auth_response.dart';
-import 'package:management_side/src/features/auth/domain/models/user_model.dart' as model;
+import 'package:management_side/src/features/auth/domain/models/user_model.dart'
+    as model;
 
 abstract class AuthRepository {
-  /// Authenticates a user with email and password
+  /// Authenticates a user with email or roll number and password
   /// Returns [AuthResponse] containing user data and tokens
-  Future<Result<AuthResponse>> login(String email, String password);
+  Future<Result<AuthResponse>> login(String identifier, String password);
 
   /// Registers a new user
   Future<Result<AuthResponse>> register({

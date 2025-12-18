@@ -27,9 +27,10 @@ class _BookApiService implements BookApiService {
     int limit = 10,
     String? search,
     String? category,
-    String? status,
     String? type,
-    String? sort,
+    int? minAvailable,
+    String? sortBy,
+    String? sortOrder,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
@@ -37,9 +38,10 @@ class _BookApiService implements BookApiService {
       r'limit': limit,
       r'search': search,
       r'category': category,
-      r'status': status,
       r'type': type,
-      r'sort': sort,
+      r'minAvailable': minAvailable,
+      r'sortBy': sortBy,
+      r'sortOrder': sortOrder,
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
@@ -413,41 +415,15 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<List<InhouseUsage>> getActiveInhouseUsages() async {
+  Future<InhouseUsageListResponse> getHistoryInhouseUsages({
+    String? status,
+  }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'status': status};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<InhouseUsage>>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/books/inhouse-usage/active',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<InhouseUsage> _value;
-    try {
-      _value = _result.data!
-          .map((dynamic i) => InhouseUsage.fromJson(i as Map<String, dynamic>))
-          .toList();
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<List<InhouseUsage>> getHistoryInhouseUsages() async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<InhouseUsage>>(
+    final _options = _setStreamType<InhouseUsageListResponse>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -457,12 +433,10 @@ class _BookApiService implements BookApiService {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<InhouseUsage> _value;
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late InhouseUsageListResponse _value;
     try {
-      _value = _result.data!
-          .map((dynamic i) => InhouseUsage.fromJson(i as Map<String, dynamic>))
-          .toList();
+      _value = InhouseUsageListResponse.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -471,13 +445,15 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<InhouseUsage> startInhouseUsage(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> startInhouseUsage(
+    Map<String, dynamic> data,
+  ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(data);
-    final _options = _setStreamType<InhouseUsage>(
+    final _options = _setStreamType<Map<String, dynamic>>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -488,9 +464,12 @@ class _BookApiService implements BookApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late InhouseUsage _value;
+    late Map<String, dynamic> _value;
     try {
-      _value = InhouseUsage.fromJson(_result.data!);
+      _value = _result.data!.map(
+        (k, dynamic v) =>
+            MapEntry(k, (v as Map<String, dynamic>)),
+      );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -499,12 +478,12 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<InhouseUsage> endInhouseUsage(String id) async {
+  Future<Map<String, dynamic>> endInhouseUsage(String id) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<InhouseUsage>(
+    final _options = _setStreamType<Map<String, dynamic>>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -515,9 +494,12 @@ class _BookApiService implements BookApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late InhouseUsage _value;
+    late Map<String, dynamic> _value;
     try {
-      _value = InhouseUsage.fromJson(_result.data!);
+      _value = _result.data!.map(
+        (k, dynamic v) =>
+            MapEntry(k, v as Map<String, dynamic>),
+      );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -526,12 +508,12 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<InhouseUsage> forceEndInhouseUsage(String id) async {
+  Future<Map<String, dynamic>> forceEndInhouseUsage(String id) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<InhouseUsage>(
+    final _options = _setStreamType<Map<String, dynamic>>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -542,9 +524,12 @@ class _BookApiService implements BookApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late InhouseUsage _value;
+    late Map<String, dynamic> _value;
     try {
-      _value = InhouseUsage.fromJson(_result.data!);
+      _value = _result.data!.map(
+        (k, dynamic v) =>
+            MapEntry(k, v as Map<String, dynamic>),
+      );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

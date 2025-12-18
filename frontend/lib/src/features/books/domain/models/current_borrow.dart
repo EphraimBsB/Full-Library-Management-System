@@ -27,4 +27,15 @@ class CurrentBorrow {
       isOverdue: json['is_overdue'] ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'copy_id': copyId,
+      'copy_access_number': copyAccessNumber,
+      'borrower': borrower.toJson(),
+      'borrowed_at': borrowedAt.toIso8601String(),
+      'due_date': dueDate.toIso8601String(),
+      'is_overdue': isOverdue,
+    };
+  }
 }

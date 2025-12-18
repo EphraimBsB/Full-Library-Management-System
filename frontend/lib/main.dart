@@ -7,6 +7,7 @@ import 'package:url_strategy/url_strategy.dart' show setPathUrlStrategy;
 
 // Core
 import 'src/core/theme/app_theme.dart';
+import 'src/core/services/cache_service.dart';
 
 // Desktop App
 import 'src/core/routes/app_routes.dart';
@@ -18,6 +19,9 @@ import 'src/features/student/app.dart' as student_app;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize cache service
+  await CacheService().initialize();
 
   // For web, use path URL strategy (removes # from URLs)
   if (kIsWeb) {

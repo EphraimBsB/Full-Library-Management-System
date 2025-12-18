@@ -58,27 +58,36 @@ class DegreeRepositoryImpl implements DegreeRepository {
   @override
   Future<Either<Failure, Degree>> createDegree(Degree degree) async {
     try {
-      final response = await _apiService.createDegree(degree.toJson());
-      return Right(Degree.fromJson(response));
+      final degreeDto = {
+        'name': degree.name,
+        if (degree.code != null) 'code': degree.code,
+        if (degree.description != null) 'description': degree.description,
+        if (degree.level != null) 'level': degree.level,
+      };
+      final response = await _apiService.createDegree(degreeDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to create degree: ${e.toString()}'));
     }
   }
 
   @override
   Future<Either<Failure, Degree>> updateDegree(Degree degree) async {
     try {
-      final response = await _apiService.updateDegree(
-        degree.id,
-        degree.toJson(),
-      );
-      return Right(Degree.fromJson(response));
+      final degreeDto = {
+        'name': degree.name,
+        if (degree.code != null) 'code': degree.code,
+        if (degree.description != null) 'description': degree.description,
+        if (degree.level != null) 'level': degree.level,
+      };
+      final response = await _apiService.updateDegree(degree.id!, degreeDto);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to update degree: ${e.toString()}'));
     }
   }
 

@@ -21,12 +21,10 @@ abstract class UserRoleApiService {
   Future<dynamic> getUserRole(@Path('id') int id);
 
   @POST('/user-roles')
-  Future<Map<String, dynamic>> createUserRole(
-    @Body() Map<String, dynamic> userRole,
-  );
+  Future<UserRole> createUserRole(@Body() Map<String, dynamic> userRole);
 
   @PUT('/user-roles/{id}')
-  Future<Map<String, dynamic>> updateUserRole(
+  Future<UserRole> updateUserRole(
     @Path('id') int id,
     @Body() Map<String, dynamic> userRole,
   );
