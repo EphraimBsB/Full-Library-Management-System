@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/features/auth/domain/models/user_model.dart';
+import 'package:management_side/src/features/student/presentation/providers/student_profile_providers.dart';
+import 'package:management_side/src/features/student/presentation/widgets/borrow_history_list.dart';
+import 'package:management_side/src/features/student/presentation/widgets/favorites_list.dart';
+import 'package:management_side/src/features/student/presentation/widgets/notes_list.dart';
+import 'package:management_side/src/features/student/presentation/widgets/profile_summary_card.dart';
 
-class MemberDetailsDialog extends StatelessWidget {
+class MemberDetailsDialog extends ConsumerStatefulWidget {
   final User member;
   final VoidCallback? onEditPressed;
 
@@ -11,6 +17,41 @@ class MemberDetailsDialog extends StatelessWidget {
     required this.member,
     this.onEditPressed,
   });
+
+  static void show({
+    required BuildContext context,
+    required User member,
+    VoidCallback? onEdit,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          MemberDetailsDialog(member: member, onEditPressed: onEdit),
+    );
+  }
+
+  @override
+  ConsumerState<MemberDetailsDialog> createState() =>
+      _MemberDetailsDialogState();
+}
+
+class _MemberDetailsDialogState extends ConsumerState<MemberDetailsDialog>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  final _tabs = const ['Overview', 'Borrowing', 'Favorites', 'Notes'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _tabs.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
@@ -44,227 +85,198 @@ class MemberDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final member = widget.member;
     final theme = Theme.of(context);
-    final dateFormat = DateFormat('MMM d, y');
 
-    return AlertDialog(
-      title: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundImage: member.avatarUrl != null
-                ? NetworkImage(member.avatarUrl!)
-                : const AssetImage('assets/default_avatar.png')
-                      as ImageProvider,
-            onBackgroundImageError: (_, __) {
-              // Handle image loading error
-            },
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  member.fullName,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  member.rollNumber!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.hintColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
+    return Dialog(
+      child: SizedBox(
+        width: 1100,
+        height: 760,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow(context, 'Email', member.email!),
-            if (member.phoneNumber != null)
-              _buildDetailRow(context, 'Phone', member.phoneNumber!),
-            if (member.course != null)
-              _buildDetailRow(context, 'Course', member.course!),
-            if (member.degree != null)
-              _buildDetailRow(context, 'Degree', member.degree!),
-            if (member.dateOfBirth != null)
-              _buildDetailRow(
-                context,
-                'Date of Birth',
-                dateFormat.format(member.dateOfBirth!),
-              ),
-            const SizedBox(height: 8),
-            _buildDetailRow(
-              context,
-              'Member Since',
-              dateFormat.format(member.joinDate!),
-            ),
-            _buildDetailRow(
-              context,
-              'Status',
-              member.isActive! ? 'Active' : 'Inactive',
-              isHighlighted: true,
-              highlightColor: member.isActive! ? Colors.green : Colors.grey,
-            ),
-            if (member.expiryDate != null)
-              _buildDetailRow(
-                context,
-                'Expiry Date',
-                dateFormat.format(member.expiryDate!),
-                isHighlighted: true,
-                highlightColor: member.isActive! ? null : Colors.orange,
-              ),
-            if (member.borrowedBooks?.isNotEmpty ?? false) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Borrowed Books (${member.borrowedBooks!.length}):',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...member.borrowedBooks!.entries.map((entry) {
-                final bookTitle = entry.key;
-                final dueDate = entry.value;
-                final isOverdue = dueDate.isBefore(DateTime.now());
-                final dueInDays = dueDate.difference(DateTime.now()).inDays;
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    leading: Container(
-                      width: 40,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        image: const DecorationImage(
-                          image: AssetImage('assets/default_book.jpg'),
-                          fit: BoxFit.cover,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 16, 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundImage: member.avatarUrl != null
+                        ? NetworkImage(member.avatarUrl!)
+                        : const AssetImage('assets/default_avatar.png')
+                              as ImageProvider,
+                    onBackgroundImageError: (_, __) {
+                      // Handle image loading error
+                    },
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          member.fullName,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ),
-                    title: Text(
-                      bookTitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Due: ${dateFormat.format(dueDate)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: isOverdue ? Colors.red : null,
-                        fontWeight: isOverdue ? FontWeight.bold : null,
-                      ),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isOverdue
-                            ? Colors.red.shade100
-                            : Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        isOverdue
-                            ? 'Overdue ${-dueInDays} days'
-                            : 'Due in $dueInDays days',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: isOverdue
-                              ? Colors.red.shade800
-                              : Colors.orange.shade800,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                        const SizedBox(height: 4),
+                        if (member.rollNumber != null)
+                          Text(
+                            member.rollNumber!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.hintColor,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                );
-              }),
-            ],
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Close',
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabs: _tabs.map((t) => Tab(text: t)).toList(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _OverviewTab(userId: member.id),
+                  BorrowHistoryList(userId: member.id),
+                  FavoritesList(userId: member.id),
+                  NotesList(userId: member.id),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => _showDeleteConfirmation(context),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: const Text('Delete'),
+                  ),
+                  const SizedBox(width: 8),
+                  if (widget.onEditPressed != null)
+                    ElevatedButton(
+                      onPressed: widget.onEditPressed,
+                      child: const Text('Edit'),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-        TextButton(
-          onPressed: () => _showDeleteConfirmation(context),
-          style: TextButton.styleFrom(foregroundColor: Colors.red),
-          child: const Text('Delete'),
-        ),
-        if (onEditPressed != null)
-          ElevatedButton(onPressed: onEditPressed, child: const Text('Edit')),
-      ],
+    );
+  }
+}
+
+class _OverviewTab extends ConsumerWidget {
+  final String userId;
+
+  const _OverviewTab({required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final dateFormat = DateFormat('MMM d, y');
+    final profileSummaryAsync = ref.watch(profileSummaryProvider(userId));
+
+    return profileSummaryAsync.when(
+      data: (profile) {
+        return ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          children: [
+            ProfileSummaryCard(userId: userId),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Personal Information',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoRow('Full Name', profile.name),
+                    _buildInfoRow('Email', profile.email),
+                    if (profile.phoneNumber != null)
+                      _buildInfoRow('Phone', profile.phoneNumber ?? 'N/A'),
+                    _buildInfoRow('Roll Number', profile.rollNumber),
+                    _buildInfoRow('Program', profile.program ?? 'N/A'),
+                    _buildInfoRow('Role', profile.role),
+                    _buildInfoRow(
+                      'Member Since',
+                      dateFormat.format(profile.joinedAt),
+                    ),
+                    _buildInfoRow(
+                      'Expiry Date',
+                      profile.expiryDate != null
+                          ? dateFormat.format(profile.expiryDate!)
+                          : 'N/A',
+                    ),
+                    _buildInfoRow(
+                      'Membership Status',
+                      profile.membershipStatus,
+                    ),
+                    _buildInfoRow('Membership Type', profile.membershipType),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) =>
+          Center(child: Text('Error loading member: ${error.toString()}')),
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isHighlighted = false,
-    Color? highlightColor,
-  }) {
-    final theme = Theme.of(context);
-
+  Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 160,
             child: Text(
               label,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: const TextStyle(
                 fontWeight: FontWeight.w500,
-                color: theme.hintColor,
+                color: Colors.grey,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: isHighlighted
-                    ? (highlightColor ?? theme.primaryColor)
-                    : null,
-                fontWeight: isHighlighted ? FontWeight.bold : null,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  static void show({
-    required BuildContext context,
-    required User member,
-    VoidCallback? onEdit,
-  }) {
-    showDialog(
-      context: context,
-      builder: (context) =>
-          MemberDetailsDialog(member: member, onEditPressed: onEdit),
     );
   }
 }
