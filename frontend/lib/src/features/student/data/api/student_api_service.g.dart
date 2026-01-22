@@ -12,7 +12,7 @@ part of 'student_api_service.dart';
 
 class _StudentApiService implements StudentApiService {
   _StudentApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
+    baseUrl ??= 'http://localhost:3000/api/v1';
   }
 
   final Dio _dio;
@@ -24,10 +24,7 @@ class _StudentApiService implements StudentApiService {
   @override
   Future<Map<String, dynamic>> getStudentDetails(String rollNumber) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'rollno': rollNumber,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
+    final queryParameters = <String, dynamic>{r'rollno': rollNumber};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<Map<String, dynamic>>(
@@ -43,7 +40,9 @@ class _StudentApiService implements StudentApiService {
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
     late Map<String, dynamic> _value;
     try {
-      _value = _result.data!;
+      _value = _result.data!.map(
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
+      );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -85,11 +84,7 @@ class _StudentApiService implements StudentApiService {
     int limit = 10,
   }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'page': page,
-      r'limit': limit,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
+    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<BorrowHistoryResponse<Loan>>(
@@ -123,11 +118,7 @@ class _StudentApiService implements StudentApiService {
     int limit = 10,
   }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'page': page,
-      r'limit': limit,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
+    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<BorrowHistoryResponse<BookModel>>(
@@ -161,11 +152,7 @@ class _StudentApiService implements StudentApiService {
     int limit = 10,
   }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'page': page,
-      r'limit': limit,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
+    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<BorrowHistoryResponse<BookNote>>(

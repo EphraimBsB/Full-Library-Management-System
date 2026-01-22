@@ -12,7 +12,7 @@ part of 'user_role_api_service.dart';
 
 class _UserRoleApiService implements UserRoleApiService {
   _UserRoleApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
+    baseUrl ??= 'http://localhost:3000/api/v1';
   }
 
   final Dio _dio;
@@ -121,7 +121,7 @@ class _UserRoleApiService implements UserRoleApiService {
     final _data = <String, dynamic>{};
     _data.addAll(userRole);
     final _options = _setStreamType<UserRole>(
-      Options(method: 'PUT', headers: _headers, extra: _extra)
+      Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
             '/user-roles/${id}',

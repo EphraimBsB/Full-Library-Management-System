@@ -6,7 +6,7 @@ import {
   Patch,
   Param,
   Delete,
-  ParseUUIDPipe,
+  ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -44,7 +44,7 @@ export class DegreesController {
   @ApiOperation({ summary: 'Get a degree program by ID' })
   @ApiResponse({ status: 200, description: 'Return the degree program', type: Degree })
   @ApiResponse({ status: 404, description: 'Degree program not found' })
-  findOne(@Param('id', ParseUUIDPipe) id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.degreesService.findOne(id);
   }
 
@@ -60,7 +60,7 @@ export class DegreesController {
   @ApiResponse({ status: 200, description: 'Degree program updated successfully', type: Degree })
   @ApiResponse({ status: 404, description: 'Degree program not found' })
   update(
-    @Param('id', ParseUUIDPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateDegreeDto: UpdateDegreeDto,
   ) {
     return this.degreesService.update(id, updateDegreeDto);
@@ -70,7 +70,7 @@ export class DegreesController {
   @ApiOperation({ summary: 'Delete a degree program' })
   @ApiResponse({ status: 200, description: 'Degree program deleted successfully' })
   @ApiResponse({ status: 404, description: 'Degree program not found' })
-  remove(@Param('id', ParseUUIDPipe) id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.degreesService.remove(id);
   }
 }

@@ -12,7 +12,7 @@ part of 'book_type_api_service.dart';
 
 class _BookTypeApiService implements BookTypeApiService {
   _BookTypeApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
+    baseUrl ??= 'http://localhost:3000/api/v1';
   }
 
   final Dio _dio;
@@ -121,7 +121,7 @@ class _BookTypeApiService implements BookTypeApiService {
     final _data = <String, dynamic>{};
     _data.addAll(type);
     final _options = _setStreamType<BookType>(
-      Options(method: 'PUT', headers: _headers, extra: _extra)
+      Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
             '/types/${id}',

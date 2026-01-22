@@ -23,7 +23,7 @@ abstract class BookTypeApiService {
   @POST('/types')
   Future<BookType> createType(@Body() Map<String, dynamic> type);
 
-  @PUT('/types/{id}')
+  @PATCH('/types/{id}')
   Future<BookType> updateType(
     @Path('id') int id,
     @Body() Map<String, dynamic> type,

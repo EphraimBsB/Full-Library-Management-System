@@ -14,8 +14,8 @@ class DegreesExpanded extends ConsumerWidget {
     final degreesAsync = ref.watch(degreesNotifierProvider);
 
     return buildExpandableSettingItem(
-      icon: Icons.type_specimen,
-      title: 'School Degrees',
+      icon: Icons.school,
+      title: 'School Programs',
       child: Column(
         children: [
           Align(

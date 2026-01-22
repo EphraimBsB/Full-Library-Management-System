@@ -18,6 +18,7 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _supplierController;
   late bool _isActive;
+  late String _format;
   bool _isLoading = false;
 
   @override
@@ -28,6 +29,10 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
       text: widget.bookType?.description ?? '',
     );
     _isActive = widget.bookType?.isActive ?? true;
+    _format =
+        (widget.bookType?.format != null && widget.bookType!.format!.isNotEmpty)
+        ? widget.bookType!.format!
+        : 'physical';
   }
 
   @override
@@ -49,7 +54,7 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
         description: _supplierController.text.trim().isEmpty
             ? null
             : _supplierController.text.trim(),
-        format: '',
+        format: _format,
         isActive: _isActive,
       );
 
@@ -139,6 +144,34 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
                   ),
                 ),
                 maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _format,
+                decoration: const InputDecoration(
+                  labelText: 'Format',
+                  border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'physical', child: Text('Physical')),
+                  DropdownMenuItem(value: 'digital', child: Text('Digital')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _format = value);
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a format';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               SwitchListTile(

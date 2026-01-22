@@ -5,23 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/core/utils/file_uploader.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_book_types.dart';
+import 'package:management_side/src/features/books/domain/services/worldcat_service.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_book_types_autocomplete.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_media_input.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_sources.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_sources_autocomplete.dart';
 import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 import 'package:management_side/src/features/settings/modules/book_sources/domain/models/source_model.dart';
 import 'package:management_side/src/features/settings/modules/book_types/domain/models/book_type_model.dart';
-import 'package:management_side/src/features/settings/modules/book_types/presentation/providers/book/book_type_providers.dart';
-import 'package:management_side/src/features/settings/modules/book_sources/presentation/providers/source_providers.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_categories.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_categories_autocomplete.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_section_header.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_subjects.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_subjects_autocomplete.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_text_field.dart';
 import 'package:management_side/src/features/settings/modules/categories/domain/models/category_model.dart';
-import 'package:management_side/src/features/settings/modules/categories/presentation/providers/category_providers.dart';
 import 'package:management_side/src/features/settings/modules/subjects/domain/models/subject_model.dart';
-import 'package:management_side/src/features/settings/modules/subjects/presentation/providers/subject_providers.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_publishers.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_locations.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_shelves.dart';
 
 class BookFormDialog extends ConsumerStatefulWidget {
   final BookModel? book;
@@ -74,7 +74,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
     _isbnController = TextEditingController(text: book?.isbn ?? '');
     _editionController = TextEditingController(text: book?.edition ?? '');
     _copiesController = TextEditingController(
-      text: book?.totalCopies.toString() ?? '1',
+      text: book?.totalCopies.toString() ?? '',
     );
     _publisherController = TextEditingController(text: book?.publisher ?? '');
     _pubYearController = TextEditingController(
@@ -136,6 +136,67 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
     _shelfController.dispose();
     _accessNumbersController.dispose();
     super.dispose();
+  }
+
+  Future<void> _autoFillFromISBN() async {
+    final isbn = _isbnController.text.trim();
+
+    if (isbn.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter an ISBN number first')),
+      );
+      return;
+    }
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Fetching book information...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Try Google Books API first (free, no API key required)
+      final bookData = await WorldCatService.fetchBookByISBNFromGoogle(isbn);
+
+      if (bookData != null) {
+        // Populate form fields with fetched data
+        _titleController.text = bookData.title ?? '';
+        _authorController.text = bookData.author ?? '';
+        _descriptionController.text = bookData.description ?? '';
+        _ddcController.text = bookData.ddc ?? '';
+        _publisherController.text = bookData.publisher ?? '';
+        _pubYearController.text = bookData.publicationYear?.toString() ?? '';
+        _imageUrlController.text = bookData.coverImageUrl ?? '';
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Book information fetched successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to fetch book information: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      // Close loading dialog
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _submitForm() async {
@@ -261,13 +322,40 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
 
   List<Map<String, dynamic>> _generateBookCopies() {
     final copies = <Map<String, dynamic>>[];
+    final accessNumbersText = _accessNumbersController.text.trim();
     final count = int.tryParse(_copiesController.text.trim()) ?? 1;
 
-    for (var i = 0; i < count; i++) {
-      copies.add({
-        'accessNumber': (i + 1).toString().padLeft(3, '0'),
-        'notes': 'Copy ${i + 1} of ${_titleController.text.trim()}',
-      });
+    if (accessNumbersText.isEmpty) {
+      // If no access numbers provided, generate default ones
+      for (var i = 0; i < count; i++) {
+        copies.add({
+          'accessNumber': (i + 1).toString().padLeft(3, '0'),
+          'notes': 'Copy ${i + 1} of ${_titleController.text.trim()}',
+        });
+      }
+    } else {
+      // Parse manually entered access numbers
+      final accessNumbers = accessNumbersText
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      // Ensure we have enough access numbers for the total copies
+      for (var i = 0; i < count; i++) {
+        if (i < accessNumbers.length) {
+          copies.add({
+            'accessNumber': accessNumbers[i],
+            'notes': 'Copy ${i + 1} of ${_titleController.text.trim()}',
+          });
+        } else {
+          // If not enough access numbers, generate default ones for remaining copies
+          copies.add({
+            'accessNumber': (i + 1).toString().padLeft(3, '0'),
+            'notes': 'Copy ${i + 1} of ${_titleController.text.trim()}',
+          });
+        }
+      }
     }
 
     return copies;
@@ -325,10 +413,6 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 1000;
-    final categories = ref.watch(categoriesNotifierProvider);
-    final subjects = ref.watch(subjectsNotifierProvider);
-    final bookTypes = ref.watch(bookTypesNotifierProvider);
-    final sources = ref.watch(sourcesNotifierProvider);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -382,10 +466,30 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                   isRequired: true,
                                 ),
                                 const SizedBox(height: 8),
-                                buildTextField(
-                                  controller: _isbnController,
-                                  hint: 'ISBN *',
-                                  isRequired: true,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: buildTextField(
+                                        controller: _isbnController,
+                                        hint: 'ISBN *',
+                                        isRequired: true,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      onPressed: _autoFillFromISBN,
+                                      icon: const Icon(Icons.search),
+                                      tooltip: 'Auto-fill from ISBN',
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        foregroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 8),
                                 buildTextField(
@@ -398,44 +502,34 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                   hint: 'Edition',
                                 ),
                                 const SizedBox(height: 8),
-                                buildCategoriesField(
-                                  categories,
-                                  _selectedCategorys,
-                                  (category) {
+                                CategoriesAutocomplete(
+                                  selectedCategories: _selectedCategorys,
+                                  onCategorySelected: (category) {
                                     setState(() {
-                                      if (!_selectedCategorys.any(
-                                        (s) => s.id == category!.id,
-                                      )) {
-                                        _selectedCategorys.add(category!);
-                                      }
+                                      _selectedCategorys.add(category);
                                     });
                                   },
-                                  (category) {
+                                  onCategoryRemoved: (category) {
                                     setState(() {
-                                      _selectedCategorys.removeWhere(
-                                        (s) => s.id == category!.id,
-                                      );
+                                      _selectedCategorys.remove(category);
                                     });
                                   },
                                 ),
                                 const SizedBox(height: 8),
-                                buildSubjectsField(
-                                  subjects,
-                                  _selectedSubjects,
-                                  (subject) {
+                                SubjectsAutocomplete(
+                                  selectedSubjects: _selectedSubjects,
+                                  onSubjectSelected: (subject) {
                                     setState(() {
                                       if (!_selectedSubjects.any(
-                                        (s) => s.id == subject!.id,
+                                        (s) => s.id == subject.id,
                                       )) {
-                                        _selectedSubjects.add(subject!);
+                                        _selectedSubjects.add(subject);
                                       }
                                     });
                                   },
-                                  (subject) {
+                                  onSubjectRemoved: (subject) {
                                     setState(() {
-                                      _selectedSubjects.removeWhere(
-                                        (s) => s.id == subject!.id,
-                                      );
+                                      _selectedSubjects.remove(subject);
                                     });
                                   },
                                 ),
@@ -458,9 +552,8 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 buildSectionHeader('Publication Details'),
-                                buildTextField(
+                                PublisherAutocomplete(
                                   controller: _publisherController,
-                                  hint: 'Publisher',
                                 ),
                                 const SizedBox(height: 8),
                                 buildTextField(
@@ -479,17 +572,15 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                   },
                                 ),
                                 const SizedBox(height: 8),
-                                buildBookTypesField(
-                                  bookTypes,
-                                  _selectedType,
-                                  (value) =>
+                                BookTypeAutocomplete(
+                                  selectedBookType: _selectedType,
+                                  onBookTypeSelected: (value) =>
                                       setState(() => _selectedType = value),
                                 ),
                                 const SizedBox(height: 8),
-                                buildSourcesField(
-                                  sources,
-                                  _selectedSource,
-                                  (value) => setState(() {
+                                SourceAutocomplete(
+                                  selectedSource: _selectedSource,
+                                  onSourceSelected: (value) => setState(() {
                                     _selectedSource = value;
                                     _fromController.text =
                                         value?.supplier ?? '';
@@ -503,167 +594,74 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                 const SizedBox(height: 8),
                                 buildTextField(
                                   controller: _priceController,
-                                  hint: 'Book Price',
+                                  hint: 'Book Price (optional)',
                                   keyboardType: TextInputType.number,
                                 ),
                                 buildSectionHeader('Location & Copies'),
-                                buildTextField(
+                                LocationAutocomplete(
                                   controller: _locationController,
-                                  hint: 'Location',
                                 ),
                                 const SizedBox(height: 8),
+                                ShelfAutocomplete(controller: _shelfController),
+                                const SizedBox(height: 16),
                                 buildTextField(
-                                  controller: _shelfController,
-                                  hint: 'Shelf',
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: buildTextField(
-                                        controller: _copiesController,
-                                        hint: 'Total Copies *',
-                                        isRequired: true,
-                                        keyboardType: TextInputType.number,
-                                        showAccessNumbersPreview: false,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'Required';
-                                          }
-                                          final n = int.tryParse(value);
-                                          if (n == null || n <= 0) {
-                                            return 'Invalid number';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    if (_selectedType != 'boo') ...[
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Access Numbers Preview:',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(
-                                                      context,
-                                                    ).hintColor,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            ValueListenableBuilder<
-                                              TextEditingValue
-                                            >(
-                                              valueListenable:
-                                                  _copiesController,
-                                              builder: (context, value, _) {
-                                                final copies =
-                                                    int.tryParse(value.text) ??
-                                                    0;
-                                                if (copies <= 0) {
-                                                  return Text(
-                                                    'Enter number of copies to see access numbers',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodySmall
-                                                        ?.copyWith(
-                                                          color: Theme.of(
-                                                            context,
-                                                          ).hintColor,
-                                                          fontStyle:
-                                                              FontStyle.italic,
-                                                        ),
-                                                  );
-                                                }
-                                                final accessNumbers =
-                                                    generateAccessNumbers(
-                                                      copies,
-                                                      _selectedType,
-                                                    );
-                                                return Wrap(
-                                                  spacing: 4,
-                                                  runSpacing: 4,
-                                                  children: [
-                                                    ...accessNumbers
-                                                        .take(10)
-                                                        .map(
-                                                          (number) => Chip(
-                                                            label: Text(number),
-                                                            backgroundColor:
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .colorScheme
-                                                                    .surfaceContainerHighest,
-                                                            padding:
-                                                                EdgeInsets.zero,
-                                                            labelPadding:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 0,
-                                                                ),
-                                                            labelStyle:
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .textTheme
-                                                                    .labelSmall,
-                                                          ),
-                                                        ),
-                                                    if (copies > 10)
-                                                      Chip(
-                                                        label: Text(
-                                                          '+${copies - 10} more',
-                                                        ),
-                                                        backgroundColor:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .surfaceContainerHighest,
-                                                        padding:
-                                                            EdgeInsets.zero,
-                                                        labelPadding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 8,
-                                                              vertical: 0,
-                                                            ),
-                                                        labelStyle:
-                                                            Theme.of(context)
-                                                                .textTheme
-                                                                .labelSmall
-                                                                ?.copyWith(
-                                                                  color: Theme.of(
-                                                                    context,
-                                                                  ).hintColor,
-                                                                ),
-                                                      ),
-                                                  ],
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                buildSectionHeader('Media'),
-                                const SizedBox(height: 4),
-                                buildMediaInput(
-                                  controller: _imageUrlController,
-                                  hintText: 'Image URL or select file',
+                                  controller: _copiesController,
+                                  hint: 'Total Copies *',
+                                  isRequired: true,
+                                  keyboardType: TextInputType.number,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Image URL is required';
+                                      return 'Required';
                                     }
+                                    final copies = int.tryParse(value);
+                                    if (copies == null || copies <= 0) {
+                                      return 'Enter a valid number';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                buildTextField(
+                                  controller: _accessNumbersController,
+                                  hint:
+                                      'Access Numbers (comma-separated, optional)',
+                                  keyboardType: TextInputType.text,
+                                  validator: (value) {
+                                    final copies =
+                                        int.tryParse(
+                                          _copiesController.text.trim(),
+                                        ) ??
+                                        0;
+                                    if (value != null && value.isNotEmpty) {
+                                      final accessNumbers = value
+                                          .split(',')
+                                          .map((s) => s.trim())
+                                          .where((s) => s.isNotEmpty)
+                                          .toList();
+                                      if (accessNumbers.length > copies) {
+                                        return 'More access numbers than total copies';
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Enter access numbers separated by commas (e.g., 001, 002, 003). If left empty, access numbers will be generated automatically.',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                ),
+
+                                // const SizedBox(height: 8),
+                                buildSectionHeader('Media'),
+                                buildMediaInput(
+                                  controller: _imageUrlController,
+                                  hintText: 'Cover image - optional',
+                                  validator: (value) {
+                                    // No validation - cover image is optional
                                     return null;
                                   },
                                   onPickAndUpload: _pickAndUploadImage,
@@ -671,15 +669,15 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
                                 const SizedBox(height: 8),
                                 buildMediaInput(
                                   controller: _ebookUrlController,
-                                  hintText: 'E-book file (PDF/EPUB)',
+                                  hintText: 'E-book file (PDF/EPUB) - optional',
                                   validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'E-book file is required';
-                                    }
+                                    // No validation - ebook is optional
                                     return null;
                                   },
                                   onPickAndUpload: _pickAndUploadEbook,
                                 ),
+
+                                const SizedBox(height: 8),
                               ],
                             ),
                           ),

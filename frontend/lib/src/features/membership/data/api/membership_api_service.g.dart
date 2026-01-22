@@ -227,7 +227,7 @@ class _MembershipApiService implements MembershipApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(data??{});
+    _data.addAll(data ?? {});
     final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
       Options(
             method: 'PUT',

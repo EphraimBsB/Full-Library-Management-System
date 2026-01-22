@@ -12,7 +12,7 @@ part of 'membership_type_api_service.dart';
 
 class _MembershipTypeApiService implements MembershipTypeApiService {
   _MembershipTypeApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
+    baseUrl ??= 'http://localhost:3000/api/v1';
   }
 
   final Dio _dio;
@@ -126,7 +126,7 @@ class _MembershipTypeApiService implements MembershipTypeApiService {
     final _data = <String, dynamic>{};
     _data.addAll(membershipType);
     final _options = _setStreamType<MembershipType>(
-      Options(method: 'PUT', headers: _headers, extra: _extra)
+      Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
             '/membership-types/${id}',

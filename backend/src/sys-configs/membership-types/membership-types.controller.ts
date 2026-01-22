@@ -6,7 +6,7 @@ import {
   Patch,
   Param,
   Delete,
-  ParseUUIDPipe,
+  ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -44,7 +44,7 @@ export class MembershipTypesController {
   @ApiOperation({ summary: 'Get a membership type by ID' })
   @ApiResponse({ status: 200, description: 'Return the membership type', type: MembershipType })
   @ApiResponse({ status: 404, description: 'Membership type not found' })
-  findOne(@Param('id', ParseUUIDPipe) id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.membershipTypesService.findOne(id);
   }
 
@@ -53,7 +53,7 @@ export class MembershipTypesController {
   @ApiResponse({ status: 200, description: 'Membership type updated successfully', type: MembershipType })
   @ApiResponse({ status: 404, description: 'Membership type not found' })
   update(
-    @Param('id', ParseUUIDPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateMembershipTypeDto: UpdateMembershipTypeDto,
   ) {
     return this.membershipTypesService.update(id, updateMembershipTypeDto);
@@ -63,7 +63,7 @@ export class MembershipTypesController {
   @ApiOperation({ summary: 'Delete a membership type' })
   @ApiResponse({ status: 200, description: 'Membership type deleted successfully' })
   @ApiResponse({ status: 404, description: 'Membership type not found' })
-  remove(@Param('id', ParseUUIDPipe) id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.membershipTypesService.remove(id);
   }
 }

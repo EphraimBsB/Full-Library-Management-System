@@ -23,7 +23,7 @@ abstract class SourceApiService {
   @POST('/sources')
   Future<Source> createSource(@Body() Map<String, dynamic> source);
 
-  @PUT('/sources/{id}')
+  @PATCH('/sources/{id}')
   Future<Source> updateSource(
     @Path('id') int id,
     @Body() Map<String, dynamic> source,

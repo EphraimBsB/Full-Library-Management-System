@@ -15,14 +15,14 @@ class BookTypesExpanded extends ConsumerWidget {
 
     return buildExpandableSettingItem(
       icon: Icons.type_specimen,
-      title: 'Book Book Types',
+      title: 'Book Types',
       child: Column(
         children: [
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               icon: const Icon(Icons.add, size: 20),
-              label: const Text('Add BookType'),
+              label: const Text('Add Book Type'),
               onPressed: () => _showBookTypeDialog(context, ref, null),
             ),
           ),
