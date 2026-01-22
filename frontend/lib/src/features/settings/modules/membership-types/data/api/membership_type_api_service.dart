@@ -26,7 +26,7 @@ abstract class MembershipTypeApiService {
     @Body() Map<String, dynamic> membershipType,
   );
 
-  @PUT('/membership-types/{id}')
+  @PATCH('/membership-types/{id}')
   Future<MembershipType> updateMembershipType(
     @Path('id') int id,
     @Body() Map<String, dynamic> membershipType,

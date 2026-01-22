@@ -5,7 +5,10 @@ import 'package:management_side/src/features/settings/modules/book_types/present
 import 'package:management_side/src/features/settings/modules/categories/presentation/screens/categories_expanded.dart';
 import 'package:management_side/src/features/settings/modules/data_import/presentation/screens/data_import_screen.dart';
 import 'package:management_side/src/features/settings/modules/degrees/presentation/screens/degree_expanded.dart';
+import 'package:management_side/src/features/settings/modules/locations/presentation/screens/location_expanded.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/presentation/screens/membership_types_expanded.dart';
+import 'package:management_side/src/features/settings/modules/publishers/presentation/screens/publisher_expanded.dart';
+import 'package:management_side/src/features/settings/modules/shelves/presentation/screens/shelf_expanded.dart';
 import 'package:management_side/src/features/settings/modules/subjects/presentation/screens/subjects_expanded.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/presentation/screens/user_roles_expanded.dart';
 
@@ -128,6 +131,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SubjectsExpanded(),
             const SourcesExpanded(),
             const BookTypesExpanded(),
+            const PublishersExpanded(),
+            const LocationsExpanded(),
+            const ShelvesExpanded(),
             const DegreesExpanded(),
             const UserRolesExpanded(),
             const MembershipTypesExpanded(),

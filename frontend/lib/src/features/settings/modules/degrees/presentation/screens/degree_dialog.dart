@@ -19,6 +19,7 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
   late final TextEditingController _codeController;
   late final TextEditingController _supplierController;
   late bool _isActive;
+  late String _level;
   bool _isLoading = false;
 
   @override
@@ -30,6 +31,9 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
       text: widget.degree?.description ?? '',
     );
     _isActive = widget.degree?.isActive ?? true;
+    _level = (widget.degree?.level != null && widget.degree!.level!.isNotEmpty)
+        ? widget.degree!.level!
+        : 'bachelors';
   }
 
   @override
@@ -53,7 +57,7 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
         description: _supplierController.text.trim().isEmpty
             ? null
             : _supplierController.text.trim(),
-        level: '',
+        level: _level,
         isActive: _isActive,
       );
 
@@ -165,6 +169,43 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
                   ),
                 ),
                 maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _level,
+                decoration: const InputDecoration(
+                  labelText: 'Level',
+                  border: OutlineInputBorder(),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppTheme.textSecondaryColor),
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'diploma', child: Text('Diploma')),
+                  DropdownMenuItem(
+                    value: 'bachelors',
+                    child: Text('Bachelors'),
+                  ),
+                  DropdownMenuItem(value: 'masters', child: Text('Masters')),
+                  DropdownMenuItem(value: 'phd', child: Text('PhD')),
+                  DropdownMenuItem(
+                    value: 'certificate',
+                    child: Text('Certificate'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _level = value);
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a level';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               SwitchListTile(

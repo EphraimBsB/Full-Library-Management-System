@@ -5,6 +5,9 @@ export class CreateDegreeDto {
   @IsString()
   name: string;
 
+  @IsString()
+  code: string;
+
   @IsEnum(DegreeLevel)
   level: DegreeLevel;
 

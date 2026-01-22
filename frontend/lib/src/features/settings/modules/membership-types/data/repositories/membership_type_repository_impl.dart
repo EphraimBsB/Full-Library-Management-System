@@ -1,4 +1,7 @@
+import 'dart:developer' as dev;
+
 import 'package:dartz/dartz.dart';
+import 'package:flutter/material.dart';
 import 'package:management_side/src/core/error/exceptions.dart';
 import 'package:management_side/src/core/error/failures.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/data/api/membership_type_api_service.dart';
@@ -101,8 +104,10 @@ class MembershipTypeRepositoryImpl implements MembershipTypeRepository {
       final response = await _apiService.updateMembershipType(type.id, typeDto);
       return Right(response);
     } on ServerException catch (e) {
+      dev.log('Error updating membership type: ${e.message}');
       return Left(ServerFailure(e.message));
     } catch (e) {
+      dev.log('Error updating membership type: $e');
       return Left(ServerFailure('Failed to update membership type: $e'));
     }
   }

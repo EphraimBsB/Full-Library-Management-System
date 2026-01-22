@@ -8,6 +8,9 @@ import { SourcesSeed } from './entities/sources.seed';
 import { TypesSeed } from './entities/types.seed';
 import { SubjectsSeed } from './entities/subjects.seed';
 import { DegreesSeed } from './entities/degrees.seed';
+import { PublishersSeed } from './entities/publishers.seed';
+import { LocationsSeed } from './entities/locations.seed';
+import { ShelvesSeed } from './entities/shelves.seed';
 
 // Users and Memberships
 import { UsersSeed } from './entities/users.seed';
@@ -42,6 +45,9 @@ export class DatabaseSeeder {
       new TypesSeed(),
       new SubjectsSeed(),
       new DegreesSeed(),
+      new PublishersSeed(),
+      new LocationsSeed(),
+      new ShelvesSeed(),
       
       // Then users and memberships
       new UsersSeed(),

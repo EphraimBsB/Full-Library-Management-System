@@ -18,6 +18,9 @@ import { Source } from 'src/sys-configs/sources/entities/source.entity';
 import { Type } from 'src/sys-configs/types/entities/type.entity';
 import { Degree } from 'src/sys-configs/degrees/entities/degree.entity';
 import { UserRole } from 'src/sys-configs/user-roles/entities/user-role.entity';
+import { Publisher } from 'src/sys-configs/publishers/entities/publisher.entity';
+import { Location } from 'src/sys-configs/locations/entities/location.entity';
+import { Shelf } from 'src/sys-configs/shelves/entities/shelf.entity';
 import { BookMetadata } from 'src/books/entities/book-metadata.entity';
 import { LoanSettings } from 'src/sys-configs/loan-settings/loan-settings.entity';
 import { BookFavorite } from 'src/books/entities/book-favorite.entity';
@@ -54,6 +57,9 @@ import { BookInhouseUsage } from 'src/books/entities/book-inhouse-usage.entity';
           Type,
           Degree,
           UserRole,
+          Publisher,
+          Location,
+          Shelf,
           BookMetadata,
           LoanSettings,
           BookInhouseUsage,

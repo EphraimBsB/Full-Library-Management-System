@@ -40,8 +40,20 @@ class MembershipType extends Equatable {
     this.isActive = true,
   });
 
-  factory MembershipType.fromJson(Map<String, dynamic> json) =>
-      _$MembershipTypeFromJson(json);
+  factory MembershipType.fromJson(Map<String, dynamic> json) {
+    final fineRateValue = json['fineRate'];
+
+    return MembershipType(
+      id: (json['id'] as num).toInt(),
+      name: json['name'] as String,
+      maxBooks: (json['maxBooks'] as num).toInt(),
+      maxDurationDays: (json['maxDurationDays'] as num).toInt(),
+      renewalLimit: (json['renewalLimit'] as num).toInt(),
+      fineRate: fineRateValue == null ? '0.00' : fineRateValue.toString(),
+      description: json['description'] as String?,
+      isActive: json['isActive'] as bool? ?? true,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {

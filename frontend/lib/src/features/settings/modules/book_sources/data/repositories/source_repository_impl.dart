@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:dartz/dartz.dart';
 import 'package:management_side/src/core/error/exceptions.dart';
 import 'package:management_side/src/core/error/failures.dart';
@@ -65,7 +67,7 @@ class SourceRepositoryImpl implements SourceRepository {
         if (source.dateAcquired != null) 'dateAcquired': source.dateAcquired,
       };
       final response = await _apiService.createSource(sourceDto);
-      return Right(Source.fromJson(response as Map<String, dynamic>));
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
@@ -83,10 +85,12 @@ class SourceRepositoryImpl implements SourceRepository {
         if (source.dateAcquired != null) 'dateAcquired': source.dateAcquired,
       };
       final response = await _apiService.updateSource(source.id!, sourceDto);
-      return Right(Source.fromJson(response as Map<String, dynamic>));
+      return Right(response);
     } on ServerException catch (e) {
+      dev.log('Error updating source: ${e.message}');
       return Left(ServerFailure(e.message));
     } catch (e) {
+      dev.log('Error updating source: ${e.toString()}');
       return Left(ServerFailure('Failed to update source: ${e.toString()}'));
     }
   }

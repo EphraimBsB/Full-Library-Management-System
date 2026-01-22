@@ -1,19 +1,24 @@
+import { Type } from 'class-transformer';
 import { IsString, IsInt, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateMembershipTypeDto {
   @IsString()
   name: string;
 
+  @Type(() => Number)
   @IsInt()
   maxBooks: number;
 
+  @Type(() => Number)
   @IsInt()
   maxDurationDays: number;
 
+  @Type(() => Number)
   @IsInt()
   renewalLimit: number;
 
-  @IsNumber()
+  @Type(() => Number)
+  @IsNumber({ allowNaN: false, allowInfinity: false, maxDecimalPlaces: 2 })
   fineRate: number;
 
   @IsString()

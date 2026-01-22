@@ -23,6 +23,9 @@ import { MembershipTypesModule } from './sys-configs/membership-types/membership
 import { SourcesModule } from './sys-configs/sources/sources.module';
 import { SubjectsModule } from './sys-configs/subjects/subjects.module';
 import { TypesModule } from './sys-configs/types/types.module';
+import { PublishersModule } from './sys-configs/publishers/publishers.module';
+import { LocationsModule } from './sys-configs/locations/locations.module';
+import { ShelvesModule } from './sys-configs/shelves/shelves.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { StudentsModule } from './auth/students/students.module';
 
@@ -46,6 +49,9 @@ import { StudentsModule } from './auth/students/students.module';
     SubjectsModule,
     TypesModule,
     SourcesModule,
+    PublishersModule,
+    LocationsModule,
+    ShelvesModule,
     MembershipTypesModule,
     UserRolesModule,
     DashboardModule,

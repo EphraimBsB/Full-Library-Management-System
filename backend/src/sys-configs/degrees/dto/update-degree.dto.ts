@@ -8,6 +8,10 @@ export class UpdateDegreeDto extends PartialType(CreateDegreeDto) {
     @IsOptional()
     name?: string;
 
+    @IsString()
+    @IsOptional()
+    code?: string;
+
     @IsEnum(DegreeLevel)
     @IsOptional()
     level?: DegreeLevel;
