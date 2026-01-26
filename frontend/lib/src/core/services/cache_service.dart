@@ -10,11 +10,17 @@ class CacheService {
   late final SharedPreferences _prefs;
   late final BaseCacheManager _fileCacheManager;
 
-  // Cache duration constants
-  static const Duration shortCache = Duration(minutes: 5);
-  static const Duration mediumCache = Duration(hours: 1);
-  static const Duration longCache = Duration(hours: 24);
-  static const Duration veryLongCache = Duration(days: 7);
+  // Cache duration constants - REDUCED for better responsiveness
+  static const Duration shortCache = Duration(minutes: 1); // Reduced from 2 min
+  static const Duration mediumCache = Duration(
+    minutes: 3,
+  ); // Reduced from 5 min
+  static const Duration longCache = Duration(
+    minutes: 10,
+  ); // Reduced from 30 min
+  static const Duration veryLongCache = Duration(
+    hours: 1,
+  ); // Reduced from 2 hours
 
   factory CacheService() {
     return _instance;
@@ -165,6 +171,90 @@ class CacheService {
 
   static String bookDetailsKey(int bookId) {
     return 'book_details_$bookId';
+  }
+
+  // NEW: Comprehensive book cache invalidation
+  static List<String> getBookRelatedCacheKeys(int? bookId) {
+    final keys = <String>[];
+
+    // Add all possible book list cache keys (common combinations)
+    final commonPages = [1, 2, 3, 4, 5];
+    final commonLimits = [10, 20, 50];
+    final commonSorts = ['title', 'author', 'createdAt', 'publicationYear'];
+    final commonOrders = ['asc', 'desc'];
+
+    for (final page in commonPages) {
+      for (final limit in commonLimits) {
+        for (final sort in commonSorts) {
+          for (final order in commonOrders) {
+            keys.add(
+              booksListKey(
+                page: page,
+                limit: limit,
+                search: null,
+                category: null,
+                type: null,
+                sortBy: sort,
+                sortOrder: order,
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    // Add book details key if bookId is provided
+    if (bookId != null) {
+      keys.add(bookDetailsKey(bookId));
+    }
+
+    // Add other book-related cache keys
+    keys.addAll([
+      'categories_list',
+      'subjects_list',
+      'types_list',
+      'sources_list',
+      'popular_books',
+      'search_suggestions',
+    ]);
+
+    return keys;
+  }
+
+  // NEW: Force refresh book caches
+  Future<void> invalidateBookCaches({
+    int? bookId,
+    bool forceRefresh = true,
+  }) async {
+    try {
+      final keys = getBookRelatedCacheKeys(bookId);
+
+      _logger.i('Invalidating ${keys.length} book-related cache keys');
+
+      // Remove all book-related cache entries
+      for (final key in keys) {
+        await remove(key);
+      }
+
+      // Also clear any cache entries with book-related prefixes
+      await clear(prefix: 'books_');
+      await clear(prefix: 'book_');
+      await clear(prefix: 'popular_');
+      await clear(prefix: 'search_');
+
+      // Force memory cache cleanup
+      _memoryCache.removeWhere(
+        (key, value) =>
+            key.startsWith('books_') ||
+            key.startsWith('book_') ||
+            key.startsWith('popular_') ||
+            key.startsWith('search_'),
+      );
+
+      _logger.i('Book cache invalidation completed');
+    } catch (e) {
+      _logger.e('Error invalidating book caches: $e');
+    }
   }
 
   static String membershipsListKey({

@@ -16,6 +16,11 @@ abstract class DataImportApiService {
     // Update headers for file upload
     dio.options.headers[HttpHeaders.contentTypeHeader] = 'multipart/form-data';
 
+    // Remove timeout duration for data import
+    dio.options.connectTimeout = Duration.zero;
+    dio.options.receiveTimeout = Duration.zero;
+    dio.options.sendTimeout = Duration.zero;
+
     return _DataImportApiService(dio, baseUrl: '');
   }
 

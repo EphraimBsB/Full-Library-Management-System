@@ -40,7 +40,7 @@ export class UpdateBookDto {
 
   @IsOptional()
   @IsString()
-  @IsISBN()
+  // @IsISBN()
   isbn?: string;
 
   @IsOptional()

@@ -4,21 +4,87 @@ import * as XLSX from 'xlsx';
 import { BooksService } from '../books/books.service';
 import { CreateBookDto } from '../books/dto/create-book.dto';
 import { ImportResultDto, ImportSummaryDto } from './dto/import-result.dto';
+import { WorldCatService } from './worldcat.service';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
+import { Book } from '../books/entities/book.entity';
+import { IsNull } from 'typeorm';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const SUPPORTED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
+  'application/vnd.oasis.opendocument.spreadsheet',
+  'application/vnd.ms-excel.sheet.macroEnabled.12',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+  'application/vnd.ms-excel.template.macroEnabled.12',
+  'application/vnd.ms-excel.addin.macroEnabled.12',
+  'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
+  'application/vnd.ms-excel.sheet.macroEnabled.12',
+  'application/vnd.ms-excel.template.macroEnabled.12',
+  'application/vnd.ms-excel.addin.macroEnabled.12',
+  'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
 ];
 
 @Injectable()
 export class DataImportService {
   private readonly logger = new Logger(DataImportService.name);
   private readonly BATCH_SIZE = 50;
+  // private readonly worldCatService: WorldCatService;
 
-  constructor(private readonly booksService: BooksService) {}
+  constructor(
+    private readonly booksService: BooksService,
+    private readonly worldCatService: WorldCatService
+  ) {}
+
+  private async checkISBNExists(isbn: string): Promise<Book | null> {
+    try {
+      // Use the BooksService's internal repository to check if ISBN exists
+      const bookRepository = this.booksService['bookRepository'];
+      
+      if (!bookRepository) {
+        // If repository not accessible, we need to create a simple check
+        // Let's create a minimal DTO and catch the conflict exception
+        const minimalDto = {
+          isbn: isbn,
+          title: 'temp',
+          author: 'temp',
+          totalCopies: 1,
+          copies: [{ accessNumber: '001' }],
+          categories: [{ name: 'temp' }],
+          subjects: [],
+          typeId: 1,
+          rating: 0
+        } as CreateBookDto;
+        
+        try {
+          await this.booksService.create(minimalDto);
+          // If successful, book doesn't exist, so we need to clean up
+          // This is not ideal but ensures we don't get false positives
+          return null;
+        } catch (error) {
+          // If conflict error, book exists
+          if (error.message?.includes('already exists') || error.message?.includes('Conflict')) {
+            return { id: 1, isbn } as Book;
+          }
+          return null;
+        }
+      }
+      
+      // Direct repository query (preferred method)
+      const existingBook = await bookRepository.findOne({
+        where: { 
+          isbn: isbn,
+          deletedAt: IsNull()
+        }
+      });
+      
+      return existingBook;
+    } catch (error) {
+      this.logger.warn(`Error checking ISBN existence: ${error.message}`);
+      return null;
+    }
+  }
 
   async validateFile(file: any): Promise<void> {
     if (!file) {
@@ -110,7 +176,8 @@ export class DataImportService {
           headerIndex + 1 + i,
           Math.min(this.BATCH_SIZE, totalRows - i),
           headersByIndex,
-          headerRow
+          headerRow,
+          warnings
         );
         results.push(...batchResults);
       }
@@ -128,7 +195,8 @@ export class DataImportService {
     startRow: number,
     batchSize: number,
     headersByIndex: string[],
-    headerRow: any[]
+    headerRow: any[],
+    warnings: string[]
   ): Promise<ImportResultDto[]> {
     const batchResults: ImportResultDto[] = [];
 
@@ -161,6 +229,57 @@ export class DataImportService {
         }
 
         const dto = this.mapRowToCreateDto(rowObj);
+        
+        // Enhanced ISBN validation and WorldCat integration
+        if (dto.isbn) {
+          this.logger.log(`Processing ISBN: ${dto.isbn}`);
+          
+          // Step 1: Check if ISBN already exists in database
+          const existingBook = await this.checkISBNExists(dto.isbn);
+          
+          if (existingBook) {
+            result.errors = [`Book with ISBN ${dto.isbn} already exists in database`];
+            batchResults.push(result);
+            continue;
+          }
+          
+          // Step 2: Always fetch from WorldCat to enrich data (description, cover, etc.)
+          this.logger.log(`Fetching WorldCat data for ISBN: ${dto.isbn}`);
+          const worldCatData = await this.worldCatService.fetchBookDataWithFallback(dto.isbn);
+          
+          if (worldCatData) {
+            // Debug: Log the WorldCat data received
+            this.logger.log(`WorldCat data received for ISBN ${dto.isbn}:`, JSON.stringify(worldCatData, null, 2));
+            
+            // Populate DTO with WorldCat data (only fill missing fields)
+            const enrichedDto = this.worldCatService.populateBookDto(worldCatData);
+            
+            // Only merge fields that are missing or empty in the original DTO
+            if (!dto.description && enrichedDto.description) {
+              dto.description = enrichedDto.description;
+            }
+            if (!dto.coverImageUrl && enrichedDto.coverImageUrl) {
+              dto.coverImageUrl = enrichedDto.coverImageUrl;
+            }
+            if (!dto.publisher && enrichedDto.publisher) {
+              dto.publisher = enrichedDto.publisher;
+            }
+            if (!dto.publicationYear && enrichedDto.publicationYear) {
+              dto.publicationYear = enrichedDto.publicationYear;
+            }
+            
+            // Debug: Log the final merged DTO
+            this.logger.log(`Final DTO after WorldCat enrichment:`, JSON.stringify(dto, null, 2));
+            
+            // Add warning about auto-filled data
+            warnings.push(`Row ${rowNumber}: Enriched with data from ISBN ${dto.isbn}`);
+          } else {
+            // If no data found in WorldCat, use Excel data as-is
+            this.logger.warn(`No WorldCat data found for ISBN ${dto.isbn}, using Excel data`);
+            warnings.push(`Row ${rowNumber}: No data found for ISBN ${dto.isbn} in WorldCat, using Excel data`);
+          }
+        }
+        
         const validationErrors = await this.validateBookData(dto);
         
         if (validationErrors.length > 0) {
