@@ -1,9 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/book_model_new.dart';
-import '../../../settings/modules/publishers/domain/models/publisher_model.dart';
-import '../../../settings/modules/categories/domain/models/category_model.dart';
-import '../../../settings/modules/subjects/domain/models/subject_model.dart';
 
 class WorldCatService {
   // WorldCat Search API endpoint

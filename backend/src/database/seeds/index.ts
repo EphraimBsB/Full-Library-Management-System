@@ -55,14 +55,14 @@ export class DatabaseSeeder {
       new MembershipRequestsSeed(),
       
       // Then books and related entities
-      new BooksSeed(),
-      new BookCopiesSeed(),
-      new BookLoansSeed(),
-      new BookRequestsSeed(),
-      new QueueEntriesSeed(),
-      new BookFavoritesSeed(),
-      new BookNotesSeed(),
-      new InhouseUsageSeed(),
+      // new BooksSeed(),
+      // new BookCopiesSeed(),
+      // new BookLoansSeed(),
+      // new BookRequestsSeed(),
+      // new QueueEntriesSeed(),
+      // new BookFavoritesSeed(),
+      // new BookNotesSeed(),
+      // new InhouseUsageSeed(),
       
       // Then notifications
       new NotificationsSeed()

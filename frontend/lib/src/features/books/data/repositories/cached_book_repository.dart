@@ -82,7 +82,7 @@ class CachedBookRepository {
       await _cacheService.set(
         cacheKey,
         jsonEncode(responseData),
-        duration: Duration(minutes: 10), // Books list cache for 10 minutes
+        duration: Duration(minutes: 5), // Books list cache for 5 minutes
       );
 
       _logger.d('Books list fetched from API and cached: page $page');
@@ -147,7 +147,7 @@ class CachedBookRepository {
       await _cacheService.set(
         cacheKey,
         jsonEncode(response.toJson()),
-        duration: Duration(minutes: 30), // Book details cache for 30 minutes
+        duration: Duration(minutes: 10), // Book details cache for 10 minutes
       );
 
       _logger.d('Book details fetched from API and cached: bookId $bookId');

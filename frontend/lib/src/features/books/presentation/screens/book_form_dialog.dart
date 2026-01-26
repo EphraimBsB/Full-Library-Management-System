@@ -7,16 +7,24 @@ import 'package:management_side/src/core/utils/file_uploader.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/domain/services/worldcat_service.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_book_types_autocomplete.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_categories_autocomplete.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_media_input.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_section_header.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_sources_autocomplete.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_subjects_autocomplete.dart';
+import 'package:management_side/src/features/books/presentation/widgets/build_text_field.dart';
 import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 import 'package:management_side/src/features/settings/modules/book_sources/domain/models/source_model.dart';
 import 'package:management_side/src/features/settings/modules/book_types/domain/models/book_type_model.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_categories_autocomplete.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_section_header.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_subjects_autocomplete.dart';
-import 'package:management_side/src/features/books/presentation/widgets/build_text_field.dart';
+import 'package:management_side/src/features/books/presentation/providers/paginated_books_provider.dart';
+import 'package:management_side/src/features/books/presentation/providers/cached_books_provider.dart';
+import 'package:management_side/src/features/settings/modules/publishers/presentation/providers/publisher_providers.dart';
+import 'package:management_side/src/features/settings/modules/locations/presentation/providers/location_providers.dart';
+import 'package:management_side/src/features/settings/modules/shelves/presentation/providers/shelf_providers.dart';
+import 'package:management_side/src/features/settings/modules/categories/presentation/providers/category_providers.dart';
+import 'package:management_side/src/features/settings/modules/subjects/presentation/providers/subject_providers.dart';
+import 'package:management_side/src/features/books/presentation/utils/cache_invalidation.dart';
 import 'package:management_side/src/features/settings/modules/categories/domain/models/category_model.dart';
 import 'package:management_side/src/features/settings/modules/subjects/domain/models/subject_model.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_publishers.dart';
@@ -282,9 +290,21 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
 
       if (mounted) {
         if (result.isSuccess) {
-          ref.invalidate(dashboardSummaryProvider);
-          // ref.invalidate(dashboardSummaryStatsProvider);
-          // ref.invalidate(recentBooksProvider);
+          // COMPREHENSIVE CACHE INVALIDATION
+          await BookCacheInvalidator.invalidateAllBookCaches(
+            bookId: widget.book?.id,
+          );
+
+          // Invalidate Riverpod providers
+          ref.invalidate(paginatedBooksProvider);
+          ref.invalidate(booksListProvider);
+          ref.invalidate(bookDetailsProvider);
+          ref.invalidate(allBooksProvider);
+          ref.invalidate(popularBooksProvider);
+          ref.invalidate(searchSuggestionsProvider);
+          ref.invalidate(booksByCategoryProvider);
+
+          // Force refresh the current page
           if (mounted) {
             Navigator.of(context).pop(true);
             ScaffoldMessenger.of(context).showSnackBar(
