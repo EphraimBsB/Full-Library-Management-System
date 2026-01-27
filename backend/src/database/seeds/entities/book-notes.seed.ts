@@ -8,7 +8,7 @@ import { User } from 'src/users/entities/user.entity';
 export class BookNotesSeed implements ISeeder {
   public async run(dataSource: DataSource): Promise<SeedResult> {
     console.log('Seeding book notes...');
-    
+
     const bookNoteRepository = dataSource.getRepository(BookNote);
     const bookRepository = dataSource.getRepository(Book);
     const userRepository = dataSource.getRepository(User);
@@ -18,7 +18,9 @@ export class BookNotesSeed implements ISeeder {
     const users = await userRepository.find({ take: 20 });
 
     if (books.length === 0 || users.length === 0) {
-      console.warn('Not enough books or users found to create notes. Skipping...');
+      console.warn(
+        'Not enough books or users found to create notes. Skipping...',
+      );
       return { entity: 'BookNotes', count: 0 };
     }
 
@@ -30,21 +32,23 @@ export class BookNotesSeed implements ISeeder {
       // Select random books for this user
       const userBooks = faker.helpers.arrayElements(
         books,
-        faker.number.int({ min: 1, max: notesPerUser })
+        faker.number.int({ min: 1, max: notesPerUser }),
       );
 
       for (const book of userBooks) {
         const isPublic = faker.datatype.boolean({ probability: 0.7 }); // 70% chance of being public
         const hasPageNumber = faker.datatype.boolean({ probability: 0.6 }); // 60% chance of having a page number
-        
+
         notes.push({
           content: faker.lorem.paragraphs(faker.number.int({ min: 1, max: 3 })),
-          pageNumber: hasPageNumber ? faker.number.int({ min: 1, max: 500 }) : undefined,
+          pageNumber: hasPageNumber
+            ? faker.number.int({ min: 1, max: 500 })
+            : undefined,
           isPublic,
           userId: user.id,
           bookId: book.id,
           createdAt: faker.date.past({ years: 1 }),
-          updatedAt: faker.date.recent({ days: 30 })
+          updatedAt: faker.date.recent({ days: 30 }),
         });
       }
     }

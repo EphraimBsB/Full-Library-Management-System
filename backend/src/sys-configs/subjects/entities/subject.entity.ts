@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, DeleteDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToMany,
+  JoinTable,
+  DeleteDateColumn,
+} from 'typeorm';
 import { Book } from '../../../books/entities/book.entity';
 
 @Entity('subjects')
@@ -15,6 +22,6 @@ export class Subject {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @ManyToMany(() => Book, book => book.subjects)
+  @ManyToMany(() => Book, (book) => book.subjects)
   books: Book[];
 }

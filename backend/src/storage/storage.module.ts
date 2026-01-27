@@ -6,10 +6,7 @@ import { StorageController } from './storage.controller';
 import { FileRecord } from './entities/file-record.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([FileRecord]),
-    ConfigModule,
-  ],
+  imports: [TypeOrmModule.forFeature([FileRecord]), ConfigModule],
   providers: [StorageService],
   controllers: [StorageController],
   exports: [StorageService],

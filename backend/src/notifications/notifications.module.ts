@@ -17,13 +17,23 @@ import { EmailModule } from 'src/emails/email.module';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([Notification, User, BookLoan, BookRequest, QueueEntry]),
+    TypeOrmModule.forFeature([
+      Notification,
+      User,
+      BookLoan,
+      BookRequest,
+      QueueEntry,
+    ]),
     // Forward ref if you need to inject notifications into users or vice versa
     forwardRef(() => UsersModule),
     forwardRef(() => AuthModule),
     EmailModule,
   ],
-  providers: [NotificationsService, NotificationsGateway, NotificationsScheduler],
+  providers: [
+    NotificationsService,
+    NotificationsGateway,
+    NotificationsScheduler,
+  ],
   controllers: [NotificationsController],
   exports: [NotificationsService],
 })

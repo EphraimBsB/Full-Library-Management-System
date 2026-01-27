@@ -26,14 +26,25 @@ export class EmailService implements OnModuleInit {
 
   private initializeTransporter() {
     try {
-      const host = this.configService.get<string>('SMTP_HOST', 'smtp-relay.brevo.com');
-      const port = parseInt(this.configService.get<string>('SMTP_PORT', '587'), 10);
-      const secure = this.configService.get<string | boolean>('SMTP_SECURE', 'false').toString() === 'true';
+      const host = this.configService.get<string>(
+        'SMTP_HOST',
+        'smtp-relay.brevo.com',
+      );
+      const port = parseInt(
+        this.configService.get<string>('SMTP_PORT', '587'),
+        10,
+      );
+      const secure =
+        this.configService
+          .get<string | boolean>('SMTP_SECURE', 'false')
+          .toString() === 'true';
       const user = this.configService.get<string>('SMTP_USER');
       const pass = this.configService.get<string>('SMTP_PASSWORD');
 
       if (!user || !pass) {
-        console.warn('SMTP credentials not fully configured. Email sending will be disabled.');
+        console.warn(
+          'SMTP credentials not fully configured. Email sending will be disabled.',
+        );
         return;
       }
 
@@ -48,23 +59,23 @@ export class EmailService implements OnModuleInit {
 
       // Check if we should use the first password or the xkeysib format
       const useXKeySib = pass.startsWith('xkeysib-');
-      
+
       const transporterConfig: any = {
         host,
         port,
         secure: false, // Always false for Brevo with port 587
         auth: {
           user,
-          pass: useXKeySib ? pass : pass
+          pass: useXKeySib ? pass : pass,
         },
         tls: {
           rejectUnauthorized: false,
-          minVersion: 'TLSv1.2'
+          minVersion: 'TLSv1.2',
         },
         connectionTimeout: 10000,
         greetingTimeout: 5000,
         logger: true,
-        debug: true
+        debug: true,
       };
 
       // Special handling for xkeysib format
@@ -73,12 +84,11 @@ export class EmailService implements OnModuleInit {
       }
 
       this.transporter = nodemailer.createTransport(transporterConfig);
-      
+
       // Add event listeners for better debugging
       this.transporter.on('token', (token) => {
         console.log('SMTP Auth token:', token);
       });
-
     } catch (error) {
       console.error('Failed to initialize email transporter:', error);
       this.transporter = null;
@@ -87,8 +97,8 @@ export class EmailService implements OnModuleInit {
 
   private loadTemplates() {
     const templateFiles = fs.readdirSync(this.templateDir);
-    
-    templateFiles.forEach(file => {
+
+    templateFiles.forEach((file) => {
       if (file.endsWith('.hbs')) {
         const templateName = path.basename(file, '.hbs');
         const templatePath = path.join(this.templateDir, file);
@@ -98,15 +108,24 @@ export class EmailService implements OnModuleInit {
     });
   }
 
-  async sendEmail(to: string, subject: string, templateName: string, context: any = {}) {
+  async sendEmail(
+    to: string,
+    subject: string,
+    templateName: string,
+    context: any = {},
+  ) {
     if (!this.transporter) {
-      throw new Error('Email service is not properly configured. SMTP transporter is not initialized.');
+      throw new Error(
+        'Email service is not properly configured. SMTP transporter is not initialized.',
+      );
     }
 
     try {
       const template = this.templates[templateName];
       if (!template) {
-        throw new Error(`Template ${templateName} not found. Available templates: ${Object.keys(this.templates).join(', ')}`);
+        throw new Error(
+          `Template ${templateName} not found. Available templates: ${Object.keys(this.templates).join(', ')}`,
+        );
       }
 
       // Ensure we have all required context for the templates
@@ -114,15 +133,24 @@ export class EmailService implements OnModuleInit {
         ...context,
         title: subject,
         currentYear: new Date().getFullYear(),
-        appName: this.configService.get<string>('APP_NAME', 'Library Management System'),
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'support@yourlibrary.com'),
+        appName: this.configService.get<string>(
+          'APP_NAME',
+          'Library Management System',
+        ),
+        supportEmail: this.configService.get<string>(
+          'SUPPORT_EMAIL',
+          'support@yourlibrary.com',
+        ),
       };
 
       // Render the template with the context
       const html = template(emailContext);
 
       const mailOptions = {
-        from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
+        from: this.configService.get<string>(
+          'SMTP_FROM',
+          'noreply@example.com',
+        ),
         to,
         subject,
         html,
@@ -137,7 +165,7 @@ export class EmailService implements OnModuleInit {
         to,
         subject,
         from: mailOptions.from,
-        template: templateName
+        template: templateName,
       });
 
       const info = await this.transporter.sendMail(mailOptions);
@@ -152,20 +180,27 @@ export class EmailService implements OnModuleInit {
         timestamp: new Date().toISOString(),
         to,
         subject,
-        template: templateName
+        template: templateName,
       };
-      
-      console.error('Error sending email:', JSON.stringify(errorDetails, null, 2));
-      
+
+      console.error(
+        'Error sending email:',
+        JSON.stringify(errorDetails, null, 2),
+      );
+
       // More specific error messages based on error code
       if (error.code === 'EAUTH') {
-        throw new Error('Authentication failed. Please check your SMTP credentials.');
+        throw new Error(
+          'Authentication failed. Please check your SMTP credentials.',
+        );
       } else if (error.code === 'ECONNECTION') {
-        throw new Error('Could not connect to the SMTP server. Please check your network connection and SMTP settings.');
+        throw new Error(
+          'Could not connect to the SMTP server. Please check your network connection and SMTP settings.',
+        );
       } else if (error.code === 'EENVELOPE') {
         throw new Error('Invalid email address or message format.');
       }
-      
+
       throw new Error(`Failed to send email: ${error.message}`);
     }
   }

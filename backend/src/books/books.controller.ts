@@ -14,7 +14,15 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiQuery,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -28,15 +36,25 @@ import { BatchCreateBooksDto, BatchUpdateBooksDto } from './dto/batch-book.dto';
 @Controller('books')
 @UseInterceptors(ClassSerializerInterceptor)
 export class BooksController {
-  constructor(private readonly booksService: BooksService) { }
+  constructor(private readonly booksService: BooksService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new book' })
   @ApiBody({ type: CreateBookDto })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'The book has been successfully created.', type: Book })
-  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'A book with this ISBN already exists.' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input data.' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'The book has been successfully created.',
+    type: Book,
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'A book with this ISBN already exists.',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data.',
+  })
   async create(@Body() createBookDto: CreateBookDto): Promise<Book | null> {
     return this.booksService.create(createBookDto);
   }
@@ -44,8 +62,14 @@ export class BooksController {
   @Get()
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get all books with optional filtering and pagination' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Returns a paginated list of books.', type: PaginatedResponseDto })
+  @ApiOperation({
+    summary: 'Get all books with optional filtering and pagination',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns a paginated list of books.',
+    type: PaginatedResponseDto,
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -55,12 +79,16 @@ export class BooksController {
   @ApiQuery({ name: 'minYear', required: false, type: Number })
   @ApiQuery({ name: 'maxYear', required: false, type: Number })
   @ApiQuery({ name: 'categories', required: false, type: [String] })
-  @ApiQuery({ name: 'type', required: false, enum: ['physical', 'ebook', 'audiobook', 'reference', 'periodical'] })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['physical', 'ebook', 'audiobook', 'reference', 'periodical'],
+  })
   @ApiQuery({ name: 'minAvailable', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
   async findAll(
-    @Query() query: BookQueryDto
+    @Query() query: BookQueryDto,
   ): Promise<PaginatedResponseDto<Book>> {
     return this.booksService.findAll(query);
   }
@@ -70,7 +98,11 @@ export class BooksController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a book by ID' })
   @ApiParam({ name: 'id', description: 'Book ID' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Returns the book with the specified ID.', type: Book })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns the book with the specified ID.',
+    type: Book,
+  })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<Book | null> {
     return this.booksService.findOne(id);
@@ -81,22 +113,34 @@ export class BooksController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get details of a book by ID' })
   @ApiParam({ name: 'id', description: 'Book ID' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Returns the details of the book with the specified ID.', })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns the details of the book with the specified ID.',
+  })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
   async getBookDetails(@Param('id', ParseIntPipe) id: number) {
     return this.booksService.getBookDetails(id);
   }
-
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a book' })
   @ApiParam({ name: 'id', description: 'Book ID' })
   @ApiBody({ type: UpdateBookDto })
-  @ApiResponse({ status: HttpStatus.OK, description: 'The book has been successfully updated.', type: Book })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'The book has been successfully updated.',
+    type: Book,
+  })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
-  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'A book with this ISBN already exists.' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input data.' })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'A book with this ISBN already exists.',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data.',
+  })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBookDto: UpdateBookDto,
@@ -108,11 +152,12 @@ export class BooksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a book (soft delete)' })
   @ApiParam({ name: 'id', description: 'Book ID' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The book has been successfully deleted.' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'The book has been successfully deleted.',
+  })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.booksService.remove(id);
   }
-
-
 }

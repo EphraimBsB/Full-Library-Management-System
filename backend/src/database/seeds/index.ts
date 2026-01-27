@@ -48,12 +48,12 @@ export class DatabaseSeeder {
       new PublishersSeed(),
       new LocationsSeed(),
       new ShelvesSeed(),
-      
+
       // Then users and memberships
       new UsersSeed(),
       new MembershipsSeed(),
       new MembershipRequestsSeed(),
-      
+
       // Then books and related entities
       // new BooksSeed(),
       // new BookCopiesSeed(),
@@ -63,15 +63,15 @@ export class DatabaseSeeder {
       // new BookFavoritesSeed(),
       // new BookNotesSeed(),
       // new InhouseUsageSeed(),
-      
+
       // Then notifications
-      new NotificationsSeed()
+      new NotificationsSeed(),
     ];
   }
 
   public async run(): Promise<SeedResult[]> {
     console.log('Starting database seeding...');
-    
+
     // Run all seeders in sequence
     for (const seeder of this.seeders) {
       try {
@@ -92,7 +92,7 @@ export class DatabaseSeeder {
   private printResults(): void {
     console.log('\n=== Seeding Summary ===');
     console.table(this.results);
-    
+
     const total = this.results.reduce((sum, result) => sum + result.count, 0);
     console.log(`\nTotal records created: ${total}\n`);
   }

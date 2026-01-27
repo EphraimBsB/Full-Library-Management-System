@@ -1,4 +1,13 @@
-import { IsNotEmpty, IsUUID, IsString, IsOptional, IsEmail, IsPhoneNumber, IsDateString, IsNumber } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsPhoneNumber,
+  IsDateString,
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMembershipRequestDto {
@@ -33,7 +42,10 @@ export class CreateMembershipRequestDto {
   @IsOptional()
   avatarUrl?: string;
 
-  @ApiProperty({ required: false, description: 'User roll/registration number' })
+  @ApiProperty({
+    required: false,
+    description: 'User roll/registration number',
+  })
   @IsString()
   @IsOptional()
   rollNumber?: string;
@@ -48,7 +60,10 @@ export class CreateMembershipRequestDto {
   @IsOptional()
   degree?: string;
 
-  @ApiProperty({ required: false, description: 'Additional notes for the request' })
+  @ApiProperty({
+    required: false,
+    description: 'Additional notes for the request',
+  })
   @IsString()
   @IsOptional()
   notes?: string;

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
@@ -50,17 +49,40 @@ class ProfileSummaryCard extends ConsumerWidget {
         CircleAvatar(
           radius: 50,
           backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: CachedNetworkImage(
-            imageUrl: profile.avatar!,
-            errorWidget: (context, url, error) => Text(
-              profile.name[0],
-              style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-            ),
-            placeholder: (context, url) => Text(
-              profile.name[0],
-              style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-            ),
-          ),
+          child: profile.avatar != null
+              ? ClipOval(
+                  child: Image.network(
+                    profile.avatar!,
+                    headers: const {'Accept': 'image/webp,image/*'},
+                    errorBuilder: (context, error, stackTrace) => Text(
+                      profile.name[0],
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Text(
+                        profile.name[0],
+                        style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                    fit: BoxFit.cover,
+                    width: 100,
+                    height: 100,
+                  ),
+                )
+              : Text(
+                  profile.name[0],
+                  style: const TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
         ),
         const SizedBox(height: 16),
         Text(profile.name, style: Theme.of(context).textTheme.headlineSmall),

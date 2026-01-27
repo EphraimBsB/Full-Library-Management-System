@@ -1,4 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  Index,
+} from 'typeorm';
 import { Book } from './book.entity';
 import { BookLoan } from './book-loan.entity';
 
@@ -45,11 +56,11 @@ export class BookCopy {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt: Date | null;
 
-  @ManyToOne(() => Book, book => book.copies)
+  @ManyToOne(() => Book, (book) => book.copies)
   @JoinColumn({ name: 'bookId' })
   book: Book;
 
-  @OneToMany(() => BookLoan, loan => loan.bookCopy)
+  @OneToMany(() => BookLoan, (loan) => loan.bookCopy)
   loans: BookLoan[];
 
   @Column({ type: 'boolean', default: true })

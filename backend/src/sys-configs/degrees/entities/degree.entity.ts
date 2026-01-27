@@ -22,7 +22,7 @@ export class Degree {
   @Column({
     type: 'enum',
     enum: DegreeLevel,
-    default: DegreeLevel.BACHELORS
+    default: DegreeLevel.BACHELORS,
   })
   level: DegreeLevel;
 
@@ -31,5 +31,4 @@ export class Degree {
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
-
 }

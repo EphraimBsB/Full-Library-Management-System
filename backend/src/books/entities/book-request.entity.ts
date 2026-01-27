@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Book } from './book.entity';
 import { QueueEntry } from './queue-entry.entity';
@@ -67,7 +77,7 @@ export class BookRequest {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, user => user.bookRequests)
+  @ManyToOne(() => User, (user) => user.bookRequests)
   @JoinColumn({ name: 'userId' })
   user: User;
 
@@ -79,23 +89,23 @@ export class BookRequest {
   @JoinColumn({ name: 'rejectedById' })
   rejectedBy: User | null;
 
-  @ManyToOne(() => Book, book => book.requests)
+  @ManyToOne(() => Book, (book) => book.requests)
   @JoinColumn({ name: 'bookId' })
   book: Book;
 
   // When a request is approved, it creates a queue entry
-  @OneToOne(() => QueueEntry, queueEntry => queueEntry.bookRequest, {
+  @OneToOne(() => QueueEntry, (queueEntry) => queueEntry.bookRequest, {
     cascade: true,
     onDelete: 'CASCADE',
-    nullable: true
+    nullable: true,
   })
   @JoinColumn({ name: 'queueEntryId' })
   queueEntry: QueueEntry | null;
 
-  @OneToOne(() => BookLoan, loan => loan.request, {
+  @OneToOne(() => BookLoan, (loan) => loan.request, {
     cascade: true,
     onDelete: 'SET NULL',
-    nullable: true
+    nullable: true,
   })
   loan: BookLoan | null;
 

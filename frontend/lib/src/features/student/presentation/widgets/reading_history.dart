@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -181,29 +180,36 @@ class ReadingHistoryList extends ConsumerWidget {
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(2),
-                                    child: CachedNetworkImage(
-                                      imageUrl:
-                                          inhouseUsage
+                                    child: Image.network(
+                                      inhouseUsage
                                               .copy['book']['coverImageUrl'] ??
-                                          'assets/default_book.jpg',
+                                          '',
+                                      headers: const {
+                                        'Accept': 'image/webp,image/*',
+                                      },
                                       fit: BoxFit.cover,
-                                      errorWidget:
+                                      errorBuilder:
                                           (context, error, stackTrace) =>
                                               const SizedBox.shrink(),
-                                      placeholder: (context, url) =>
-                                          const Center(
-                                            child: SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                      Color
-                                                    >(Color(0xFF7F56D9)),
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null) {
+                                              return child;
+                                            }
+                                            return const Center(
+                                              child: SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Color(0xFF7F56D9)),
+                                                ),
                                               ),
-                                            ),
-                                          ),
+                                            );
+                                          },
                                     ),
                                   ),
                                 ),

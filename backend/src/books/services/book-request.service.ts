@@ -5,11 +5,14 @@ import {
   Inject,
   forwardRef,
   Logger,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
-import { BookRequest, BookRequestStatus } from '../entities/book-request.entity';
+import {
+  BookRequest,
+  BookRequestStatus,
+} from '../entities/book-request.entity';
 import { User } from '../../users/entities/user.entity';
 import { Book } from '../entities/book.entity';
 import { BookCopy, BookCopyStatus } from '../entities/book-copy.entity';
@@ -18,7 +21,10 @@ import { BookLoan, LoanStatus } from '../entities/book-loan.entity';
 import { BookLoanService } from './book-loan.service';
 import { QueueService } from './queue.service';
 import { BookNotAvailableException } from '../exceptions/book-not-available.exception';
-import { MembershipService, MembershipStatus } from 'src/membership/membership.service';
+import {
+  MembershipService,
+  MembershipStatus,
+} from 'src/membership/membership.service';
 import { EmailUtilsService } from 'src/emails/email-utils.service';
 
 @Injectable()
@@ -39,104 +45,126 @@ export class BookRequestService {
     private readonly dataSource: DataSource,
     private readonly membershipService: MembershipService,
     private readonly emailUtilsService: EmailUtilsService,
-  ) { }
+  ) {}
 
-  async createRequest(bookId: string, userId: string, reason?: string): Promise<BookRequest> {
-  return this.dataSource.transaction(async (transactionalEntityManager) => {
-    // 1️⃣ Check membership status
-    const membership = await this.membershipService.findActiveMembership(userId);
-    if (!membership) {
-      throw new BadRequestException('Active membership is required to request books');
-    }
+  async createRequest(
+    bookId: string,
+    userId: string,
+    reason?: string,
+  ): Promise<BookRequest> {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      // 1️⃣ Check membership status
+      const membership =
+        await this.membershipService.findActiveMembership(userId);
+      if (!membership) {
+        throw new BadRequestException(
+          'Active membership is required to request books',
+        );
+      }
 
-    if (membership.status !== MembershipStatus.ACTIVE) {
-      throw new BadRequestException(`Membership is ${membership.status.toLowerCase()}`);
-    }
+      if (membership.status !== MembershipStatus.ACTIVE) {
+        throw new BadRequestException(
+          `Membership is ${membership.status.toLowerCase()}`,
+        );
+      }
 
-    // 2️⃣ Get book with available copies
-    const book = await transactionalEntityManager.findOne(Book, {
-      where: { id: Number(bookId) },
-      relations: ['copies'],
+      // 2️⃣ Get book with available copies
+      const book = await transactionalEntityManager.findOne(Book, {
+        where: { id: Number(bookId) },
+        relations: ['copies'],
+      });
+
+      if (!book) {
+        throw new NotFoundException('Book not found');
+      }
+
+      // 3️⃣ Check if user already has pending request or active loan
+      const [existingRequest, existingLoan] = await Promise.all([
+        transactionalEntityManager.findOne(BookRequest, {
+          where: {
+            book: { id: book.id },
+            user: { id: userId },
+            status: In([
+              BookRequestStatus.PENDING,
+              BookRequestStatus.QUEUED,
+              BookRequestStatus.FULFILLED,
+            ]),
+          },
+        }),
+        transactionalEntityManager.findOne(BookLoan, {
+          where: {
+            user: { id: userId },
+            bookCopy: { book: { id: book.id } },
+            status: In([LoanStatus.ACTIVE, LoanStatus.OVERDUE]),
+          },
+          relations: ['bookCopy', 'bookCopy.book'],
+        }),
+      ]);
+
+      if (existingRequest) {
+        throw new ConflictException(
+          'You already have a request or queue entry for this book',
+        );
+      }
+
+      if (existingLoan) {
+        throw new ConflictException(
+          'You already have an active loan for this book',
+        );
+      }
+
+      // 4️⃣ Decide: Request or Queue
+      let status: BookRequestStatus;
+      let queueEntryId: string | null = null;
+
+      if (
+        book.copies.filter((copy) => copy.status === BookCopyStatus.AVAILABLE)
+          .length > 0
+      ) {
+        // There are available copies → normal request
+        status = BookRequestStatus.PENDING;
+      } else {
+        // No copies → automatically join the queue
+        status = BookRequestStatus.QUEUED;
+
+        // Create queue entry (outside the transaction manager to reuse your QueueService)
+        const queueEntry = await this.queueService.addToQueue(
+          bookId,
+          userId,
+          transactionalEntityManager,
+        );
+        queueEntryId = queueEntry.id;
+      }
+
+      // 5️⃣ Create the book request
+      const request = transactionalEntityManager.create(BookRequest, {
+        book: { id: book.id },
+        user: { id: userId },
+        reason,
+        status,
+        queueId: queueEntryId,
+      });
+
+      const savedRequest = await transactionalEntityManager.save(
+        BookRequest,
+        request,
+      );
+
+      // 6️⃣ Return response with context info
+      return {
+        ...savedRequest,
+        message:
+          status === BookRequestStatus.PENDING
+            ? 'Your book request has been submitted and is awaiting approval.'
+            : 'All copies are currently borrowed. You’ve been added to the waiting list.',
+      } as any;
     });
-
-    if (!book) {
-      throw new NotFoundException('Book not found');
-    }
-
-    // 3️⃣ Check if user already has pending request or active loan
-    const [existingRequest, existingLoan] = await Promise.all([
-      transactionalEntityManager.findOne(BookRequest, {
-        where: {
-          book: { id: book.id },
-          user: { id: userId },
-          status: In([
-            BookRequestStatus.PENDING,
-            BookRequestStatus.QUEUED,
-            BookRequestStatus.FULFILLED,
-          ]),
-        },
-      }),
-      transactionalEntityManager.findOne(BookLoan, {
-        where: {
-          user: { id: userId },
-          bookCopy: { book: { id: book.id } },
-          status: In([LoanStatus.ACTIVE, LoanStatus.OVERDUE]),
-        },
-        relations: ['bookCopy', 'bookCopy.book'],
-      }),
-    ]);
-
-    if (existingRequest) {
-      throw new ConflictException('You already have a request or queue entry for this book');
-    }
-
-    if (existingLoan) {
-      throw new ConflictException('You already have an active loan for this book');
-    }
-
-    // 4️⃣ Decide: Request or Queue
-    let status: BookRequestStatus;
-    let queueEntryId: string | null = null;
-
-    if (book.copies.filter(copy => copy.status === BookCopyStatus.AVAILABLE).length > 0) {
-      // There are available copies → normal request
-      status = BookRequestStatus.PENDING;
-    } else {
-      // No copies → automatically join the queue
-      status = BookRequestStatus.QUEUED;
-
-      // Create queue entry (outside the transaction manager to reuse your QueueService)
-      const queueEntry = await this.queueService.addToQueue(bookId, userId, transactionalEntityManager);
-      queueEntryId = queueEntry.id;
-    }
-
-    // 5️⃣ Create the book request
-    const request = transactionalEntityManager.create(BookRequest, {
-      book: { id: book.id },
-      user: { id: userId },
-      reason,
-      status,
-      queueId: queueEntryId,
-    });
-
-    const savedRequest = await transactionalEntityManager.save(BookRequest, request);
-
-    // 6️⃣ Return response with context info
-    return {
-      ...savedRequest,
-      message:
-        status === BookRequestStatus.PENDING
-          ? 'Your book request has been submitted and is awaiting approval.'
-          : 'All copies are currently borrowed. You’ve been added to the waiting list.',
-    } as any;
-  });
-}
-
+  }
 
   async approveRequest(
     requestId: string,
     approvedById: string,
-    preferredCopyId?: string
+    preferredCopyId?: string,
   ): Promise<{ loan?: BookLoan; queueEntry?: QueueEntry }> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const request = await transactionalEntityManager.findOne(BookRequest, {
@@ -160,13 +188,16 @@ export class BookRequestService {
 
       try {
         // Try to create a loan with the preferred copy if specified
-        const loan = await this.bookLoanService.createLoan(transactionalEntityManager, {
-          preferredCopyId,
-          bookId: request.book.id.toString(),
-          userId: request.user.id,
-          requestId: request.id,
-          approvedById
-        });
+        const loan = await this.bookLoanService.createLoan(
+          transactionalEntityManager,
+          {
+            preferredCopyId,
+            bookId: request.book.id.toString(),
+            userId: request.user.id,
+            requestId: request.id,
+            approvedById,
+          },
+        );
 
         // If we get here, the loan was created successfully
         request.status = BookRequestStatus.FULFILLED;
@@ -176,7 +207,7 @@ export class BookRequestService {
           status: BookRequestStatus.FULFILLED,
           fulfilledAt: new Date(),
           approvedById,
-          loanId: loan.id
+          loanId: loan.id,
         });
 
         // If there was a queue entry, remove it
@@ -196,7 +227,7 @@ export class BookRequestService {
         // If we get here, the preferred copy (or any copy) is not available
         this.logger.warn(
           `No available copy found for book ${request.book.id}` +
-          (preferredCopyId ? ` (preferred copy: ${preferredCopyId})` : '')
+            (preferredCopyId ? ` (preferred copy: ${preferredCopyId})` : ''),
         );
 
         // Save the approved request first
@@ -222,7 +253,7 @@ export class BookRequestService {
   async rejectRequest(
     requestId: string,
     reason: string,
-    rejectedById: string
+    rejectedById: string,
   ): Promise<BookRequest> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const request = await transactionalEntityManager.findOne(BookRequest, {
@@ -315,7 +346,9 @@ export class BookRequestService {
     return request;
   }
 
-  async findAll(filters?: { status?: BookRequestStatus }): Promise<BookRequest[]> {
+  async findAll(filters?: {
+    status?: BookRequestStatus;
+  }): Promise<BookRequest[]> {
     const query = this.bookRequestRepository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.user', 'user')

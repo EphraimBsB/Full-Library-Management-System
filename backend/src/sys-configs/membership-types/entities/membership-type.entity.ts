@@ -1,5 +1,5 @@
 import { Membership } from 'src/membership/entities/membership.entity';
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn, } from 'typeorm';
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('membership_types')
 export class MembershipType {
@@ -18,7 +18,13 @@ export class MembershipType {
   @Column({ name: 'renewal_limit', type: 'int', default: 1 })
   renewalLimit: number;
 
-  @Column({ name: 'fine_rate', type: 'decimal', precision: 10, scale: 2, default: 100 })
+  @Column({
+    name: 'fine_rate',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 100,
+  })
   fineRate: number;
 
   @Column({ type: 'text', nullable: true })

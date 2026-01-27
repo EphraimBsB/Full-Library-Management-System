@@ -37,7 +37,11 @@ export class NotificationsService {
     return saved;
   }
 
-  async listForUser(userId: string, limit = 20, offset = 0): Promise<{ items: Notification[]; total: number }> {
+  async listForUser(
+    userId: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<{ items: Notification[]; total: number }> {
     const [items, total] = await this.repo.findAndCount({
       where: { userId },
       order: { createdAt: 'DESC' },
@@ -58,7 +62,8 @@ export class NotificationsService {
   }
 
   async markAllRead(userId: string): Promise<number> {
-    const res = await this.repo.createQueryBuilder()
+    const res = await this.repo
+      .createQueryBuilder()
       .update(Notification)
       .set({ readAt: () => 'CURRENT_TIMESTAMP' })
       .where('userId = :userId', { userId })
@@ -68,15 +73,24 @@ export class NotificationsService {
   }
 
   async getUnreadCount(userId: string): Promise<{ count: number }> {
-    const count = await this.repo.count({ where: { userId, readAt: IsNull() } });
+    const count = await this.repo.count({
+      where: { userId, readAt: IsNull() },
+    });
     return { count };
   }
 
   async listLatest(userId: string, limit = 10): Promise<Notification[]> {
-    return this.repo.find({ where: { userId }, order: { createdAt: 'DESC' }, take: limit });
+    return this.repo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
   }
 
-  async getSummary(userId: string, limit = 10): Promise<{ unreadCount: number; latest: Notification[] }> {
+  async getSummary(
+    userId: string,
+    limit = 10,
+  ): Promise<{ unreadCount: number; latest: Notification[] }> {
     const [{ count }, latest] = await Promise.all([
       this.getUnreadCount(userId),
       this.listLatest(userId, limit),

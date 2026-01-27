@@ -7,7 +7,7 @@ export class MembershipTypesSeed implements ISeeder {
   public async run(dataSource: DataSource): Promise<SeedResult> {
     console.log('Seeding membership types...');
     const repository = dataSource.getRepository(MembershipType);
-    
+
     const types = [
       {
         name: 'Student',
@@ -16,7 +16,7 @@ export class MembershipTypesSeed implements ISeeder {
         renewalLimit: 2,
         fineRate: 50,
         description: 'Standard membership for students',
-        isActive: true
+        isActive: true,
       },
       {
         name: 'Regular',
@@ -25,7 +25,7 @@ export class MembershipTypesSeed implements ISeeder {
         renewalLimit: 1,
         fineRate: 100,
         description: 'Standard membership for regular users',
-        isActive: true
+        isActive: true,
       },
       {
         name: 'Premium',
@@ -34,7 +34,7 @@ export class MembershipTypesSeed implements ISeeder {
         renewalLimit: 2,
         fineRate: 50,
         description: 'Premium membership with extended benefits',
-        isActive: true
+        isActive: true,
       },
       {
         name: 'Faculty',
@@ -43,7 +43,7 @@ export class MembershipTypesSeed implements ISeeder {
         renewalLimit: 3,
         fineRate: 0,
         description: 'Special membership for faculty members',
-        isActive: true
+        isActive: true,
       },
       {
         name: 'Researcher',
@@ -52,7 +52,7 @@ export class MembershipTypesSeed implements ISeeder {
         renewalLimit: 3,
         fineRate: 25,
         description: 'For research staff with extended loan periods',
-        isActive: true
+        isActive: true,
       },
       {
         name: 'Alumni',
@@ -61,16 +61,16 @@ export class MembershipTypesSeed implements ISeeder {
         renewalLimit: 1,
         fineRate: 150,
         description: 'Basic membership for alumni members',
-        isActive: true
-      }
+        isActive: true,
+      },
     ];
 
     let created = 0;
     const results: string[] = [];
-    
+
     for (const type of types) {
       let existingType = await repository.findOneBy({ name: type.name });
-      
+
       if (!existingType) {
         const newType = repository.create(type);
         await repository.save(newType);
@@ -87,7 +87,7 @@ export class MembershipTypesSeed implements ISeeder {
     console.log(results.join('\n'));
     return {
       entity: 'MembershipType',
-      count: created
+      count: created,
     };
   }
 }

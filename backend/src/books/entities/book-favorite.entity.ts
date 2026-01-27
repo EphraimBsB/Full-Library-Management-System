@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn, Unique, Column, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  DeleteDateColumn,
+  Unique,
+  Column,
+  Index,
+} from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Book } from './book.entity';
 
@@ -16,14 +26,14 @@ export class BookFavorite {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt?: Date;
 
-  @ManyToOne(() => User, user => user.bookFavorites, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.bookFavorites, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column({ name: 'userId' })
   userId: string;
 
-  @ManyToOne(() => Book, book => book.favorites, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Book, (book) => book.favorites, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'bookId' })
   book: Book;
 

@@ -68,11 +68,14 @@ export class NotificationsScheduler {
               bookTitle,
               dueDate,
               returnLink: `${frontendUrl}/my-loans`,
-            }
+            },
           );
           this.logger.log(`Due reminder email sent for loan ${loan.id}`);
         } catch (error) {
-          this.logger.error(`Failed to send due reminder email for loan ${loan.id}:`, error.message);
+          this.logger.error(
+            `Failed to send due reminder email for loan ${loan.id}:`,
+            error.message,
+          );
         }
       }
 
@@ -100,10 +103,10 @@ export class NotificationsScheduler {
           type: NotificationType.OVERDUE,
           title,
           message,
-          data: { 
+          data: {
             loanId: loan.id,
             bookId: loan.bookCopy?.book?.id,
-            dueDate: loan.dueDate?.toISOString() 
+            dueDate: loan.dueDate?.toISOString(),
           },
         });
 
@@ -117,19 +120,28 @@ export class NotificationsScheduler {
               userName: loan.user.firstName || 'there',
               bookTitle,
               dueDate,
-              daysOverdue: Math.ceil((now.getTime() - (loan.dueDate?.getTime() || now.getTime())) / (1000 * 60 * 60 * 24)),
+              daysOverdue: Math.ceil(
+                (now.getTime() - (loan.dueDate?.getTime() || now.getTime())) /
+                  (1000 * 60 * 60 * 24),
+              ),
               returnLink: `${frontendUrl}/my-loans`,
-              contactEmail: process.env.SUPPORT_EMAIL || 'support@yourlibrary.com',
-            }
+              contactEmail:
+                process.env.SUPPORT_EMAIL || 'support@yourlibrary.com',
+            },
           );
           this.logger.log(`Overdue notice sent for loan ${loan.id}`);
         } catch (error) {
-          this.logger.error(`Failed to send overdue notice for loan ${loan.id}:`, error.message);
+          this.logger.error(
+            `Failed to send overdue notice for loan ${loan.id}:`,
+            error.message,
+          );
         }
       }
 
       // Log completion with counts
-      this.logger.log(`Scheduled notifications completed: ${dueSoon.length} due soon, ${overdue.length} overdue`);
+      this.logger.log(
+        `Scheduled notifications completed: ${dueSoon.length} due soon, ${overdue.length} overdue`,
+      );
     } catch (error) {
       this.logger.error('Error in scheduled notifications:', error);
       throw error; // Re-throw to mark the job as failed in the scheduler

@@ -24,7 +24,7 @@ export class LoanSettingsService implements OnModuleInit {
     const count = await this.loanSettingsRepository.count();
     if (count === 0) {
       await this.loanSettingsRepository.save(
-        this.loanSettingsRepository.create(this.defaultSettings)
+        this.loanSettingsRepository.create(this.defaultSettings),
       );
     }
   }
@@ -33,17 +33,19 @@ export class LoanSettingsService implements OnModuleInit {
     const settings = await this.loanSettingsRepository.findOne({
       order: { id: 'ASC' },
     });
-    
+
     if (!settings) {
       return this.loanSettingsRepository.save(
-        this.loanSettingsRepository.create(this.defaultSettings)
+        this.loanSettingsRepository.create(this.defaultSettings),
       );
     }
-    
+
     return settings;
   }
 
-  async updateSettings(updateSettings: Partial<LoanSettings>): Promise<LoanSettings> {
+  async updateSettings(
+    updateSettings: Partial<LoanSettings>,
+  ): Promise<LoanSettings> {
     const settings = await this.getSettings();
     Object.assign(settings, updateSettings);
     return this.loanSettingsRepository.save(settings);

@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Book } from './book.entity';
 
 @Entity('book_metadata')
@@ -24,13 +30,17 @@ export class BookMetadata {
   @Column({ type: 'timestamp', nullable: true })
   lastAccessedAt: Date;
 
-  @OneToOne(() => Book, book => book.metadata, { onDelete: 'CASCADE' })
+  @OneToOne(() => Book, (book) => book.metadata, { onDelete: 'CASCADE' })
   @JoinColumn()
   book: Book;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   updatedAt: Date;
 }

@@ -196,20 +196,11 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
     Map<String, dynamic> data,
   ) async {
     try {
-      print('=== START IN-HOUSE USAGE REQUEST ===');
-      print('Endpoint: POST /books/inhouse-usage/start');
-      print('Request Data: $data');
-
       final response = await _apiService.startInhouseUsage(data);
-      print('Response Data: $response');
       return Success(response);
     } on DioException catch (e) {
-      print('DioError: ${e.message}');
-      print('Status Code: ${e.response?.statusCode}');
-      print('Response Data: ${e.response?.data}');
       return Failure(e, e.stackTrace);
     } catch (e, stackTrace) {
-      print('Unexpected error: $e');
       return Failure(e, stackTrace);
     }
   }

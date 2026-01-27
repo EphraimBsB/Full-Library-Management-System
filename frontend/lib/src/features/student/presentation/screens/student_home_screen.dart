@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,20 +76,14 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
                   radius: 16,
                   backgroundColor: Theme.of(context).primaryColor,
                   child: user['avatarUrl'] != null
-                      ? CachedNetworkImage(
-                          imageUrl: user['avatarUrl']!,
-                          imageBuilder: (context, imageProvider) => Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          placeholder: (context, url) =>
-                              const CircularProgressIndicator(),
-                          errorWidget: (context, url, error) => Text(
+                      ? Image.network(
+                          user['avatarUrl']!,
+                          headers: const {'Accept': 'image/webp,image/*'},
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const CircularProgressIndicator();
+                          },
+                          errorBuilder: (context, error, stackTrace) => Text(
                             '${user['firstName'][0]}${user['lastName']?.isNotEmpty == true ? user['lastName'][0] : ''}',
                             style: const TextStyle(
                               fontSize: 12,
@@ -98,6 +91,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
                               color: Colors.white,
                             ),
                           ),
+                          fit: BoxFit.cover,
                         )
                       : Text(
                           '${user['firstName'][0]}${user['lastName']?.isNotEmpty == true ? user['lastName'][0] : ''}',
@@ -389,11 +383,14 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
           CircleAvatar(
             radius: 22,
             backgroundColor: Theme.of(context).primaryColor,
-            child: CachedNetworkImage(
-              imageUrl: user['avatarUrl'] ?? '',
-              placeholder: (context, url) =>
-                  const Center(child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) => Text(
+            child: Image.network(
+              user['avatarUrl'] ?? '',
+              headers: const {'Accept': 'image/webp,image/*'},
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(child: CircularProgressIndicator());
+              },
+              errorBuilder: (context, error, stackTrace) => Text(
                 '${user['firstName'][0]}${user['lastName']?.isNotEmpty == true ? user['lastName'][0] : ''}',
                 style: const TextStyle(
                   fontSize: 16,

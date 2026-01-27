@@ -1,4 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, BeforeInsert, BeforeUpdate, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  BeforeInsert,
+  BeforeUpdate,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { UserRole } from '../../sys-configs/user-roles/entities/user-role.entity';
 import { BookLoan } from '../../books/entities/book-loan.entity';
@@ -38,20 +50,24 @@ export class User {
   @Column({ name: 'date_of_birth', type: 'date', nullable: true })
   dateOfBirth?: Date;
 
-  @ManyToOne(() => UserRole, (userRole) => userRole.users, { 
+  @ManyToOne(() => UserRole, (userRole) => userRole.users, {
     eager: true,
-    nullable: false
+    nullable: false,
   })
-  @JoinColumn({ 
+  @JoinColumn({
     name: 'role_id',
-    referencedColumnName: 'id'
+    referencedColumnName: 'id',
   })
   role: UserRole;
 
   @Column({ name: 'role_id' })
   roleId: number;
 
-  @Column({ name: 'join_date', type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'join_date',
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   joinDate: Date;
 
   @Column({ name: 'is_active', default: false })
@@ -66,37 +82,39 @@ export class User {
 
   // Helper method to check if user is currently active
   isCurrentlyActive(): boolean {
-    return this.isActive && (!this.expiryDate || new Date(this.expiryDate) > new Date());
+    return (
+      this.isActive &&
+      (!this.expiryDate || new Date(this.expiryDate) > new Date())
+    );
   }
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   @Exclude()
   deletedAt?: Date;
 
-  @OneToMany(() => BookRequest, bookRequest => bookRequest.user)
+  @OneToMany(() => BookRequest, (bookRequest) => bookRequest.user)
   bookRequests: BookRequest[];
 
-  @OneToMany(() => BookLoan, loan => loan.user)
+  @OneToMany(() => BookLoan, (loan) => loan.user)
   bookLoans: BookLoan[];
 
-  @OneToMany(() => QueueEntry, queueEntry => queueEntry.user)
+  @OneToMany(() => QueueEntry, (queueEntry) => queueEntry.user)
   queueEntries: QueueEntry[];
 
-  @OneToMany(() => Membership, membership => membership.user, { eager: true })
+  @OneToMany(() => Membership, (membership) => membership.user, { eager: true })
   memberships: Membership[];
 
-  @OneToMany(() => MembershipRequest, request => request.user)
+  @OneToMany(() => MembershipRequest, (request) => request.user)
   membershipRequests: MembershipRequest[];
 
-  @OneToMany(() => BookNote, note => note.user)
+  @OneToMany(() => BookNote, (note) => note.user)
   bookNotes: BookNote[];
 
-  @OneToMany(() => BookFavorite, favorite => favorite.user)
+  @OneToMany(() => BookFavorite, (favorite) => favorite.user)
   bookFavorites: BookFavorite[];
 
   @Column({ type: 'int', default: 0 })
@@ -106,7 +124,6 @@ export class User {
   @BeforeUpdate()
   emailToLowerCase() {
     this.email = this.email.toLowerCase();
-
   }
   // Add any additional methods or relationships here
   get fullName(): string {

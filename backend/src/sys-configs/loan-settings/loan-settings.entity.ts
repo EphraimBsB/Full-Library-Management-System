@@ -5,17 +5,19 @@ export class LoanSettings {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ 
+  @Column({
     type: 'boolean',
     default: false,
-    comment: 'Whether to automatically approve loans when a book becomes available from queue'
+    comment:
+      'Whether to automatically approve loans when a book becomes available from queue',
   })
   autoApproveQueueLoans: boolean;
 
-  @Column({ 
+  @Column({
     type: 'int',
     default: 24,
-    comment: 'Number of hours a user has to pick up a book after it becomes available'
+    comment:
+      'Number of hours a user has to pick up a book after it becomes available',
   })
   queueHoldDurationHours: number;
 }

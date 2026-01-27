@@ -1,14 +1,14 @@
-import { IsDateString, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class CreateSourceDto {
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsString()
-    @IsOptional()
-    supplier?: string;
+  @IsString()
+  @IsOptional()
+  supplier?: string;
 
-    @IsDateString()
-    @IsOptional()
-    dateAcquired?: Date;
+  @IsDateString()
+  @IsOptional()
+  dateAcquired?: Date;
 }

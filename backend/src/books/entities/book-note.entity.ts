@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, DeleteDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  DeleteDateColumn,
+  Index,
+} from 'typeorm';
 import { Book } from './book.entity';
 import { User } from 'src/users/entities/user.entity';
 
@@ -12,7 +22,7 @@ export class BookNote {
   @Column('text')
   content: string;
 
-  @Column({ name: 'page_number', nullable: true }) 
+  @Column({ name: 'page_number', nullable: true })
   pageNumber?: number;
 
   @Column({ name: 'is_public', default: false })
@@ -27,14 +37,14 @@ export class BookNote {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt?: Date;
 
-  @ManyToOne(() => User, user => user.bookNotes, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.bookNotes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column({ name: 'userId' })
   userId: string;
 
-  @ManyToOne(() => Book, book => book.notes, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Book, (book) => book.notes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'bookId' })
   book: Book;
 

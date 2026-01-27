@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Membership } from './entities/membership.entity';
@@ -13,7 +18,7 @@ export enum MembershipStatus {
   ACTIVE = 'active',
   EXPIRED = 'expired',
   SUSPENDED = 'suspended',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 @Injectable()
@@ -56,7 +61,9 @@ export class MembershipService {
       startDate,
       expiryDate,
       status: MembershipStatus.ACTIVE,
-      membershipNumber: await this.generateMembershipNumber(membershipType.name),
+      membershipNumber: await this.generateMembershipNumber(
+        membershipType.name,
+      ),
     });
 
     const saved = await this.membershipRepository.save(membership);
@@ -69,13 +76,18 @@ export class MembershipService {
     return this.membershipRepository
       .createQueryBuilder('membership')
       .where('membership.userId = :userId', { userId })
-      .andWhere('membership.status = :status', { status: MembershipStatus.ACTIVE })
+      .andWhere('membership.status = :status', {
+        status: MembershipStatus.ACTIVE,
+      })
       .andWhere('membership.expiryDate >= :now', { now })
       .leftJoinAndSelect('membership.type', 'type')
       .getOne();
   }
 
-  async canBorrowBooks(userId: string, requestedCount: number): Promise<{ canBorrow: boolean; reason?: string }> {
+  async canBorrowBooks(
+    userId: string,
+    requestedCount: number,
+  ): Promise<{ canBorrow: boolean; reason?: string }> {
     const membership = await this.findActiveMembership(userId);
     if (!membership) {
       return { canBorrow: false, reason: 'No active membership found' };
@@ -89,9 +101,9 @@ export class MembershipService {
     const remainingSlots = membership.type.maxBooks - activeLoans;
 
     if (remainingSlots < requestedCount) {
-      return { 
-        canBorrow: false, 
-        reason: `Exceeds borrow limit. You can borrow ${remainingSlots} more book(s).` 
+      return {
+        canBorrow: false,
+        reason: `Exceeds borrow limit. You can borrow ${remainingSlots} more book(s).`,
       };
     }
 
@@ -123,7 +135,9 @@ export class MembershipService {
   }
 
   async findMembershipTypeById(id: string): Promise<MembershipType> {
-    const type = await this.membershipTypeRepository.findOne({ where: { id: Number(id) } });
+    const type = await this.membershipTypeRepository.findOne({
+      where: { id: Number(id) },
+    });
     if (!type) {
       throw new NotFoundException(`Membership type with ID ${id} not found`);
     }

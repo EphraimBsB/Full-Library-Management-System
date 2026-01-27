@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateLocationDto } from './dto/create-location.dto';
@@ -45,7 +49,10 @@ export class LocationsService {
     return await this.locationRepository.save(location);
   }
 
-  async update(id: number, updateLocationDto: UpdateLocationDto): Promise<Location> {
+  async update(
+    id: number,
+    updateLocationDto: UpdateLocationDto,
+  ): Promise<Location> {
     const location = await this.findOne(id);
 
     if (updateLocationDto.name && updateLocationDto.name !== location.name) {

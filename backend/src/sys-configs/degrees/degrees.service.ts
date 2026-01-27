@@ -23,7 +23,7 @@ export class DegreesService {
 
   async findOne(id: number): Promise<Degree> {
     const degree = await this.degreeRepository.findOne({
-      where: { id }
+      where: { id },
     });
     if (!degree) {
       throw new NotFoundException(`Degree with ID ${id} not found`);

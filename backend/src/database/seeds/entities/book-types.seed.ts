@@ -6,26 +6,28 @@ export class BookTypesSeed implements ISeeder {
   public async run(dataSource: DataSource): Promise<SeedResult> {
     console.log('Seeding book types...');
     const repository = dataSource.getRepository(Type);
-    
+
     const bookTypes = [
       // Academic Book Types
       {
         name: 'Textbook',
-        description: 'Comprehensive educational books used as standard works for formal study',
+        description:
+          'Comprehensive educational books used as standard works for formal study',
         loanDurationDays: 14,
         renewalLimit: 1,
         finePerDay: 100,
         canBeReserved: true,
-        maxRenewalDays: 7
+        maxRenewalDays: 7,
       },
       {
         name: 'Reference',
-        description: 'Books meant to be consulted for specific information rather than read cover to cover',
+        description:
+          'Books meant to be consulted for specific information rather than read cover to cover',
         loanDurationDays: 7,
         renewalLimit: 0,
         finePerDay: 150,
         canBeReserved: false,
-        maxRenewalDays: 0
+        maxRenewalDays: 0,
       },
       {
         name: 'Research Monograph',
@@ -34,9 +36,9 @@ export class BookTypesSeed implements ISeeder {
         renewalLimit: 2,
         finePerDay: 75,
         canBeReserved: true,
-        maxRenewalDays: 14
+        maxRenewalDays: 14,
       },
-      
+
       // General Reading
       {
         name: 'Fiction',
@@ -45,7 +47,7 @@ export class BookTypesSeed implements ISeeder {
         renewalLimit: 2,
         finePerDay: 50,
         canBeReserved: true,
-        maxRenewalDays: 14
+        maxRenewalDays: 14,
       },
       {
         name: 'Non-Fiction',
@@ -54,39 +56,41 @@ export class BookTypesSeed implements ISeeder {
         renewalLimit: 2,
         finePerDay: 50,
         canBeReserved: true,
-        maxRenewalDays: 14
+        maxRenewalDays: 14,
       },
       {
         name: 'Biography',
-        description: 'Detailed description of a person\'s life',
+        description: "Detailed description of a person's life",
         loanDurationDays: 14,
         renewalLimit: 1,
         finePerDay: 75,
         canBeReserved: true,
-        maxRenewalDays: 7
+        maxRenewalDays: 7,
       },
-      
+
       // Special Collections
       {
         name: 'Rare Book',
-        description: 'Valuable or scarce books that may have special handling requirements',
+        description:
+          'Valuable or scarce books that may have special handling requirements',
         loanDurationDays: 7,
         renewalLimit: 0,
         finePerDay: 500,
         canBeReserved: true,
         maxRenewalDays: 0,
-        requiresSpecialHandling: true
+        requiresSpecialHandling: true,
       },
       {
         name: 'Thesis/Dissertation',
-        description: 'Academic research papers submitted for higher education degrees',
+        description:
+          'Academic research papers submitted for higher education degrees',
         loanDurationDays: 14,
         renewalLimit: 1,
         finePerDay: 100,
         canBeReserved: true,
-        maxRenewalDays: 7
+        maxRenewalDays: 7,
       },
-      
+
       // Media Types
       {
         name: 'Audiobook',
@@ -96,7 +100,7 @@ export class BookTypesSeed implements ISeeder {
         finePerDay: 75,
         canBeReserved: true,
         maxRenewalDays: 7,
-        isMedia: true
+        isMedia: true,
       },
       {
         name: 'E-book',
@@ -106,9 +110,9 @@ export class BookTypesSeed implements ISeeder {
         finePerDay: 50,
         canBeReserved: true,
         maxRenewalDays: 7,
-        isDigital: true
+        isDigital: true,
       },
-      
+
       // Periodicals
       {
         name: 'Journal',
@@ -117,27 +121,29 @@ export class BookTypesSeed implements ISeeder {
         renewalLimit: 0,
         finePerDay: 100,
         canBeReserved: false,
-        maxRenewalDays: 0
+        maxRenewalDays: 0,
       },
       {
         name: 'Magazine',
-        description: 'Periodical publication containing articles and illustrations',
+        description:
+          'Periodical publication containing articles and illustrations',
         loanDurationDays: 7,
         renewalLimit: 0,
         finePerDay: 50,
         canBeReserved: false,
-        maxRenewalDays: 0
+        maxRenewalDays: 0,
       },
-      
+
       // Special Purpose
       {
         name: 'Course Reserve',
-        description: 'Materials set aside for specific courses with limited loan periods',
+        description:
+          'Materials set aside for specific courses with limited loan periods',
         loanDurationDays: 2,
         renewalLimit: 0,
         finePerDay: 200,
         canBeReserved: false,
-        maxRenewalDays: 0
+        maxRenewalDays: 0,
       },
       {
         name: 'Open Shelf Reference',
@@ -147,17 +153,17 @@ export class BookTypesSeed implements ISeeder {
         finePerDay: 0,
         canBeReserved: false,
         maxRenewalDays: 0,
-        isForInLibraryUseOnly: true
-      }
+        isForInLibraryUseOnly: true,
+      },
     ];
 
     const results: string[] = [];
     let created = 0;
-    
+
     for (const type of bookTypes) {
       try {
         let existingType = await repository.findOneBy({ name: type.name });
-        
+
         if (!existingType) {
           const newType = repository.create(type);
           await repository.save(newType);
@@ -166,9 +172,9 @@ export class BookTypesSeed implements ISeeder {
         } else {
           // Update existing type if any properties changed
           const needsUpdate = Object.keys(type).some(
-            key => existingType[key] !== type[key]
+            (key) => existingType[key] !== type[key],
           );
-          
+
           if (needsUpdate) {
             Object.assign(existingType, type);
             await repository.save(existingType);
@@ -178,14 +184,16 @@ export class BookTypesSeed implements ISeeder {
           }
         }
       } catch (error) {
-        results.push(`Error processing book type ${type.name}: ${error.message}`);
+        results.push(
+          `Error processing book type ${type.name}: ${error.message}`,
+        );
       }
     }
 
     console.log(results.join('\n'));
     return {
       entity: 'BookType',
-      count: created
+      count: created,
     };
   }
 }

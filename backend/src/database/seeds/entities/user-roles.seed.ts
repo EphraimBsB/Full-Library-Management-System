@@ -6,7 +6,7 @@ export class UserRolesSeed implements ISeeder {
   public async run(dataSource: DataSource): Promise<SeedResult> {
     console.log('Seeding user roles...');
     const repository = dataSource.getRepository(UserRole);
-    
+
     const roles = [
       {
         name: 'Admin',
@@ -16,35 +16,24 @@ export class UserRolesSeed implements ISeeder {
           'books:manage',
           'loans:manage',
           'reports:view',
-          'system:configure'
-        ]
+          'system:configure',
+        ],
       },
       {
         name: 'Librarian',
         description: 'Library staff member with limited administrative access',
-        permissions: [
-          'books:manage',
-          'loans:manage',
-          'reports:view'
-        ]
+        permissions: ['books:manage', 'loans:manage', 'reports:view'],
       },
       {
         name: 'Student',
         description: 'Regular library member',
-        permissions: [
-          'books:borrow',
-          'profile:manage'
-        ]
+        permissions: ['books:borrow', 'profile:manage'],
       },
       {
         name: 'Faculty',
         description: 'Teaching staff with extended borrowing privileges',
-        permissions: [
-          'books:borrow',
-          'profile:manage',
-          'books:request'
-        ]
-      }
+        permissions: ['books:borrow', 'profile:manage', 'books:request'],
+      },
     ];
 
     let created = 0;
@@ -59,7 +48,7 @@ export class UserRolesSeed implements ISeeder {
 
     return {
       entity: 'UserRole',
-      count: created
+      count: created,
     };
   }
 }

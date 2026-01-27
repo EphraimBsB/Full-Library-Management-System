@@ -31,7 +31,8 @@ export class FileUtils {
 
   static generateUniqueFilename(originalName: string): string {
     const ext = this.getFileExtension(originalName);
-    const baseName = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
+    const baseName =
+      originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
     const uniqueId = crypto.randomBytes(4).toString('hex');
     return `${baseName}-${uniqueId}${ext ? `.${ext}` : ''}`.toLowerCase();
   }

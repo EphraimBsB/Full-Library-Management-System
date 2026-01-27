@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, DataSource, EntityManager } from 'typeorm';
 import { QueueEntry, QueueStatus } from '../entities/queue-entry.entity';
@@ -21,7 +25,7 @@ export class QueueService {
     @InjectRepository(BookCopy)
     private readonly bookCopyRepository: Repository<BookCopy>,
     @Inject(forwardRef(() => BookLoanService))
-        private readonly bookLoanService: BookLoanService,
+    private readonly bookLoanService: BookLoanService,
     @Inject(forwardRef(() => LoanSettingsService))
     private readonly loanSettingsService: LoanSettingsService,
     @InjectRepository(BookRequest)
@@ -29,58 +33,63 @@ export class QueueService {
     private dataSource: DataSource,
     @Inject(forwardRef(() => EmailUtilsService))
     private readonly emailUtilsService: EmailUtilsService,
-  ) { }
+  ) {}
 
   async addToQueue(
-  bookId: string,
-  userId: string,
-  manager?: EntityManager
-): Promise<QueueEntry> {
-  // Use either the provided transaction manager or default repositories
-  const bookRepo = manager ? manager.getRepository(Book) : this.bookRepository;
-  const queueRepo = manager ? manager.getRepository(QueueEntry) : this.queueEntryRepository;
+    bookId: string,
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<QueueEntry> {
+    // Use either the provided transaction manager or default repositories
+    const bookRepo = manager
+      ? manager.getRepository(Book)
+      : this.bookRepository;
+    const queueRepo = manager
+      ? manager.getRepository(QueueEntry)
+      : this.queueEntryRepository;
 
-  // 1. Check if book exists
-  const book = await bookRepo.findOne({ where: { id: parseInt(bookId) } });
-  if (!book) {
-    throw new NotFoundException('Book not found');
-  }
+    // 1. Check if book exists
+    const book = await bookRepo.findOne({ where: { id: parseInt(bookId) } });
+    if (!book) {
+      throw new NotFoundException('Book not found');
+    }
 
-  // 2. Check if user is already in queue for this book
-  const existingEntry = await queueRepo.findOne({
-    where: {
+    // 2. Check if user is already in queue for this book
+    const existingEntry = await queueRepo.findOne({
+      where: {
+        book: { id: parseInt(bookId) },
+        user: { id: userId },
+        status: In([QueueStatus.WAITING, QueueStatus.FULFILLED]),
+      },
+    });
+
+    if (existingEntry) {
+      throw new ConflictException('You are already in the queue for this book');
+    }
+
+    // 3. Get queue position
+    const queueCount = await queueRepo.count({
+      where: { book: { id: parseInt(bookId) } },
+    });
+
+    // 4. Create queue entry
+    const queueEntry = queueRepo.create({
       book: { id: parseInt(bookId) },
       user: { id: userId },
-      status: In([QueueStatus.WAITING, QueueStatus.FULFILLED]),
-    },
-  });
+      status: QueueStatus.WAITING,
+      position: queueCount + 1,
+    });
 
-  if (existingEntry) {
-    throw new ConflictException('You are already in the queue for this book');
+    // 5. Increment book’s queue count
+    await bookRepo.increment({ id: parseInt(bookId) }, 'queueCount', 1);
+
+    // 6. Save entry
+    return await queueRepo.save(queueEntry);
   }
 
-  // 3. Get queue position
-  const queueCount = await queueRepo.count({
-    where: { book: { id: parseInt(bookId) } },
-  });
-
-  // 4. Create queue entry
-  const queueEntry = queueRepo.create({
-    book: { id: parseInt(bookId) },
-    user: { id: userId },
-    status: QueueStatus.WAITING,
-    position: queueCount + 1,
-  });
-
-  // 5. Increment book’s queue count
-  await bookRepo.increment({ id: parseInt(bookId) }, 'queueCount', 1);
-
-  // 6. Save entry
-  return await queueRepo.save(queueEntry);
-}
-
-
-  async getQueuePosition(entryId: string): Promise<{ position: number; total: number }> {
+  async getQueuePosition(
+    entryId: string,
+  ): Promise<{ position: number; total: number }> {
     const entry = await this.queueEntryRepository.findOne({
       where: { id: entryId },
       relations: ['book'],
@@ -151,14 +160,20 @@ export class QueueService {
     // 3️⃣ Update queue entry to READY (book is available for them)
     entry.status = QueueStatus.READY;
     entry.readyAt = new Date();
-    entry.expiresAt = new Date(Date.now() + settings.queueHoldDurationHours * 60 * 60 * 1000); // e.g., 24 hours
+    entry.expiresAt = new Date(
+      Date.now() + settings.queueHoldDurationHours * 60 * 60 * 1000,
+    ); // e.g., 24 hours
     await this.queueEntryRepository.save(entry);
 
     // 4️⃣ Handle depending on library setting
     if (settings.autoApproveQueueLoans) {
       // ✅ Auto-approve: directly create a loan
       try {
-        const requestId = await this.createPendingApproval(entry, true, availableCopy);
+        const requestId = await this.createPendingApproval(
+          entry,
+          true,
+          availableCopy,
+        );
         await this.bookLoanService.createLoan(this.dataSource.manager, {
           preferredCopyId: availableCopy.id.toString(),
           bookId: bookId.toString(),
@@ -172,10 +187,17 @@ export class QueueService {
         await this.queueEntryRepository.save(entry);
 
         // Notify user via email
-        await this.emailUtilsService.sendLoanConfirmationEmail(entry.user, entry.book, entry.expiresAt, entry.readyAt, entry.id);
-
+        await this.emailUtilsService.sendLoanConfirmationEmail(
+          entry.user,
+          entry.book,
+          entry.expiresAt,
+          entry.readyAt,
+          entry.id,
+        );
       } catch (error) {
-        console.error(`Auto-loan failed for user ${entry.user.id}: ${error.message}`);
+        console.error(
+          `Auto-loan failed for user ${entry.user.id}: ${error.message}`,
+        );
         // Optionally fallback to pending approval
         await this.createPendingApproval(entry, false, availableCopy);
       }
@@ -185,7 +207,11 @@ export class QueueService {
     }
   }
 
-  private async createPendingApproval(entry: QueueEntry, autoGenerated: boolean, copy: BookCopy) {
+  private async createPendingApproval(
+    entry: QueueEntry,
+    autoGenerated: boolean,
+    copy: BookCopy,
+  ) {
     const request = this.bookRequestRepository.create({
       user: { id: entry.user.id },
       book: { id: entry.book.id },
@@ -208,11 +234,11 @@ export class QueueService {
     //   link: `/admin/requests/${request.id}`,
     // });
 
-    console.log(`Created pending approval for user ${entry.user.id} for book ${entry.book.title}`);
+    console.log(
+      `Created pending approval for user ${entry.user.id} for book ${entry.book.title}`,
+    );
     return request.id;
   }
-
-
 
   async cancelQueueEntry(entryId: string, userId: string): Promise<void> {
     const entry = await this.queueEntryRepository.findOne({
@@ -224,7 +250,9 @@ export class QueueService {
     }
 
     if (entry.status !== QueueStatus.WAITING) {
-      throw new ConflictException('Only waiting queue entries can be cancelled');
+      throw new ConflictException(
+        'Only waiting queue entries can be cancelled',
+      );
     }
 
     // Update book's queue count

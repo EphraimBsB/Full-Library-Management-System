@@ -60,4 +60,4 @@ import { MembershipType } from 'src/sys-configs/membership-types/entities/member
   ],
   exports: [UsersService, TypeOrmModule],
 })
-export class UsersModule { }
+export class UsersModule {}

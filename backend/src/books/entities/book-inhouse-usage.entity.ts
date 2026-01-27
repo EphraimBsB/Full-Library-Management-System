@@ -9,14 +9,14 @@ import {
   JoinColumn,
   CreateDateColumn,
   Index,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 
 export enum InhouseUsageStatus {
   ACTIVE = 'active',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
-  FORCE_ENDED = 'force_ended'
+  FORCE_ENDED = 'force_ended',
 }
 
 @Entity('book_inhouse_usage')
@@ -56,7 +56,7 @@ export class BookInhouseUsage {
   @Column({
     type: 'enum',
     enum: InhouseUsageStatus,
-    default: InhouseUsageStatus.ACTIVE
+    default: InhouseUsageStatus.ACTIVE,
   })
   status: InhouseUsageStatus;
 

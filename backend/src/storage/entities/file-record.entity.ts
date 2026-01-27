@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import * as fileMetadataInterface from '../interfaces/file-metadata.interface';
 
 @Entity()
@@ -19,7 +26,7 @@ export class FileRecord {
   @Column('int')
   size: number;
 
-  @Column('simple-json', { nullable: true })  // Changed from 'jsonb' to 'simple-json'
+  @Column('simple-json', { nullable: true }) // Changed from 'jsonb' to 'simple-json'
   metadata: fileMetadataInterface.FileMetadata;
 
   @Column()

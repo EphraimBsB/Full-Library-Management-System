@@ -1,11 +1,30 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { BookRequestService } from '../services/book-request.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { UserRole } from 'src/common/enums/user-role.enum';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { CreateBookRequestDto, ApproveRejectRequestDto } from '../dto/book-request.dto';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
+import {
+  CreateBookRequestDto,
+  ApproveRejectRequestDto,
+} from '../dto/book-request.dto';
 import { BookRequestStatus } from '../entities/book-request.entity';
 
 @ApiTags('book-requests')
@@ -18,7 +37,10 @@ export class BookRequestController {
   // @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT,)
   @ApiOperation({ summary: 'Create a new book request' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 201, description: 'Book request created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Book request created successfully',
+  })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Book not found' })
@@ -44,14 +66,21 @@ export class BookRequestController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Request not found' })
-  @ApiResponse({ status: 409, description: 'Request is not in a pending state' })
+  @ApiResponse({
+    status: 409,
+    description: 'Request is not in a pending state',
+  })
   async approve(
     @Param('id') id: string,
     @Body() approveRequestDto: ApproveRejectRequestDto,
     @Req() req: any,
   ) {
     const approvedById = req.user.id;
-    return this.bookRequestService.approveRequest(id, approvedById, approveRequestDto.preferredCopyId);
+    return this.bookRequestService.approveRequest(
+      id,
+      approvedById,
+      approveRequestDto.preferredCopyId,
+    );
   }
 
   @Post(':id/reject')
@@ -62,7 +91,10 @@ export class BookRequestController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Request not found' })
-  @ApiResponse({ status: 409, description: 'Request is not in a pending state' })
+  @ApiResponse({
+    status: 409,
+    description: 'Request is not in a pending state',
+  })
   async reject(
     @Param('id') id: string,
     @Body() rejectRequestDto: ApproveRejectRequestDto,
@@ -84,7 +116,10 @@ export class BookRequestController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Request not found' })
-  @ApiResponse({ status: 409, description: 'Only pending requests can be cancelled' })
+  @ApiResponse({
+    status: 409,
+    description: 'Only pending requests can be cancelled',
+  })
   async remove(@Param('id') id: string, @Req() req: any) {
     const userId = req.user.id;
     return this.bookRequestService.cancelRequest(id, userId);
@@ -92,20 +127,20 @@ export class BookRequestController {
 
   @Get()
   @Roles(UserRole.LIBRARIAN, UserRole.ADMIN)
-  @ApiOperation({ summary: 'List all book requests with optional status filter' })
+  @ApiOperation({
+    summary: 'List all book requests with optional status filter',
+  })
   @ApiBearerAuth()
-  @ApiQuery({ 
-    name: 'status', 
+  @ApiQuery({
+    name: 'status',
     required: false,
     enum: BookRequestStatus,
-    description: 'Filter requests by status' 
+    description: 'Filter requests by status',
   })
   @ApiResponse({ status: 200, description: 'List of book requests' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  async findAll(
-    @Query('status') status?: BookRequestStatus,
-  ) {
+  async findAll(@Query('status') status?: BookRequestStatus) {
     return this.bookRequestService.findAll({ status });
   }
 
@@ -113,7 +148,10 @@ export class BookRequestController {
   @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get my book requests' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Returns list of user\'s book requests' })
+  @ApiResponse({
+    status: 200,
+    description: "Returns list of user's book requests",
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMyRequests(@Req() req: any) {
     const userId = req.user.id;

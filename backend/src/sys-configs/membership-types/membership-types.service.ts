@@ -12,8 +12,12 @@ export class MembershipTypesService {
     private readonly membershipTypeRepository: Repository<MembershipType>,
   ) {}
 
-  async create(createMembershipTypeDto: CreateMembershipTypeDto): Promise<MembershipType> {
-    const membershipType = this.membershipTypeRepository.create(createMembershipTypeDto);
+  async create(
+    createMembershipTypeDto: CreateMembershipTypeDto,
+  ): Promise<MembershipType> {
+    const membershipType = this.membershipTypeRepository.create(
+      createMembershipTypeDto,
+    );
     return await this.membershipTypeRepository.save(membershipType);
   }
 
@@ -22,7 +26,9 @@ export class MembershipTypesService {
   }
 
   async findOne(id: number): Promise<MembershipType> {
-    const membershipType = await this.membershipTypeRepository.findOne({ where: { id } });
+    const membershipType = await this.membershipTypeRepository.findOne({
+      where: { id },
+    });
     if (!membershipType) {
       throw new NotFoundException(`Membership type with ID ${id} not found`);
     }

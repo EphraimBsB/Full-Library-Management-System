@@ -1,5 +1,36 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, CreateDateColumn, UpdateDateColumn, Index, DeleteDateColumn, BeforeInsert, BeforeUpdate, JoinTable, ManyToMany, OneToOne } from 'typeorm';
-import { IsString, IsUUID, IsOptional, IsUrl, IsNumber, Min, Max, IsEnum, IsDateString, IsBoolean, ValidateNested, ArrayMinSize, IsInt, IsISBN } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  DeleteDateColumn,
+  BeforeInsert,
+  BeforeUpdate,
+  JoinTable,
+  ManyToMany,
+  OneToOne,
+} from 'typeorm';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsUrl,
+  IsNumber,
+  Min,
+  Max,
+  IsEnum,
+  IsDateString,
+  IsBoolean,
+  ValidateNested,
+  ArrayMinSize,
+  IsInt,
+  IsISBN,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { Type as TypeEntity } from '../../sys-configs/types/entities/type.entity';
 import { Subject } from '../../sys-configs/subjects/entities/subject.entity';
@@ -76,11 +107,14 @@ export class Book {
   @IsUrl()
   coverImageUrl?: string;
 
-  @ManyToMany(() => Category, category => category.books, { cascade: true, eager: true })
+  @ManyToMany(() => Category, (category) => category.books, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'book_categories',
     joinColumn: { name: 'bookId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'categoryId', referencedColumnName: 'id' }
+    inverseJoinColumn: { name: 'categoryId', referencedColumnName: 'id' },
   })
   @IsOptional()
   @ValidateNested({ each: true })
@@ -88,11 +122,14 @@ export class Book {
   @ArrayMinSize(1, { message: 'At least one category is required' })
   categories: Category[];
 
-  @ManyToMany(() => Subject, subject => subject.books, { cascade: true, eager: true })
+  @ManyToMany(() => Subject, (subject) => subject.books, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'book_subjects',
     joinColumn: { name: 'bookId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'subjectId', referencedColumnName: 'id' }
+    inverseJoinColumn: { name: 'subjectId', referencedColumnName: 'id' },
   })
   @IsOptional()
   @ValidateNested({ each: true })
@@ -105,7 +142,7 @@ export class Book {
 
   @Column({
     type: 'int',
-    nullable: true
+    nullable: true,
   })
   typeId?: number;
 
@@ -115,11 +152,11 @@ export class Book {
 
   @Column({
     type: 'int',
-    nullable: true
+    nullable: true,
   })
   sourceId?: number;
 
-  @Column({ nullable: true, name: 'ddc', unique: true })
+  @Column({ nullable: true, name: 'ddc', unique: false })
   @IsOptional()
   @IsString()
   ddc?: string;
@@ -145,13 +182,16 @@ export class Book {
   @OneToMany(() => BookRequest, (request) => request.book)
   requests: BookRequest[];
 
-  @OneToOne(() => BookMetadata, (metadata) => metadata.book, { cascade: true, eager: true })
+  @OneToOne(() => BookMetadata, (metadata) => metadata.book, {
+    cascade: true,
+    eager: true,
+  })
   metadata: BookMetadata;
 
-  @OneToMany(() => BookNote, note => note.book)
+  @OneToMany(() => BookNote, (note) => note.book)
   notes: BookNote[];
 
-  @OneToMany(() => BookFavorite, favorite => favorite.book)
+  @OneToMany(() => BookFavorite, (favorite) => favorite.book)
   favorites: BookFavorite[];
 
   @OneToMany('BookLoan', 'bookCopy')

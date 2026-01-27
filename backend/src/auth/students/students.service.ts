@@ -8,8 +8,9 @@ export class StudentsService {
   constructor(private readonly httpService: HttpService) {}
 
   async getStudentDetails(rollNumber: string): Promise<any> {
-    const thirdPartyApiUrl = 'https://ilimsapi.isbatuniversity.ac.ug:9093/api/StudentDetails';
-    
+    const thirdPartyApiUrl =
+      'https://ilimsapi.isbatuniversity.ac.ug:9093/api/StudentDetails';
+
     try {
       const response: AxiosResponse = await firstValueFrom(
         this.httpService.get(thirdPartyApiUrl, {
@@ -21,8 +22,11 @@ export class StudentsService {
       return response.data;
     } catch (error) {
       const axiosError = error as AxiosError;
-      console.error('Error fetching student details from third-party API:', axiosError.message);
-      
+      console.error(
+        'Error fetching student details from third-party API:',
+        axiosError.message,
+      );
+
       // Re-throw the error to be handled by the controller
       throw axiosError;
     }

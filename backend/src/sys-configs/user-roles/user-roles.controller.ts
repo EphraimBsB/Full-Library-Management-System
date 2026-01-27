@@ -24,7 +24,11 @@ export class UserRolesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new user role' })
-  @ApiResponse({ status: 201, description: 'User role created successfully', type: UserRole })
+  @ApiResponse({
+    status: 201,
+    description: 'User role created successfully',
+    type: UserRole,
+  })
   create(@Body() createUserRoleDto: CreateUserRoleDto) {
     return this.userRolesService.create(createUserRoleDto);
   }
@@ -33,7 +37,11 @@ export class UserRolesController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all user roles' })
-  @ApiResponse({ status: 200, description: 'Return all user roles', type: [UserRole] })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all user roles',
+    type: [UserRole],
+  })
   findAll() {
     return this.userRolesService.findAll();
   }
@@ -42,7 +50,11 @@ export class UserRolesController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a user role by ID' })
-  @ApiResponse({ status: 200, description: 'Return the user role', type: UserRole })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the user role',
+    type: UserRole,
+  })
   @ApiResponse({ status: 404, description: 'User role not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userRolesService.findOne(id);
@@ -50,14 +62,22 @@ export class UserRolesController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Toggle user role status' })
-  @ApiResponse({ status: 200, description: 'User role status toggled successfully', type: UserRole })
+  @ApiResponse({
+    status: 200,
+    description: 'User role status toggled successfully',
+    type: UserRole,
+  })
   toggleStatus(@Param('id', ParseIntPipe) id: number) {
     return this.userRolesService.toggleStatus(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user role' })
-  @ApiResponse({ status: 200, description: 'User role updated successfully', type: UserRole })
+  @ApiResponse({
+    status: 200,
+    description: 'User role updated successfully',
+    type: UserRole,
+  })
   @ApiResponse({ status: 404, description: 'User role not found' })
   update(
     @Param('id', ParseIntPipe) id: number,

@@ -1,6 +1,9 @@
 import { DataSource } from 'typeorm';
 import { ISeeder, SeedResult } from '../base-seed.interface';
-import { Notification, NotificationType } from '../../../notifications/entities/notification.entity';
+import {
+  Notification,
+  NotificationType,
+} from '../../../notifications/entities/notification.entity';
 import { User } from '../../../users/entities/user.entity';
 
 type NotificationData = {
@@ -18,7 +21,7 @@ export class NotificationsSeed implements ISeeder {
     // Get regular users (non-admins)
     const users = await userRepository.find({
       where: { role: { name: 'Member' } },
-      take: 10 // Limit to first 10 members
+      take: 10, // Limit to first 10 members
     });
 
     if (users.length === 0) {
@@ -32,15 +35,18 @@ export class NotificationsSeed implements ISeeder {
       NotificationType.BORROWED_BOOK_DUE,
       NotificationType.DUE_SOON,
       NotificationType.OVERDUE,
-      NotificationType.GENERAL
+      NotificationType.GENERAL,
     ];
 
     // Create 2-5 notifications per user
     for (const user of users) {
       const notificationCount = 2 + Math.floor(Math.random() * 4);
-      
+
       for (let i = 0; i < notificationCount; i++) {
-        const type = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
+        const type =
+          notificationTypes[
+            Math.floor(Math.random() * notificationTypes.length)
+          ];
         const isRead = Math.random() > 0.5;
         const createdAt = new Date();
         createdAt.setDate(createdAt.getDate() - Math.floor(Math.random() * 30)); // Up to 30 days ago
@@ -58,19 +64,22 @@ export class NotificationsSeed implements ISeeder {
             break;
           case NotificationType.BORROWED_BOOK_DUE:
             title = 'Book Due Soon';
-            message = 'You have a book due tomorrow. Please return or renew it.';
+            message =
+              'You have a book due tomorrow. Please return or renew it.';
             data.relatedEntityType = 'loan';
             data.relatedEntityId = 1 + Math.floor(Math.random() * 20);
             break;
           case NotificationType.DUE_SOON:
             title = 'Due Date Reminder';
-            message = 'You have a book due in 2 days. Please return or renew it soon.';
+            message =
+              'You have a book due in 2 days. Please return or renew it soon.';
             data.relatedEntityType = 'loan';
             data.relatedEntityId = 1 + Math.floor(Math.random() * 20);
             break;
           case NotificationType.OVERDUE:
             title = 'Overdue Notice';
-            message = 'You have an overdue book. Please return it as soon as possible to avoid additional fees.';
+            message =
+              'You have an overdue book. Please return it as soon as possible to avoid additional fees.';
             data.relatedEntityType = 'loan';
             data.relatedEntityId = 1 + Math.floor(Math.random() * 20);
             break;
@@ -88,9 +97,11 @@ export class NotificationsSeed implements ISeeder {
           message,
           type,
           data: Object.keys(data).length > 0 ? data : null,
-          readAt: isRead ? new Date(createdAt.getTime() + 1000 * 60 * 60) : null, // Read 1 hour after creation
+          readAt: isRead
+            ? new Date(createdAt.getTime() + 1000 * 60 * 60)
+            : null, // Read 1 hour after creation
           createdAt,
-          updatedAt: createdAt
+          updatedAt: createdAt,
         });
 
         notifications.push(notification);
@@ -105,7 +116,7 @@ export class NotificationsSeed implements ISeeder {
 
     return {
       entity: 'Notification',
-      count: created
+      count: created,
     };
   }
 }

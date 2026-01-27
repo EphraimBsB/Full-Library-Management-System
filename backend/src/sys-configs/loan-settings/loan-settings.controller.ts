@@ -17,14 +17,22 @@ export class LoanSettingsController {
 
   @Get()
   @ApiOperation({ summary: 'Get current loan settings' })
-  @ApiResponse({ status: 200, description: 'Returns the current loan settings', type: LoanSettings })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the current loan settings',
+    type: LoanSettings,
+  })
   async getSettings(): Promise<LoanSettings> {
     return this.loanSettingsService.getSettings();
   }
 
   @Put()
   @ApiOperation({ summary: 'Update loan settings' })
-  @ApiResponse({ status: 200, description: 'Updates and returns the loan settings', type: LoanSettings })
+  @ApiResponse({
+    status: 200,
+    description: 'Updates and returns the loan settings',
+    type: LoanSettings,
+  })
   async updateSettings(
     @Body() updateSettingsDto: UpdateLoanSettingsDto,
   ): Promise<LoanSettings> {

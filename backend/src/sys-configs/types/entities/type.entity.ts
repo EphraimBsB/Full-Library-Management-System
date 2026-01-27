@@ -1,5 +1,5 @@
-import { Book } from "src/books/entities/book.entity";
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Book } from 'src/books/entities/book.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum BookFormat {
   PHYSICAL = 'physical',
@@ -17,7 +17,7 @@ export class Type {
   @Column({
     type: 'enum',
     enum: BookFormat,
-    default: BookFormat.PHYSICAL
+    default: BookFormat.PHYSICAL,
   })
   format: BookFormat;
 
@@ -30,4 +30,3 @@ export class Type {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 }
-

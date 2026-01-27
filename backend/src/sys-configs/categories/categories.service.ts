@@ -65,17 +65,17 @@ export class CategoriesService {
     }
 
     // const skip = (page - 1) * limit;
-    const queryBuilder = this.categoryRepository
-      .createQueryBuilder('category');
+    const queryBuilder = this.categoryRepository.createQueryBuilder('category');
 
     if (search) {
-      queryBuilder.andWhere('category.name LIKE :search', { 
-        search: `%${search}%` 
+      queryBuilder.andWhere('category.name LIKE :search', {
+        search: `%${search}%`,
       });
     }
 
     const [data, total] = await queryBuilder
-      .orderBy('category.name', 'ASC').getManyAndCount();
+      .orderBy('category.name', 'ASC')
+      .getManyAndCount();
 
     // Cache the result for 60 seconds
     await this.cacheManager.set(cacheKey, data, 60);
@@ -100,12 +100,12 @@ export class CategoriesService {
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     const category = await this.findOne(id);
-    
+
     // If name is being updated, check for conflicts
     if (updateCategoryDto.name && updateCategoryDto.name !== category.name) {
       const existingCategory = await this.categoryRepository.findOne({
-        where: { 
-          name: updateCategoryDto.name, 
+        where: {
+          name: updateCategoryDto.name,
           id: Not(id),
         },
       });
@@ -160,7 +160,7 @@ export class CategoriesService {
     { page = 1, limit = 10 }: PaginationOptions,
   ): Promise<PaginatedResponseDto<any>> {
     const skip = (page - 1) * limit;
-    
+
     const category = await this.categoryRepository.findOne({
       where: { id },
       relations: ['books'],
@@ -180,7 +180,7 @@ export class CategoriesService {
       .getManyAndCount();
 
     const totalPages = Math.ceil(total / limit);
-    
+
     return new PaginatedResponseDto({
       data: data[0]?.books || [],
       total,

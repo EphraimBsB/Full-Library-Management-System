@@ -1,4 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  OneToOne,
+  Index,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { BookLoan } from '../../books/entities/book-loan.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
@@ -8,7 +19,7 @@ export enum MembershipStatus {
   ACTIVE = 'active',
   EXPIRED = 'expired',
   SUSPENDED = 'suspended',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 @Entity('memberships')
@@ -26,7 +37,7 @@ export class Membership {
   @Column('uuid')
   userId: string;
 
-  @ManyToOne(() => User, user => user.memberships, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.memberships, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
@@ -53,7 +64,7 @@ export class Membership {
   @Column({
     type: 'enum',
     enum: MembershipStatus,
-    default: MembershipStatus.ACTIVE
+    default: MembershipStatus.ACTIVE,
   })
   status: MembershipStatus;
 
@@ -63,7 +74,7 @@ export class Membership {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   outstandingFines: number;
 
-  @OneToMany(() => BookLoan, loan => loan.membership)
+  @OneToMany(() => BookLoan, (loan) => loan.membership)
   loans: BookLoan[];
 
   @CreateDateColumn()
@@ -74,8 +85,10 @@ export class Membership {
 
   isActive(): boolean {
     const now = new Date();
-    return this.status === MembershipStatus.ACTIVE && 
-           new Date(this.expiryDate) >= now;
+    return (
+      this.status === MembershipStatus.ACTIVE &&
+      new Date(this.expiryDate) >= now
+    );
   }
 
   canBorrowMoreBooks(currentLoans: number): boolean {

@@ -53,7 +53,7 @@ export class StorageUtils {
       }
 
       const processedBuffer = await image.toBuffer();
-      
+
       return {
         buffer: processedBuffer,
         metadata: {
@@ -68,9 +68,10 @@ export class StorageUtils {
     }
   }
 
-  static getVariantDimensions(
-    variant: ImageVariant,
-  ): { width?: number; height?: number } {
+  static getVariantDimensions(variant: ImageVariant): {
+    width?: number;
+    height?: number;
+  } {
     switch (variant) {
       case ImageVariant.THUMBNAIL:
         return { width: 200, height: 200 };
