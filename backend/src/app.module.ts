@@ -58,6 +58,30 @@ import { StudentsModule } from './auth/students/students.module';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'public'),
       serveRoot: '/uploads',
+      serveStaticOptions: {
+        setHeaders: (res, path, stat) => {
+          // Set CORS headers for static files
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+          res.setHeader(
+            'Access-Control-Allow-Headers',
+            'Content-Type, Authorization, Range',
+          );
+          res.setHeader(
+            'Access-Control-Expose-Headers',
+            'Content-Length, Content-Type',
+          );
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
+          // Cache control for images
+          if (path.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+            res.setHeader(
+              'Cache-Control',
+              'public, max-age=31536000, immutable',
+            );
+          }
+        },
+      },
     }),
     // Data import module for uploading book Excel files
     DataImportModule,
@@ -72,4 +96,4 @@ import { StudentsModule } from './auth/students/students.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

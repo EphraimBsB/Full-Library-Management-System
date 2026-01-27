@@ -12,7 +12,13 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DataImportService } from './data-import.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiBody, ApiConsumes, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiConsumes,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { ImportSummaryDto } from './dto/import-result.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -57,12 +63,13 @@ export class DataImportController {
       },
     }),
   )
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Import books from Excel file',
-    description: 'Upload an Excel file to import books into the system. The first row should contain headers.'
+    description:
+      'Upload an Excel file to import books into the system. The first row should contain headers.',
   })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ 
+  @ApiBody({
     description: 'Excel file (.xlsx, .xls) with book data',
     schema: {
       type: 'object',
@@ -74,21 +81,21 @@ export class DataImportController {
       },
     },
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Books imported successfully',
     type: ImportSummaryDto,
   })
-  @ApiResponse({ 
-    status: 400, 
+  @ApiResponse({
+    status: 400,
     description: 'Invalid file format or validation error',
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized',
   })
-  @ApiResponse({ 
-    status: 500, 
+  @ApiResponse({
+    status: 500,
     description: 'Internal server error',
   })
   async importBooks(@UploadedFile() file: Express.Multer.File) {
@@ -98,7 +105,8 @@ export class DataImportController {
 
     try {
       const fileBuffer = fs.readFileSync(file.path);
-      const result = await this.dataImportService.importBooksFromExcel(fileBuffer);
+      const result =
+        await this.dataImportService.importBooksFromExcel(fileBuffer);
       return result;
     } catch (error) {
       throw new HttpException(

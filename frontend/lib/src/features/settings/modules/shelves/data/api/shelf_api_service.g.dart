@@ -4,15 +4,15 @@ part of 'shelf_api_service.dart';
 
 // dart format off
 
-// ***************************************************************************
+// **************************************************************************
 // RetrofitGenerator
-// ***************************************************************************
+// **************************************************************************
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter
 
 class _ShelfApiService implements ShelfApiService {
   _ShelfApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://localhost:3000/api/v1';
+    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
   }
 
   final Dio _dio;
@@ -53,7 +53,8 @@ class _ShelfApiService implements ShelfApiService {
     try {
       _value = _result.data!
           .map(
-            (dynamic i) => Map<String, dynamic>.from(i as Map<String, dynamic>),
+            (dynamic i) =>
+                Map<String, dynamic>.from(i as Map<String, dynamic>),
           )
           .toList();
     } on Object catch (e, s) {

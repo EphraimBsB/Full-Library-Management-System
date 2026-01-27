@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull, MoreThan, LessThanOrEqual } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -34,15 +41,17 @@ export class UsersService {
     private readonly bookNoteService: BookNoteService,
     @Inject(forwardRef(() => MembershipService))
     private readonly membershipService: MembershipService,
-  ) { }
+  ) {}
 
-  private getSafePaginationOptions(options?: PaginationOptions): Required<PaginationOptions> {
+  private getSafePaginationOptions(
+    options?: PaginationOptions,
+  ): Required<PaginationOptions> {
     return {
       page: options?.page || 1,
       limit: options?.limit || 10,
       search: options?.search || '',
       sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'DESC'
+      sortOrder: options?.sortOrder || 'DESC',
     };
   }
 
@@ -64,26 +73,31 @@ export class UsersService {
         where: {
           userId,
           status: LoanStatus.RETURNED,
-          returnedAt: Not(IsNull())
+          returnedAt: Not(IsNull()),
         },
-        select: ['id']
-      })
+        select: ['id'],
+      }),
     ]);
 
     // Get favorites and notes count
     const [favorites, notes] = await Promise.all([
       this.bookFavoriteService.getUserFavoritesCount(userId),
-      this.bookNoteService.getUserNotes(userId)
+      this.bookNoteService.getUserNotes(userId),
     ]);
 
-    const activeBorrows = userLoans.filter(loan => loan.status === LoanStatus.ACTIVE).length;
+    const activeBorrows = userLoans.filter(
+      (loan) => loan.status === LoanStatus.ACTIVE,
+    ).length;
     const overdueBorrows = overdueLoans.length;
     const returnedBorrows = returnedLoans.length;
     const favoritesCount = typeof favorites === 'number' ? favorites : 0;
     const notesCount = Array.isArray(notes) ? notes.length : 0;
 
     // Handle case where user has no memberships
-    const latestMembership = user.memberships && user.memberships.length > 0 ? user.memberships[0] : null;
+    const latestMembership =
+      user.memberships && user.memberships.length > 0
+        ? user.memberships[0]
+        : null;
 
     return {
       id: user.id,
@@ -112,7 +126,7 @@ export class UsersService {
 
   async getUserBorrowHistory(
     userId: string,
-    options: PaginationOptions = {}
+    options: PaginationOptions = {},
   ): Promise<PaginatedResponseDto<any>> {
     const safeOptions = this.getSafePaginationOptions(options);
     const [items, total] = await this.bookLoanService.getUserLoansPaginated(
@@ -128,19 +142,20 @@ export class UsersService {
       limit: safeOptions.limit,
       totalPages,
       hasPreviousPage: safeOptions.page > 1,
-      hasNextPage: safeOptions.page < totalPages
+      hasNextPage: safeOptions.page < totalPages,
     };
   }
 
   async getUserFavorites(
     userId: string,
-    options: PaginationOptions = {}
+    options: PaginationOptions = {},
   ): Promise<PaginatedResponseDto<any>> {
     const safeOptions = this.getSafePaginationOptions(options);
-    const [favoritesList, total] = await this.bookFavoriteService.getUserFavoritesPaginated(
-      userId,
-      safeOptions,
-    );
+    const [favoritesList, total] =
+      await this.bookFavoriteService.getUserFavoritesPaginated(
+        userId,
+        safeOptions,
+      );
     const totalPages = Math.ceil(total / safeOptions.limit);
     return {
       data: favoritesList,
@@ -149,13 +164,13 @@ export class UsersService {
       limit: safeOptions.limit,
       totalPages,
       hasPreviousPage: safeOptions.page > 1,
-      hasNextPage: safeOptions.page < totalPages
+      hasNextPage: safeOptions.page < totalPages,
     };
   }
 
   async getUserNotes(
     userId: string,
-    options: PaginationOptions = {}
+    options: PaginationOptions = {},
   ): Promise<PaginatedResponseDto<any>> {
     const safeOptions = this.getSafePaginationOptions(options);
     const [notesList, total] = await this.bookNoteService.getUserNotesPaginated(
@@ -170,7 +185,7 @@ export class UsersService {
       limit: safeOptions.limit,
       totalPages,
       hasPreviousPage: safeOptions.page > 1,
-      hasNextPage: safeOptions.page < totalPages
+      hasNextPage: safeOptions.page < totalPages,
     };
   }
 
@@ -194,7 +209,9 @@ export class UsersService {
     });
 
     if (existingRollNumber) {
-      throw new ConflictException('A user with this roll number already exists');
+      throw new ConflictException(
+        'A user with this roll number already exists',
+      );
     }
 
     const hashedPassword = await this.hashPassword(createUserDto.password);
@@ -247,9 +264,9 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: {
         id,
-        deletedAt: IsNull()
+        deletedAt: IsNull(),
       },
-      relations: ['role']
+      relations: ['role'],
     });
 
     if (!user) {
@@ -281,8 +298,8 @@ export class UsersService {
       where: {
         id: userId,
         isActive: true,
-        deletedAt: IsNull()
-      }
+        deletedAt: IsNull(),
+      },
     });
 
     if (!user) {
@@ -312,13 +329,22 @@ export class UsersService {
     }
 
     // Check if roll number is being updated and conflicts with existing users
-    if (updateUserDto.rollNumber && updateUserDto.rollNumber !== user.rollNumber) {
+    if (
+      updateUserDto.rollNumber &&
+      updateUserDto.rollNumber !== user.rollNumber
+    ) {
       const existingRollNumber = await this.userRepository.findOne({
-        where: { rollNumber: updateUserDto.rollNumber, id: Not(id), deletedAt: IsNull() },
+        where: {
+          rollNumber: updateUserDto.rollNumber,
+          id: Not(id),
+          deletedAt: IsNull(),
+        },
       });
 
       if (existingRollNumber) {
-        throw new ConflictException('A user with this roll number already exists');
+        throw new ConflictException(
+          'A user with this roll number already exists',
+        );
       }
     }
 
@@ -336,33 +362,39 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
-      relations: ['role']
+      relations: ['role'],
     });
   }
 
   async findByRollNumber(rollNumber: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { rollNumber, deletedAt: IsNull() },
-      relations: ['role']
+      relations: ['role'],
     });
   }
 
-  async validateUser(identifier: string, password: string): Promise<User | null> {
+  async validateUser(
+    identifier: string,
+    password: string,
+  ): Promise<User | null> {
     // Try to find user by email first
     let user = await this.findByEmail(identifier);
-    
+
     // If not found by email, try by roll number
     if (!user) {
       user = await this.findByRollNumber(identifier);
     }
-    
+
     if (!user) return null;
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     return isPasswordValid ? user : null;
   }
 
-  async createStudentFromThirdParty(studentDetails: any, password: string): Promise<User> {
+  async createStudentFromThirdParty(
+    studentDetails: any,
+    password: string,
+  ): Promise<User> {
     // Extract name from student details
     const fullName = studentDetails.name || '';
     const nameParts = fullName.split(' ');
@@ -409,12 +441,17 @@ export class UsersService {
         studentMembershipType.id.toString(),
         new Date(),
       );
-      console.log(`Automatic membership created for student: ${savedUser.email}`);
+      console.log(
+        `Automatic membership created for student: ${savedUser.email}`,
+      );
     } catch (error) {
-      console.error('Failed to create automatic membership for student:', error);
+      console.error(
+        'Failed to create automatic membership for student:',
+        error,
+      );
       // Don't throw error here - user creation should succeed even if membership creation fails
     }
-    
+
     return savedUser;
   }
 }

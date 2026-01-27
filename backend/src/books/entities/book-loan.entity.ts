@@ -1,4 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, DeleteDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  DeleteDateColumn,
+  Index,
+} from 'typeorm';
 import { BookCopy } from './book-copy.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Membership } from 'src/membership/entities/membership.entity';
@@ -67,28 +78,33 @@ export class BookLoan {
   @DeleteDateColumn({ nullable: true })
   deletedAt: Date | null;
 
-  @ManyToOne(() => BookCopy, bookCopy => bookCopy.loans)
+  @ManyToOne(() => BookCopy, (bookCopy) => bookCopy.loans)
   @JoinColumn({ name: 'bookCopyId' })
   bookCopy: BookCopy;
 
-  @ManyToOne(() => User, user => user.bookLoans, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.bookLoans, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Membership, membership => membership.loans, { onDelete: 'RESTRICT', nullable: true })
+  @ManyToOne(() => Membership, (membership) => membership.loans, {
+    onDelete: 'RESTRICT',
+    nullable: true,
+  })
   @JoinColumn({ name: 'membershipId' })
   membership: Membership | null;
 
-  @OneToOne(() => QueueEntry, queueEntry => queueEntry.loan, { nullable: true })
+  @OneToOne(() => QueueEntry, (queueEntry) => queueEntry.loan, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'queueEntryId' })
   queueEntry: QueueEntry | null;
 
   @Column({ type: 'uuid', nullable: true })
   returnedBy: string | null;
 
-  @OneToOne(() => BookRequest, request => request.loan, {
+  @OneToOne(() => BookRequest, (request) => request.loan, {
     onDelete: 'SET NULL',
-    nullable: true
+    nullable: true,
   })
   @JoinColumn({ name: 'requestId' })
   request: BookRequest | null;

@@ -6,33 +6,34 @@ export class LocationsSeed implements ISeeder {
   public async run(dataSource: DataSource): Promise<SeedResult> {
     console.log('Seeding locations...');
     const repository = dataSource.getRepository(Location);
-    
+
     const locations = [
-      { 
-        name: 'Main Campus Library', 
+      {
+        name: 'Main Campus Library',
         description: 'Central library building with comprehensive collections',
-        address: '123 University Avenue, Main Campus, Kampala, Uganda'
+        address: '123 University Avenue, Main Campus, Kampala, Uganda',
       },
-      { 
-        name: 'City Campus Library', 
+      {
+        name: 'City Campus Library',
         description: 'Downtown branch serving urban students and professionals',
-        address: '456 City Center Plaza, Kampala, Uganda'
+        address: '456 City Center Plaza, Kampala, Uganda',
       },
-      { 
-        name: 'Science & Technology Library', 
+      {
+        name: 'Science & Technology Library',
         description: 'Specialized library for STEM disciplines',
-        address: '789 Tech Park Road, Kampala, Uganda'
+        address: '789 Tech Park Road, Kampala, Uganda',
       },
-      { 
-        name: 'Medical Campus Library', 
+      {
+        name: 'Medical Campus Library',
         description: 'Health sciences and medical literature collection',
-        address: '321 Medical Center Drive, Kampala, Uganda'
+        address: '321 Medical Center Drive, Kampala, Uganda',
       },
-      { 
-        name: 'Distance Learning Center', 
-        description: 'Library services for online and distance education students',
-        address: '654 Online Learning Boulevard, Kampala, Uganda'
-      }
+      {
+        name: 'Distance Learning Center',
+        description:
+          'Library services for online and distance education students',
+        address: '654 Online Learning Boulevard, Kampala, Uganda',
+      },
     ];
 
     let created = 0;
@@ -47,7 +48,7 @@ export class LocationsSeed implements ISeeder {
 
     return {
       entity: 'Location',
-      count: created
+      count: created,
     };
   }
 }

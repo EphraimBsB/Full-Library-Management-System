@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeepPartial } from 'typeorm';
-import { MembershipRequest, MembershipRequestStatus } from './entities/membership-request.entity';
+import {
+  MembershipRequest,
+  MembershipRequestStatus,
+} from './entities/membership-request.entity';
 import { Membership, MembershipStatus } from './entities/membership.entity';
 import { User } from '../users/entities/user.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
@@ -13,7 +21,8 @@ import { StudentsService } from '../auth/students/students.service';
 @Injectable()
 export class MembershipRequestService {
   constructor(
-    @InjectRepository(MembershipRequest)    private readonly requestRepository: Repository<MembershipRequest>,
+    @InjectRepository(MembershipRequest)
+    private readonly requestRepository: Repository<MembershipRequest>,
     @InjectRepository(Membership)
     private readonly membershipRepository: Repository<Membership>,
     @InjectRepository(MembershipType)
@@ -36,24 +45,24 @@ export class MembershipRequestService {
     const randomNum = Math.floor(100000 + Math.random() * 900000);
     const prefix = 'MEM';
     const membershipNumber = `${prefix}${randomNum}`;
-    
+
     // Check if the generated number already exists
     const existingMembership = await this.membershipRepository.findOne({
-      where: { membershipNumber }
+      where: { membershipNumber },
     });
-    
+
     // If it exists, generate a new one recursively
     if (existingMembership) {
       return this.generateMembershipNumber();
     }
-    
+
     return membershipNumber;
   }
 
   async getRequestById(id: string): Promise<MembershipRequest> {
     const request = await this.requestRepository.findOne({
       where: { id },
-      relations: ['user', 'membershipType', 'processedBy']
+      relations: ['user', 'membershipType', 'processedBy'],
     });
 
     if (!request) {
@@ -64,33 +73,37 @@ export class MembershipRequestService {
   }
 
   async createRequest(createDto: CreateMembershipRequestDto) {
-
     // Check if user exists by email
     let user = await this.userRepository.findOne({
-      where: { email: createDto.email }
+      where: { email: createDto.email },
     });
 
     // If rollNumber is provided, check if it's already in use by another user
     if (createDto.rollNumber) {
       const existingUserWithRollNumber = await this.userRepository.findOne({
-        where: { rollNumber: createDto.rollNumber }
+        where: { rollNumber: createDto.rollNumber },
       });
-      
-      if (existingUserWithRollNumber && existingUserWithRollNumber.email !== createDto.email) {
-        throw new ConflictException('Roll number is already in use by another user');
+
+      if (
+        existingUserWithRollNumber &&
+        existingUserWithRollNumber.email !== createDto.email
+      ) {
+        throw new ConflictException(
+          'Roll number is already in use by another user',
+        );
       }
     }
 
     // Create or update user
     if (!user) {
       let role = await this.userRoleRepository.findOne({
-        where: { id: createDto.roleId }
+        where: { id: createDto.roleId },
       });
 
       if (!createDto.rollNumber) {
         throw new BadRequestException('Roll number is required');
       }
-      
+
       const password = hashSync(createDto.rollNumber, 10);
       const userData: Partial<User> = {
         avatarUrl: createDto.avatarUrl,
@@ -103,9 +116,9 @@ export class MembershipRequestService {
         isActive: false, // Will be activated when request is approved
         role: role!,
         joinDate: new Date(), // Set the join date to now
-        passwordHash: password
+        passwordHash: password,
       };
-      
+
       user = this.userRepository.create(userData);
     }
 
@@ -133,7 +146,9 @@ export class MembershipRequestService {
     });
 
     if (existingRequest) {
-      throw new ConflictException('You already have a pending membership request');
+      throw new ConflictException(
+        'You already have a pending membership request',
+      );
     }
 
     // Verify membership type exists
@@ -148,17 +163,21 @@ export class MembershipRequestService {
     // Check student details for automatic approval
     let isStudentVerified = false;
     let studentDetails = null;
-    
-    
+
     try {
       if (createDto.rollNumber) {
-        studentDetails = await this.studentsService.getStudentDetails(createDto.rollNumber);
+        studentDetails = await this.studentsService.getStudentDetails(
+          createDto.rollNumber,
+        );
         isStudentVerified = true;
       } else {
         console.log(`No roll number provided for student verification`);
       }
     } catch (error) {
-      console.log(`Student verification FAILED for roll number: ${createDto.rollNumber}. Error:`, error.message);
+      console.log(
+        `Student verification FAILED for roll number: ${createDto.rollNumber}. Error:`,
+        error.message,
+      );
       console.log(`Request will remain pending.`);
       isStudentVerified = false;
     }
@@ -166,7 +185,9 @@ export class MembershipRequestService {
     console.log(`Final verification status: ${isStudentVerified}`);
 
     // Determine initial request status
-    const initialStatus = isStudentVerified ? MembershipRequestStatus.APPROVED : MembershipRequestStatus.PENDING;
+    const initialStatus = isStudentVerified
+      ? MembershipRequestStatus.APPROVED
+      : MembershipRequestStatus.PENDING;
 
     // Create the membership request with all required fields
     const requestData: DeepPartial<MembershipRequest> = {
@@ -179,7 +200,7 @@ export class MembershipRequestService {
       rejectionReason: null,
       processedById: null,
       processedBy: null,
-      processedAt: isStudentVerified ? new Date() : null
+      processedAt: isStudentVerified ? new Date() : null,
     };
 
     const request = this.requestRepository.create(requestData);
@@ -187,34 +208,53 @@ export class MembershipRequestService {
 
     // If student is verified, automatically create membership
     if (isStudentVerified && studentDetails) {
-      console.log(`Starting automatic membership creation for verified student: ${user.email}`);
+      console.log(
+        `Starting automatic membership creation for verified student: ${user.email}`,
+      );
       try {
-        console.log(`Creating membership for user ID: ${user.id}, membership type: ${membershipType.name}`);
-        const membership = await this.createMembershipForVerifiedUser(request, user, membershipType);
-        console.log(`Membership created successfully with ID: ${membership.id}, number: ${membership.membershipNumber}`);
-        
+        console.log(
+          `Creating membership for user ID: ${user.id}, membership type: ${membershipType.name}`,
+        );
+        const membership = await this.createMembershipForVerifiedUser(
+          request,
+          user,
+          membershipType,
+        );
+        console.log(
+          `Membership created successfully with ID: ${membership.id}, number: ${membership.membershipNumber}`,
+        );
+
         // Update user to active
         console.log(`Updating user ${user.email} to active status`);
         await this.userRepository.update(user.id, { isActive: true });
         console.log(`User ${user.email} activated successfully`);
-        
-        console.log(`Automatic membership creation completed for verified student: ${user.email}`);
+
+        console.log(
+          `Automatic membership creation completed for verified student: ${user.email}`,
+        );
       } catch (error) {
-        console.error('Failed to create automatic membership for verified student:', error);
+        console.error(
+          'Failed to create automatic membership for verified student:',
+          error,
+        );
         console.error('Error details:', error.message);
         // If automatic membership creation fails, keep the request as pending
-        console.log(`Reverting request ${request.id} to pending status due to membership creation failure`);
-        await this.requestRepository.update(request.id, { 
+        console.log(
+          `Reverting request ${request.id} to pending status due to membership creation failure`,
+        );
+        await this.requestRepository.update(request.id, {
           status: MembershipRequestStatus.PENDING,
           processedAt: null,
           processedById: null,
-          processedBy: null
+          processedBy: null,
         });
       }
     } else {
-      console.log(`Student not verified or no student details. Request will remain pending.`);
+      console.log(
+        `Student not verified or no student details. Request will remain pending.`,
+      );
     }
-    
+
     // Return the request with user and membership type details
     return this.getRequestById(request.id);
   }
@@ -222,16 +262,20 @@ export class MembershipRequestService {
   private async createMembershipForVerifiedUser(
     request: MembershipRequest,
     user: User,
-    membershipType: MembershipType
+    membershipType: MembershipType,
   ): Promise<Membership> {
-    console.log(`Creating membership for verified user - User ID: ${user.id}, Request ID: ${request.id}`);
-    
+    console.log(
+      `Creating membership for verified user - User ID: ${user.id}, Request ID: ${request.id}`,
+    );
+
     const now = new Date();
     const expiryDate = this.calculateExpiryDate(membershipType.maxDurationDays);
     const membershipNumber = await this.generateMembershipNumber();
-    
-    console.log(`Membership details - Number: ${membershipNumber}, Start: ${now}, Expiry: ${expiryDate}, Duration: ${membershipType.maxDurationDays} days`);
-    
+
+    console.log(
+      `Membership details - Number: ${membershipNumber}, Start: ${now}, Expiry: ${expiryDate}, Duration: ${membershipType.maxDurationDays} days`,
+    );
+
     const membership = this.membershipRepository.create({
       membershipNumber,
       userId: user.id,
@@ -245,13 +289,13 @@ export class MembershipRequestService {
     console.log(`Saving membership to database...`);
     const savedMembership = await this.membershipRepository.save(membership);
     console.log(`Membership saved successfully - ID: ${savedMembership.id}`);
-    
+
     return savedMembership;
   }
 
   async approveRequest(
     requestId: string,
-    processedBy: User
+    processedBy: User,
   ): Promise<{ request: MembershipRequest; user: User }> {
     // 1. Get the request with relations in a single query
     const request = await this.getRequestById(requestId);
@@ -262,14 +306,14 @@ export class MembershipRequestService {
         const updatedUser = await this.userRepository.findOne({
           where: { id: request.user.id },
         });
-        
+
         if (!updatedUser) {
           throw new BadRequestException('User not found');
         }
-        
-        return { 
-          request, 
-          user: updatedUser 
+
+        return {
+          request,
+          user: updatedUser,
         };
       }
       throw new ConflictException('This request has already been processed');
@@ -277,82 +321,89 @@ export class MembershipRequestService {
 
     // 2. Prepare data for updates
     const now = new Date();
-    const expiryDate = this.calculateExpiryDate(request.membershipType.maxDurationDays);
+    const expiryDate = this.calculateExpiryDate(
+      request.membershipType.maxDurationDays,
+    );
     const membershipNumber = await this.generateMembershipNumber();
-    
+
     // 3. Execute all updates in a single transaction
     try {
-      return await this.requestRepository.manager.transaction(async (transactionalEntityManager) => {
-        // Update request status with processedBy relation
-        await transactionalEntityManager.update(
-          MembershipRequest,
-          { id: requestId },
-          {
-            status: MembershipRequestStatus.APPROVED,
-            processedById: processedBy.id,
-            processedAt: now,
+      return await this.requestRepository.manager.transaction(
+        async (transactionalEntityManager) => {
+          // Update request status with processedBy relation
+          await transactionalEntityManager.update(
+            MembershipRequest,
+            { id: requestId },
+            {
+              status: MembershipRequestStatus.APPROVED,
+              processedById: processedBy.id,
+              processedAt: now,
+            },
+          );
+
+          // Update user status and role if needed
+          const userUpdate: any = { isActive: true };
+
+          await transactionalEntityManager.update(
+            User,
+            { id: request.user.id },
+            userUpdate,
+          );
+
+          // Create membership with generated membership number
+          await transactionalEntityManager.insert(Membership, {
+            membershipNumber,
+            userId: request.user.id,
+            membershipTypeId: request.membershipType.id,
+            startDate: now,
+            expiryDate,
+            status: MembershipStatus.ACTIVE,
+            requestId: requestId,
+          });
+
+          // Fetch the updated request with all relations
+          const updatedRequest = await transactionalEntityManager
+            .createQueryBuilder(MembershipRequest, 'request')
+            .leftJoinAndSelect('request.user', 'user')
+            .leftJoinAndSelect('request.membershipType', 'membershipType')
+            .leftJoinAndSelect('request.processedBy', 'processedBy')
+            .where('request.id = :requestId', { requestId })
+            .getOne();
+
+          if (!updatedRequest) {
+            throw new Error('Failed to fetch updated request');
           }
-        );
 
-        // Update user status and role if needed
-        const userUpdate: any = { isActive: true };
-        
-        await transactionalEntityManager.update(
-          User,
-          { id: request.user.id },
-          userUpdate
-        );
+          const updatedUser = await transactionalEntityManager.findOne(User, {
+            where: { id: request.user.id },
+          });
 
-        // Create membership with generated membership number
-        await transactionalEntityManager.insert(Membership, {
-          membershipNumber,
-          userId: request.user.id,
-          membershipTypeId: request.membershipType.id,
-          startDate: now,
-          expiryDate,
-          status: MembershipStatus.ACTIVE,
-          requestId: requestId,
-        });
+          if (!updatedUser) {
+            throw new Error('Failed to fetch updated user');
+          }
 
-        // Fetch the updated request with all relations
-        const updatedRequest = await transactionalEntityManager
-          .createQueryBuilder(MembershipRequest, 'request')
-          .leftJoinAndSelect('request.user', 'user')
-          .leftJoinAndSelect('request.membershipType', 'membershipType')
-          .leftJoinAndSelect('request.processedBy', 'processedBy')
-          .where('request.id = :requestId', { requestId })
-          .getOne();
+          const membership = await transactionalEntityManager.findOne(
+            Membership,
+            {
+              where: { userId: request.user.id },
+            },
+          );
 
-        if (!updatedRequest) {
-          throw new Error('Failed to fetch updated request');
-        }
+          if (!membership) {
+            throw new Error('Failed to fetch updated membership');
+          }
 
-        const updatedUser = await transactionalEntityManager.findOne(User, {
-          where: { id: request.user.id },
-        });
-
-        if (!updatedUser) {
-          throw new Error('Failed to fetch updated user');
-        }
-
-        const membership = await transactionalEntityManager.findOne(Membership, {
-          where: { userId: request.user.id },
-        });
-
-        if (!membership) {
-          throw new Error('Failed to fetch updated membership');
-        }
-
-        return { 
-          request: updatedRequest, 
-          user: updatedUser,
-          membership: membership,
-        };
-      });
+          return {
+            request: updatedRequest,
+            user: updatedUser,
+            membership: membership,
+          };
+        },
+      );
     } catch (error) {
       console.error('Error in approveRequest transaction:', error);
       throw new BadRequestException(
-        error.message || 'Failed to approve membership request'
+        error.message || 'Failed to approve membership request',
       );
     }
   }
@@ -360,9 +411,8 @@ export class MembershipRequestService {
   async rejectRequest(
     requestId: string,
     processedBy: User,
-    reason: string
+    reason: string,
   ): Promise<{ request: MembershipRequest; user: User }> {
-
     // 1. Get the request with relations
     const request = await this.requestRepository.findOne({
       where: { id: requestId },
@@ -402,7 +452,9 @@ export class MembershipRequestService {
     };
   }
 
-  async getAllRequests(status?: MembershipRequestStatus): Promise<MembershipRequest[]> {
+  async getAllRequests(
+    status?: MembershipRequestStatus,
+  ): Promise<MembershipRequest[]> {
     const where = status ? { status } : {};
     return this.requestRepository.find({
       where,

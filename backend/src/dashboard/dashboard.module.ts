@@ -8,14 +8,7 @@ import { BookRequest } from '../books/entities/book-request.entity';
 import { BookLoan } from '../books/entities/book-loan.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Book,
-      User,
-      BookRequest,
-      BookLoan,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([Book, User, BookRequest, BookLoan])],
   controllers: [DashboardController],
   providers: [DashboardService],
   exports: [DashboardService],

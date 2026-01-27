@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  Index,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { MembershipType } from 'src/sys-configs/membership-types/entities/membership-type.entity';
 import { Membership } from './membership.entity';
@@ -6,7 +16,7 @@ import { Membership } from './membership.entity';
 export enum MembershipRequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
-  REJECTED = 'rejected'
+  REJECTED = 'rejected',
 }
 
 @Entity('membership_requests')
@@ -30,13 +40,15 @@ export class MembershipRequest {
   @JoinColumn({ name: 'membershipTypeId' })
   membershipType: MembershipType;
 
-  @OneToOne(() => Membership, membership => membership.request, { nullable: true })
+  @OneToOne(() => Membership, (membership) => membership.request, {
+    nullable: true,
+  })
   membership: Membership | null;
 
   @Column({
     type: 'enum',
     enum: MembershipRequestStatus,
-    default: MembershipRequestStatus.PENDING
+    default: MembershipRequestStatus.PENDING,
   })
   status: MembershipRequestStatus;
 

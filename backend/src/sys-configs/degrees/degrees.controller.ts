@@ -24,7 +24,11 @@ export class DegreesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new degree program' })
-  @ApiResponse({ status: 201, description: 'Degree program created successfully', type: Degree })
+  @ApiResponse({
+    status: 201,
+    description: 'Degree program created successfully',
+    type: Degree,
+  })
   create(@Body() createDegreeDto: CreateDegreeDto) {
     return this.degreesService.create(createDegreeDto);
   }
@@ -33,7 +37,11 @@ export class DegreesController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all degree programs' })
-  @ApiResponse({ status: 200, description: 'Return all degree programs', type: [Degree] })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all degree programs',
+    type: [Degree],
+  })
   findAll() {
     return this.degreesService.findAll();
   }
@@ -42,7 +50,11 @@ export class DegreesController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a degree program by ID' })
-  @ApiResponse({ status: 200, description: 'Return the degree program', type: Degree })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the degree program',
+    type: Degree,
+  })
   @ApiResponse({ status: 404, description: 'Degree program not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.degreesService.findOne(id);
@@ -50,14 +62,22 @@ export class DegreesController {
 
   @Get('name/:name')
   @ApiOperation({ summary: 'Get a degree program by name' })
-  @ApiResponse({ status: 200, description: 'Return the degree program by name', type: Degree })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the degree program by name',
+    type: Degree,
+  })
   findByName(@Param('name') name: string) {
     return this.degreesService.findByName(name);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a degree program' })
-  @ApiResponse({ status: 200, description: 'Degree program updated successfully', type: Degree })
+  @ApiResponse({
+    status: 200,
+    description: 'Degree program updated successfully',
+    type: Degree,
+  })
   @ApiResponse({ status: 404, description: 'Degree program not found' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -68,7 +88,10 @@ export class DegreesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a degree program' })
-  @ApiResponse({ status: 200, description: 'Degree program deleted successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Degree program deleted successfully',
+  })
   @ApiResponse({ status: 404, description: 'Degree program not found' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.degreesService.remove(id);

@@ -36,7 +36,7 @@ export class WorldCatService {
     return new Promise((resolve) => {
       try {
         const cleanISBN = isbnInput.replace(/[^0-9Xx]/g, '');
-        
+
         if (cleanISBN.length < 10 || cleanISBN.length > 13) {
           this.logger.warn(`Invalid ISBN format: ${isbnInput}`);
           resolve(null);
@@ -61,7 +61,9 @@ export class WorldCatService {
 
           // Parse the book data from node-isbn response
           const bookData = this.parseNodeISBNResponse(book, cleanISBN);
-          this.logger.log(`Successfully fetched book data for ISBN: ${cleanISBN}`);
+          this.logger.log(
+            `Successfully fetched book data for ISBN: ${cleanISBN}`,
+          );
           resolve(bookData);
         });
       } catch (error) {
@@ -75,9 +77,12 @@ export class WorldCatService {
    * Parse node-isbn response and extract book data
    * Enhanced to match the reference code's data extraction
    */
-  private parseNodeISBNResponse(book: any, cleanISBN: string): WorldCatBookData {
-    this.logger.debug(`Parsing node-isbn response for ISBN: ${cleanISBN}`);
-    this.logger.debug(`Book data structure:`, JSON.stringify(book, null, 2));
+  private parseNodeISBNResponse(
+    book: any,
+    cleanISBN: string,
+  ): WorldCatBookData {
+    // this.logger.debug(`Parsing node-isbn response for ISBN: ${cleanISBN}`);
+    // this.logger.debug(`Book data structure:`, JSON.stringify(book, null, 2));
 
     // Extract description with multiple fallbacks
     let description = '';
@@ -86,7 +91,10 @@ export class WorldCatService {
         description = book.description;
       } else if (book.description.value) {
         description = book.description.value;
-      } else if (Array.isArray(book.description) && book.description.length > 0) {
+      } else if (
+        Array.isArray(book.description) &&
+        book.description.length > 0
+      ) {
         description = book.description[0];
       }
     }
@@ -121,11 +129,13 @@ export class WorldCatService {
     let author = '';
     if (book.authors) {
       if (Array.isArray(book.authors)) {
-        author = book.authors.map((a: any) => {
-          if (typeof a === 'string') return a;
-          if (a.name) return a.name;
-          return String(a);
-        }).join(', ');
+        author = book.authors
+          .map((a: any) => {
+            if (typeof a === 'string') return a;
+            if (a.name) return a.name;
+            return String(a);
+          })
+          .join(', ');
       } else if (book.author) {
         author = book.author;
       }
@@ -155,23 +165,26 @@ export class WorldCatService {
       publicationYear: publicationYear,
       description: description || 'NO DESCRIPTION AVAILABLE',
       isbn: cleanISBN,
-      coverImageUrl: coverImageUrl || '/uploaded_files/book_images/No-image.jpg',
+      coverImageUrl:
+        coverImageUrl || '/uploaded_files/book_images/No-image.jpg',
       edition: book.edition || '',
       language: book.language || 'en',
       ddc: book.ddc || '',
     };
 
-    this.logger.log(`Parsed book data:`, JSON.stringify(result, null, 2));
+    // this.logger.log(`Parsed book data:`, JSON.stringify(result, null, 2));
     return result;
   }
 
   /**
    * Fetch from OpenLibrary API (no rate limits, very reliable fallback)
    */
-  async fetchBookByISBNFromOpenLibrary(isbn: string): Promise<WorldCatBookData | null> {
+  async fetchBookByISBNFromOpenLibrary(
+    isbn: string,
+  ): Promise<WorldCatBookData | null> {
     try {
       const cleanISBN = isbn.replace(/[^0-9Xx]/g, '');
-      
+
       if (cleanISBN.length < 10 || cleanISBN.length > 13) {
         this.logger.warn(`Invalid ISBN format: ${isbn}`);
         return null;
@@ -179,11 +192,11 @@ export class WorldCatService {
 
       // Fetch from OpenLibrary books API
       const booksUrl = `https://openlibrary.org/api/books?bibkeys=ISBN:${cleanISBN}&jio=1&format=json`;
-      
+
       const response = await this.httpService.axiosRef.get(booksUrl, {
         headers: {
           'User-Agent': 'LMS-Backend/1.0',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         timeout: 10000,
       });
@@ -191,7 +204,7 @@ export class WorldCatService {
       if (response.status === 200 && response.data) {
         const data = response.data;
         const bookKey = Object.keys(data)[0];
-        
+
         if (bookKey && data[bookKey]) {
           const book = data[bookKey];
           const bookUrl = book.info_url;
@@ -199,18 +212,21 @@ export class WorldCatService {
           if (bookUrl) {
             try {
               // Fetch detailed book info
-              const detailResponse = await this.httpService.axiosRef.get(`${bookUrl}.json`, {
-                headers: {
-                  'User-Agent': 'LMS-Backend/1.0',
-                  'Accept': 'application/json',
+              const detailResponse = await this.httpService.axiosRef.get(
+                `${bookUrl}.json`,
+                {
+                  headers: {
+                    'User-Agent': 'LMS-Backend/1.0',
+                    Accept: 'application/json',
+                  },
+                  timeout: 10000,
                 },
-                timeout: 10000,
-              });
-              
+              );
+
               if (detailResponse.status === 200 && detailResponse.data) {
                 const detail = detailResponse.data;
-                this.logger.debug(`OpenLibrary found detailed data for ISBN: ${cleanISBN}`);
-                
+                // this.logger.debug(`OpenLibrary found detailed data for ISBN: ${cleanISBN}`);
+
                 // Extract description with multiple fallbacks
                 let description = '';
                 if (detail.description) {
@@ -218,14 +234,21 @@ export class WorldCatService {
                     description = detail.description;
                   } else if (detail.description.value) {
                     description = detail.description.value;
-                  } else if (Array.isArray(detail.description) && detail.description.length > 0) {
+                  } else if (
+                    Array.isArray(detail.description) &&
+                    detail.description.length > 0
+                  ) {
                     description = detail.description[0];
                   }
                 }
 
                 // Extract cover image with OpenLibrary cover API
                 let coverImageUrl = book.thumbnail_url || '';
-                if (!coverImageUrl && detail.covers && detail.covers.length > 0) {
+                if (
+                  !coverImageUrl &&
+                  detail.covers &&
+                  detail.covers.length > 0
+                ) {
                   const coverId = detail.covers[0];
                   coverImageUrl = `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`;
                 }
@@ -233,14 +256,17 @@ export class WorldCatService {
                 // Extract authors properly
                 let author = '';
                 if (detail.authors) {
-                  author = detail.authors.map((a: any) => a.name || a).join(', ');
+                  author = detail.authors
+                    .map((a: any) => a.name || a)
+                    .join(', ');
                 }
 
                 // Extract publisher
                 let publisher = '';
                 if (detail.publishers) {
                   if (Array.isArray(detail.publishers)) {
-                    publisher = detail.publishers[0]?.name || detail.publishers[0] || '';
+                    publisher =
+                      detail.publishers[0]?.name || detail.publishers[0] || '';
                   } else {
                     publisher = detail.publishers;
                   }
@@ -263,19 +289,24 @@ export class WorldCatService {
                   publicationYear: publicationYear,
                   description: description || 'NO DESCRIPTION AVAILABLE',
                   isbn: cleanISBN,
-                  coverImageUrl: coverImageUrl || '/uploaded_files/book_images/No-image.jpg',
+                  coverImageUrl:
+                    coverImageUrl || '/uploaded_files/book_images/No-image.jpg',
                   edition: detail.edition || '',
                   language: detail.languages?.[0]?.key || 'en',
                   ddc: detail.dewey_decimal_class?.[0] || '',
                 };
               }
             } catch (e) {
-              this.logger.debug(`Could not fetch detailed OpenLibrary data: ${e.message}`);
+              this.logger.debug(
+                `Could not fetch detailed OpenLibrary data: ${e.message}`,
+              );
             }
           }
 
           // Return basic OpenLibrary data if detailed fetch failed
-          this.logger.debug(`OpenLibrary found basic data for ISBN: ${cleanISBN}`);
+          this.logger.debug(
+            `OpenLibrary found basic data for ISBN: ${cleanISBN}`,
+          );
           return {
             title: book.title || '',
             author: '',
@@ -283,7 +314,8 @@ export class WorldCatService {
             publicationYear: undefined,
             description: 'NO DESCRIPTION AVAILABLE',
             isbn: cleanISBN,
-            coverImageUrl: book.thumbnail_url || '/uploaded_files/book_images/No-image.jpg',
+            coverImageUrl:
+              book.thumbnail_url || '/uploaded_files/book_images/No-image.jpg',
             edition: '',
             language: 'en',
             ddc: '',
@@ -294,7 +326,9 @@ export class WorldCatService {
       this.logger.warn(`Book not found on OpenLibrary for ISBN: ${isbn}`);
       return null;
     } catch (error) {
-      this.logger.debug(`Error fetching book from OpenLibrary: ${error.message}`);
+      this.logger.debug(
+        `Error fetching book from OpenLibrary: ${error.message}`,
+      );
       return null;
     }
   }
@@ -303,10 +337,12 @@ export class WorldCatService {
    * Try to fetch book data using multiple sources with fallback
    * Priority: node-isbn (Google Books + OpenLibrary) → OpenLibrary
    */
-  async fetchBookDataWithFallback(isbnInput: string): Promise<WorldCatBookData | null> {
+  async fetchBookDataWithFallback(
+    isbnInput: string,
+  ): Promise<WorldCatBookData | null> {
     // Clean ISBN first
     const cleanISBN = isbnInput.replace(/[^0-9Xx]/g, '');
-    
+
     if (cleanISBN.length < 10 || cleanISBN.length > 13) {
       this.logger.warn(`Invalid ISBN format: ${isbnInput}`);
       return null;
@@ -314,15 +350,17 @@ export class WorldCatService {
 
     // First try node-isbn (tries multiple providers internally)
     let bookData = await this.fetchBookByISBN(cleanISBN);
-    
+
     if (bookData) {
       return bookData;
     }
 
     // Fallback to OpenLibrary (no rate limits)
-    this.logger.log(`node-isbn failed, trying OpenLibrary for ISBN: ${cleanISBN}`);
+    this.logger.log(
+      `node-isbn failed, trying OpenLibrary for ISBN: ${cleanISBN}`,
+    );
     bookData = await this.fetchBookByISBNFromOpenLibrary(cleanISBN);
-    
+
     return bookData;
   }
 
@@ -331,13 +369,13 @@ export class WorldCatService {
    */
   validateISBN(isbn: string): boolean {
     const cleanISBN = isbn.replace(/[^0-9Xx]/g, '');
-    
+
     if (cleanISBN.length === 10) {
       return this.validateISBN10(cleanISBN);
     } else if (cleanISBN.length === 13) {
       return this.validateISBN13(cleanISBN);
     }
-    
+
     return false;
   }
 
@@ -364,16 +402,17 @@ export class WorldCatService {
    */
   populateBookDto(bookData: WorldCatBookData): Partial<CreateBookDto> {
     const dto: Partial<CreateBookDto> = {};
-    
+
     if (bookData.title) dto.title = bookData.title;
     if (bookData.author) dto.author = bookData.author;
     if (bookData.publisher) dto.publisher = bookData.publisher;
-    if (bookData.publicationYear) dto.publicationYear = bookData.publicationYear;
+    if (bookData.publicationYear)
+      dto.publicationYear = bookData.publicationYear;
     if (bookData.description) dto.description = bookData.description;
     if (bookData.ddc) dto.ddc = bookData.ddc;
     if (bookData.isbn) dto.isbn = bookData.isbn;
     if (bookData.coverImageUrl) dto.coverImageUrl = bookData.coverImageUrl;
-    
+
     return dto;
   }
 }

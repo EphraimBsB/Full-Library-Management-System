@@ -1,5 +1,4 @@
 // lib/src/features/loans/presentation/widgets/borrow_history_list.dart
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
@@ -82,17 +81,21 @@ class _BorrowHistoryCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: CachedNetworkImage(
-                    imageUrl: book['coverImageUrl'] ?? '',
+                  child: Image.network(
+                    book['coverImageUrl'] ?? '',
                     width: 80,
                     height: 120,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
-                      width: 80,
-                      height: 120,
-                      color: Colors.grey[200],
-                    ),
-                    errorWidget: (_, __, ___) => Image.asset(
+                    headers: const {'Accept': 'image/webp,image/*'},
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: 80,
+                        height: 120,
+                        color: Colors.grey[200],
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Image.asset(
                       'assets/default_book.jpg',
                       width: 80,
                       height: 120,

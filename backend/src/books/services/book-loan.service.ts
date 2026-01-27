@@ -5,20 +5,35 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
-  Logger
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, MoreThan, Not, In, DataSource, EntityManager } from 'typeorm';
+import {
+  Repository,
+  LessThan,
+  MoreThan,
+  Not,
+  In,
+  DataSource,
+  EntityManager,
+} from 'typeorm';
 import { BookLoan, LoanStatus } from '../entities/book-loan.entity';
 import { BookCopy, BookCopyStatus } from '../entities/book-copy.entity';
 import { QueueEntry, QueueStatus } from '../entities/queue-entry.entity';
-import { BookRequest, BookRequestStatus } from '../entities/book-request.entity';
+import {
+  BookRequest,
+  BookRequestStatus,
+} from '../entities/book-request.entity';
 import { User } from '../../users/entities/user.entity';
 import { Book } from '../entities/book.entity';
 import { CreateLoanDto } from '../dto/create-loan.dto';
 import { BookNotAvailableException } from '../exceptions/book-not-available.exception';
 import { QueueService } from './queue.service';
-import { LoanLimitExceededException, RenewalLimitExceededException, RenewalCooldownException } from '../exceptions/book-loan.exceptions';
+import {
+  LoanLimitExceededException,
+  RenewalLimitExceededException,
+  RenewalCooldownException,
+} from '../exceptions/book-loan.exceptions';
 import type { ConfigType } from '@nestjs/config';
 import loanConfig from '../config/loan.config';
 import { EmailUtilsService } from '../../emails/email-utils.service';
@@ -65,11 +80,13 @@ export class BookLoanService {
     }
   }
 
-  private getLoansListCacheKey(options: {
-    status?: LoanStatus;
-    userId?: string;
-    bookId?: string;
-  } & PaginationOptions): string {
+  private getLoansListCacheKey(
+    options: {
+      status?: LoanStatus;
+      userId?: string;
+      bookId?: string;
+    } & PaginationOptions,
+  ): string {
     const page = options.page && options.page > 0 ? options.page : 1;
     const limit = options.limit && options.limit > 0 ? options.limit : 10;
     const normalized = {
@@ -90,7 +107,6 @@ export class BookLoanService {
     return `loans:detail:${id}`;
   }
 
-
   /**
    * Creates a new book loan if a copy is available
    */
@@ -99,22 +115,28 @@ export class BookLoanService {
    */
   async createLoan(
     manager: EntityManager,
-    createLoanDto: CreateLoanDto
+    createLoanDto: CreateLoanDto,
   ): Promise<BookLoan> {
     const { bookId, preferredCopyId, userId, requestId } = createLoanDto;
 
     if (!bookId && !preferredCopyId) {
-      throw new BadRequestException('Either bookId or preferredCopyId must be provided');
+      throw new BadRequestException(
+        'Either bookId or preferredCopyId must be provided',
+      );
     }
 
     // 1️⃣ Check membership validity and rules
-    const activeMembership = await this.membershipService.findActiveMembership(userId);
+    const activeMembership =
+      await this.membershipService.findActiveMembership(userId);
     if (!activeMembership) {
-      throw new BadRequestException('Active membership required to borrow books');
+      throw new BadRequestException(
+        'Active membership required to borrow books',
+      );
     }
 
     const maxLoans = activeMembership.type.maxBooks;
-    const loanPeriodDays = activeMembership.type.maxDurationDays || this.loanPeriodDays;
+    const loanPeriodDays =
+      activeMembership.type.maxDurationDays || this.loanPeriodDays;
 
     // Use the passed manager directly (no nested transaction)
     const transactionalEntityManager = manager;
@@ -140,7 +162,9 @@ export class BookLoanService {
       const query = transactionalEntityManager
         .createQueryBuilder(BookCopy, 'copy')
         .where('copy.id = :id', { id: preferredCopyIdNumber })
-        .andWhere('copy.status = :status', { status: BookCopyStatus.AVAILABLE });
+        .andWhere('copy.status = :status', {
+          status: BookCopyStatus.AVAILABLE,
+        });
 
       if (bookId) {
         query.andWhere('copy.bookId = :bookId', { bookId: Number(bookId) });
@@ -149,7 +173,9 @@ export class BookLoanService {
       availableCopy = await query.setLock('pessimistic_write').getOne();
 
       if (!availableCopy) {
-        throw new BookNotAvailableException('The specified copy is not available');
+        throw new BookNotAvailableException(
+          'The specified copy is not available',
+        );
       }
     } else {
       availableCopy = await transactionalEntityManager
@@ -175,7 +201,9 @@ export class BookLoanService {
     });
 
     if (existingLoan) {
-      throw new ConflictException('You already have an active loan for this book');
+      throw new ConflictException(
+        'You already have an active loan for this book',
+      );
     }
 
     // 5️⃣ Compute loan dates
@@ -187,7 +215,14 @@ export class BookLoanService {
     const [user, book] = await Promise.all([
       transactionalEntityManager.findOne(User, {
         where: { id: userId },
-        select: ['id', 'firstName', 'lastName', 'email', 'phoneNumber', 'rollNumber'],
+        select: [
+          'id',
+          'firstName',
+          'lastName',
+          'email',
+          'phoneNumber',
+          'rollNumber',
+        ],
       }),
       transactionalEntityManager.findOne(Book, {
         where: { id: Number(bookId) },
@@ -222,7 +257,7 @@ export class BookLoanService {
     // if (book.availableCopies > 0) {
     //   book.availableCopies -= 1;
     //   await transactionalEntityManager.save(Book, book);
-    // } 
+    // }
 
     // 3. Update the metadata
     if (book.metadata) {
@@ -253,7 +288,9 @@ export class BookLoanService {
         savedLoan.id,
       );
     } catch (err) {
-      this.logger.warn(`Failed to send loan confirmation for loan ${savedLoan.id}: ${err.message}`);
+      this.logger.warn(
+        `Failed to send loan confirmation for loan ${savedLoan.id}: ${err.message}`,
+      );
     }
 
     try {
@@ -265,7 +302,9 @@ export class BookLoanService {
         borrowedAt,
       );
     } catch (err) {
-      this.logger.warn(`Failed to schedule reminder for loan ${savedLoan.id}: ${err.message}`);
+      this.logger.warn(
+        `Failed to schedule reminder for loan ${savedLoan.id}: ${err.message}`,
+      );
     }
 
     const result = savedLoan;
@@ -273,14 +312,13 @@ export class BookLoanService {
     return result;
   }
 
-
   async returnBook(loanId: string, returnedById: string): Promise<BookLoan> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       // 1. Find the loan with a lock to prevent concurrent modifications
       const loan = await transactionalEntityManager.findOne(BookLoan, {
         where: { id: loanId },
         relations: ['bookCopy', 'user', 'bookCopy.book'],
-        lock: { mode: 'pessimistic_write' }
+        lock: { mode: 'pessimistic_write' },
       });
 
       if (!loan) {
@@ -299,7 +337,7 @@ export class BookLoanService {
       // 3. Update book copy status and available copies
       const bookCopy = await transactionalEntityManager.findOne(BookCopy, {
         where: { id: loan.bookCopy.id },
-        relations: ['book']
+        relations: ['book'],
       });
 
       if (bookCopy) {
@@ -324,9 +362,13 @@ export class BookLoanService {
 
       // 5. Process queue for this book (outside transaction) if bookCopy exists
       if (bookCopy) {
-        this.queueService.processNextInQueue(bookCopy.bookId.toString())
-          .catch(error => {
-            this.logger.error(`Error processing queue after returning book ${loanId}:`, error);
+        this.queueService
+          .processNextInQueue(bookCopy.bookId.toString())
+          .catch((error) => {
+            this.logger.error(
+              `Error processing queue after returning book ${loanId}:`,
+              error,
+            );
           });
       }
 
@@ -337,20 +379,20 @@ export class BookLoanService {
           loan.bookCopy.book,
           loan.returnedAt,
           loan.borrowedAt,
-          loan.id
+          loan.id,
         );
       } catch (error) {
         this.logger.error(
           `Failed to send return confirmation for loan ${loan.id}: ${error.message}`,
-          error.stack
+          error.stack,
         );
       }
 
       // 6. Send return confirmation email in the background
-      this.sendReturnConfirmation(updatedLoan).catch(error => {
+      this.sendReturnConfirmation(updatedLoan).catch((error) => {
         this.logger.error(
           `Failed to send return confirmation for loan ${updatedLoan.id}: ${error.message}`,
-          error.stack
+          error.stack,
         );
       });
 
@@ -363,65 +405,78 @@ export class BookLoanService {
    * Renews a book loan if allowed
    */
   async renewLoan(loanId: string, userId: string): Promise<BookLoan> {
-  const activeMembership = await this.membershipService.findActiveMembership(userId);
-  if (!activeMembership) {
-    throw new BadRequestException('Active membership is required to renew books');
+    const activeMembership =
+      await this.membershipService.findActiveMembership(userId);
+    if (!activeMembership) {
+      throw new BadRequestException(
+        'Active membership is required to renew books',
+      );
+    }
+
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      const loan = await transactionalEntityManager.findOne(BookLoan, {
+        where: { id: loanId },
+        relations: ['user', 'bookCopy', 'bookCopy.book'],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!loan) throw new NotFoundException('Loan not found');
+      if (loan.user.id !== userId)
+        throw new ConflictException('You can only renew your own loans');
+      if (loan.status !== LoanStatus.ACTIVE)
+        throw new ConflictException('Only active loans can be renewed');
+
+      const hasPendingRequests =
+        (await this.bookRequestRepository.count({
+          where: {
+            book: { id: loan.bookCopy.book.id },
+            status: BookRequestStatus.PENDING,
+            user: { id: Not(userId) },
+          },
+        })) > 0;
+
+      if (hasPendingRequests) {
+        throw new ConflictException(
+          'This book has been requested by another user and cannot be renewed',
+        );
+      }
+
+      const membershipType =
+        activeMembership.type ??
+        (await this.membershipTypeRepository.findOne({
+          where: { id: activeMembership.type },
+        }));
+
+      const maxRenewals = membershipType?.renewalLimit ?? 0;
+      if (loan.renewalCount >= maxRenewals) {
+        throw new RenewalLimitExceededException(maxRenewals);
+      }
+
+      const baseDate = loan.dueDate > new Date() ? loan.dueDate : new Date();
+      const newDueDate = new Date(baseDate);
+      const renewalPeriod = membershipType?.maxDurationDays ?? 14;
+      newDueDate.setDate(newDueDate.getDate() + renewalPeriod);
+
+      loan.dueDate = newDueDate;
+      loan.renewalCount += 1;
+      loan.lastRenewedAt = new Date();
+      loan.updatedAt = new Date();
+
+      const updatedLoan = await transactionalEntityManager.save(BookLoan, loan);
+
+      this.logger.log(
+        `Loan ${loan.id} renewed by user ${userId} until ${newDueDate.toISOString()}`,
+      );
+
+      this.sendRenewalConfirmation(updatedLoan, newDueDate).catch((error) =>
+        this.logger.error(
+          `Failed to send renewal confirmation for loan ${updatedLoan.id}: ${error.message}`,
+        ),
+      );
+
+      return updatedLoan;
+    });
   }
-
-  return this.dataSource.transaction(async (transactionalEntityManager) => {
-    const loan = await transactionalEntityManager.findOne(BookLoan, {
-      where: { id: loanId },
-      relations: ['user', 'bookCopy', 'bookCopy.book'],
-      lock: { mode: 'pessimistic_write' },
-    });
-
-    if (!loan) throw new NotFoundException('Loan not found');
-    if (loan.user.id !== userId) throw new ConflictException('You can only renew your own loans');
-    if (loan.status !== LoanStatus.ACTIVE) throw new ConflictException('Only active loans can be renewed');
-
-    const hasPendingRequests = await this.bookRequestRepository.count({
-      where: {
-        book: { id: loan.bookCopy.book.id },
-        status: BookRequestStatus.PENDING,
-        user: { id: Not(userId) },
-      },
-    }) > 0;
-
-    if (hasPendingRequests) {
-      throw new ConflictException('This book has been requested by another user and cannot be renewed');
-    }
-
-    const membershipType = activeMembership.type ?? await this.membershipTypeRepository.findOne({
-      where: { id: activeMembership.type },
-    });
-
-    const maxRenewals = membershipType?.renewalLimit ?? 0;
-    if (loan.renewalCount >= maxRenewals) {
-      throw new RenewalLimitExceededException(maxRenewals);
-    }
-
-    const baseDate = loan.dueDate > new Date() ? loan.dueDate : new Date();
-    const newDueDate = new Date(baseDate);
-    const renewalPeriod = membershipType?.maxDurationDays ?? 14;
-    newDueDate.setDate(newDueDate.getDate() + renewalPeriod);
-
-    loan.dueDate = newDueDate;
-    loan.renewalCount += 1;
-    loan.lastRenewedAt = new Date();
-    loan.updatedAt = new Date();
-
-    const updatedLoan = await transactionalEntityManager.save(BookLoan, loan);
-
-    this.logger.log(`Loan ${loan.id} renewed by user ${userId} until ${newDueDate.toISOString()}`);
-
-    this.sendRenewalConfirmation(updatedLoan, newDueDate).catch(error =>
-      this.logger.error(`Failed to send renewal confirmation for loan ${updatedLoan.id}: ${error.message}`)
-    );
-
-    return updatedLoan;
-  });
-}
-
 
   /**
    * Gets all active loans for a user
@@ -430,7 +485,7 @@ export class BookLoanService {
     return this.bookLoanRepository.find({
       where: {
         user: { id: userId },
-        status: LoanStatus.ACTIVE
+        status: LoanStatus.ACTIVE,
       },
       relations: ['bookCopy', 'bookCopy.book'],
       order: { dueDate: 'ASC' },
@@ -500,11 +555,13 @@ export class BookLoanService {
    * Find all book loans with optional filters and pagination
    * @param options Optional filters for status, userId, and bookId plus pagination
    */
-  async findAll(options?: {
-    status?: LoanStatus;
-    userId?: string;
-    bookId?: string;
-  } & PaginationOptions): Promise<PaginatedResponseDto<BookLoan>> {
+  async findAll(
+    options?: {
+      status?: LoanStatus;
+      userId?: string;
+      bookId?: string;
+    } & PaginationOptions,
+  ): Promise<PaginatedResponseDto<BookLoan>> {
     const page = options?.page && options.page > 0 ? options.page : 1;
     const limit = options?.limit && options.limit > 0 ? options.limit : 10;
 
@@ -515,12 +572,14 @@ export class BookLoanService {
       page,
       limit,
     });
-    const cached = await this.cacheManager.get<PaginatedResponseDto<BookLoan>>(cacheKey);
+    const cached =
+      await this.cacheManager.get<PaginatedResponseDto<BookLoan>>(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const query = this.bookLoanRepository.createQueryBuilder('loan')
+    const query = this.bookLoanRepository
+      .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.user', 'user')
       .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
       .leftJoinAndSelect('bookCopy.book', 'book')
@@ -575,7 +634,7 @@ export class BookLoanService {
 
     const loan = await this.bookLoanRepository.findOne({
       where: { id: bookLoanId },
-      relations: ['user', 'bookCopy', 'bookCopy.book', 'request']
+      relations: ['user', 'bookCopy', 'bookCopy.book', 'request'],
     });
 
     if (!loan) {
@@ -594,9 +653,9 @@ export class BookLoanService {
     const overdueLoans = await this.bookLoanRepository.find({
       where: {
         status: LoanStatus.ACTIVE,
-        dueDate: LessThan(new Date())
+        dueDate: LessThan(new Date()),
       },
-      relations: ['user', 'bookCopy', 'bookCopy.book']
+      relations: ['user', 'bookCopy', 'bookCopy.book'],
     });
 
     let updated = 0;
@@ -610,15 +669,17 @@ export class BookLoanService {
         updated++;
 
         // Send overdue notice in the background
-        this.sendOverdueNotice(loan).catch(error => {
+        this.sendOverdueNotice(loan).catch((error) => {
           this.logger.error(
             `Failed to send overdue notice for loan ${loan.id}: ${error.message}`,
-            error.stack
+            error.stack,
           );
         });
 
         notified++;
-        this.logger.log(`Marked loan ${loan.id} as overdue and sent notice to user ${loan.user.id}`);
+        this.logger.log(
+          `Marked loan ${loan.id} as overdue and sent notice to user ${loan.user.id}`,
+        );
       } catch (error) {
         this.logger.error(`Error processing overdue loan ${loan.id}:`, error);
       }
@@ -642,7 +703,9 @@ export class BookLoanService {
     }
 
     // Get membership for fine calculation
-    const membership = await this.membershipService.findActiveMembership(bookLoan.user.id);
+    const membership = await this.membershipService.findActiveMembership(
+      bookLoan.user.id,
+    );
 
     // Check for grace period (premium members might have one)
     const gracePeriodDays = membership?.type.name === 'premium' ? 2 : 0;
@@ -654,10 +717,13 @@ export class BookLoanService {
     }
 
     // Calculate days overdue (excluding grace period)
-    const daysOverdue = Math.ceil((now.getTime() - gracePeriodEnd.getTime()) / (1000 * 60 * 60 * 24));
+    const daysOverdue = Math.ceil(
+      (now.getTime() - gracePeriodEnd.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     // Apply membership-specific fine rate
-    const dailyFine = membership?.type.fineRate || this.loanConfig.dailyFineAmount;
+    const dailyFine =
+      membership?.type.fineRate || this.loanConfig.dailyFineAmount;
 
     return Math.max(0, daysOverdue * dailyFine);
   }
@@ -665,11 +731,16 @@ export class BookLoanService {
   /**
    * Sends a loan renewal confirmation email (fire and forget)
    */
-  private async sendRenewalConfirmation(loan: BookLoan, newDueDate: Date): Promise<void> {
+  private async sendRenewalConfirmation(
+    loan: BookLoan,
+    newDueDate: Date,
+  ): Promise<void> {
     try {
       const { user, bookCopy } = loan;
       if (!user || !bookCopy?.book) {
-        throw new Error('Missing required loan data for sending renewal confirmation');
+        throw new Error(
+          'Missing required loan data for sending renewal confirmation',
+        );
       }
 
       await this.emailUtilsService.sendEmail(
@@ -682,14 +753,16 @@ export class BookLoanService {
           bookAuthor: bookCopy.book.author,
           newDueDate: newDueDate.toLocaleDateString(),
           supportEmail: 'library@example.com',
-        }
+        },
       );
 
-      this.logger.log(`Sent renewal confirmation for loan ${loan.id} to ${user.email}`);
+      this.logger.log(
+        `Sent renewal confirmation for loan ${loan.id} to ${user.email}`,
+      );
     } catch (error) {
       this.logger.error(
         `Error in sendRenewalConfirmation for loan ${loan?.id}: ${error.message}`,
-        error.stack
+        error.stack,
       );
       throw error; // Re-throw to be caught by the caller
     }
@@ -702,7 +775,9 @@ export class BookLoanService {
     try {
       const { user, bookCopy, returnedAt } = loan;
       if (!user || !bookCopy?.book || !returnedAt) {
-        throw new Error('Missing required loan data for sending return confirmation');
+        throw new Error(
+          'Missing required loan data for sending return confirmation',
+        );
       }
 
       await this.emailUtilsService.sendEmail(
@@ -715,14 +790,16 @@ export class BookLoanService {
           bookAuthor: bookCopy.book.author,
           returnDate: new Date(returnedAt).toLocaleDateString(),
           supportEmail: 'library@example.com',
-        }
+        },
       );
 
-      this.logger.log(`Sent return confirmation for loan ${loan.id} to ${user.email}`);
+      this.logger.log(
+        `Sent return confirmation for loan ${loan.id} to ${user.email}`,
+      );
     } catch (error) {
       this.logger.error(
         `Error in sendReturnConfirmation for loan ${loan?.id}: ${error.message}`,
-        error.stack
+        error.stack,
       );
       throw error; // Re-throw to be caught by the caller
     }
@@ -735,15 +812,23 @@ export class BookLoanService {
     try {
       const { user, bookCopy, dueDate } = loan;
       if (!user || !bookCopy?.book || !dueDate) {
-        throw new Error('Missing required loan data for sending overdue notice');
+        throw new Error(
+          'Missing required loan data for sending overdue notice',
+        );
       }
 
       // Calculate days overdue
-      const daysOverdue = Math.ceil((new Date().getTime() - new Date(dueDate).getTime()) / (1000 * 60 * 60 * 24));
+      const daysOverdue = Math.ceil(
+        (new Date().getTime() - new Date(dueDate).getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
 
       // Get membership for fine calculation
-      const membership = await this.membershipService.findActiveMembership(user.id);
-      const dailyFine = membership?.type.fineRate || this.loanConfig.dailyFineAmount;
+      const membership = await this.membershipService.findActiveMembership(
+        user.id,
+      );
+      const dailyFine =
+        membership?.type.fineRate || this.loanConfig.dailyFineAmount;
       const fineAmount = daysOverdue * dailyFine;
 
       await this.emailUtilsService.sendEmail(
@@ -758,14 +843,16 @@ export class BookLoanService {
           daysOverdue,
           fineAmount: fineAmount.toFixed(2),
           supportEmail: 'library@example.com',
-        }
+        },
       );
 
-      this.logger.log(`Sent overdue notice for loan ${loan.id} to ${user.email}`);
+      this.logger.log(
+        `Sent overdue notice for loan ${loan.id} to ${user.email}`,
+      );
     } catch (error) {
       this.logger.error(
         `Error in sendOverdueNotice for loan ${loan?.id}: ${error.message}`,
-        error.stack
+        error.stack,
       );
       throw error; // Re-throw to be caught by the caller
     }

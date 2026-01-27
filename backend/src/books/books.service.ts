@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, IsNull, Not, DataSource } from 'typeorm';
 import { Book } from './entities/book.entity';
@@ -32,7 +38,7 @@ export class BooksService {
     private dataSource: DataSource,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-  ) { }
+  ) {}
 
   private async resetCache(): Promise<void> {
     const store: any = (this.cacheManager as any).store;
@@ -42,11 +48,7 @@ export class BooksService {
   }
 
   private getBooksListCacheKey(query: BookQueryDto): string {
-    const {
-      page = 1,
-      limit = 10,
-      ...rest
-    } = query;
+    const { page = 1, limit = 10, ...rest } = query;
     // Normalize query to get stable keys
     const normalized = { page, limit, ...rest };
     const serialized = JSON.stringify(normalized);
@@ -71,7 +73,7 @@ export class BooksService {
       // Check for duplicate ISBN if provided
       if (createBookDto.isbn) {
         const existingBook = await this.bookRepository.findOne({
-          where: { isbn: createBookDto.isbn, deletedAt: IsNull() }
+          where: { isbn: createBookDto.isbn, deletedAt: IsNull() },
         });
         if (existingBook) {
           throw new ConflictException('A book with this ISBN already exists');
@@ -80,40 +82,44 @@ export class BooksService {
 
       // Get or create categories
       const categories = await Promise.all(
-        createBookDto.categories.map(categoryDto =>
-          this.getOrCreateCategory(categoryDto, queryRunner)
-        )
+        createBookDto.categories.map((categoryDto) =>
+          this.getOrCreateCategory(categoryDto, queryRunner),
+        ),
       );
 
       // Get or create subjects
       const subjects = await Promise.all(
-        (createBookDto.subjects || []).map(subjectDto =>
-          this.getOrCreateSubject(subjectDto, queryRunner)
-        )
+        (createBookDto.subjects || []).map((subjectDto) =>
+          this.getOrCreateSubject(subjectDto, queryRunner),
+        ),
       );
 
       // Get type and source
       const type = await this.typeRepository.findOne({
-        where: { id: createBookDto.typeId }
+        where: { id: createBookDto.typeId },
       });
       if (!type) {
-        throw new NotFoundException(`Type with ID ${createBookDto.typeId} not found`);
+        throw new NotFoundException(
+          `Type with ID ${createBookDto.typeId} not found`,
+        );
       }
 
       let source: Source | null = null;
       if (createBookDto.sourceId) {
         source = await this.sourceRepository.findOne({
-          where: { id: createBookDto.sourceId }
+          where: { id: createBookDto.sourceId },
         });
         if (!source) {
-          throw new NotFoundException(`Source with ID ${createBookDto.sourceId} not found`);
+          throw new NotFoundException(
+            `Source with ID ${createBookDto.sourceId} not found`,
+          );
         }
       }
 
       //create metadata
       const metadata = {
         averageRating: createBookDto.rating,
-        totalRatings: 1
+        totalRatings: 1,
       };
 
       // Create book entity
@@ -127,7 +133,7 @@ export class BooksService {
         totalCopies: 0,
         // Explicitly exclude relations that might be in the DTO but shouldn't be in the entity
         copies: undefined,
-        metadata: metadata
+        metadata: metadata,
       };
 
       // Create and save the book in one step
@@ -136,9 +142,9 @@ export class BooksService {
 
       // Create book copies if provided
       if (createBookDto.copies?.length) {
-        const copies = createBookDto.copies.map(copy => ({
+        const copies = createBookDto.copies.map((copy) => ({
           accessNumber: copy.accessNumber,
-          notes: copy.notes
+          notes: copy.notes,
         }));
         await this.createBookCopies(savedBook, copies, queryRunner);
       }
@@ -158,7 +164,10 @@ export class BooksService {
       return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (error instanceof ConflictException || error instanceof NotFoundException) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create book: ' + error.message);
@@ -170,7 +179,8 @@ export class BooksService {
   // Find all books with pagination and filtering
   async findAll(query: BookQueryDto): Promise<PaginatedResponseDto<Book>> {
     const cacheKey = this.getBooksListCacheKey(query);
-    const cached = await this.cacheManager.get<PaginatedResponseDto<Book>>(cacheKey);
+    const cached =
+      await this.cacheManager.get<PaginatedResponseDto<Book>>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -202,7 +212,7 @@ export class BooksService {
         `(LOWER(book.title) LIKE LOWER(:search)
         OR LOWER(book.author) LIKE LOWER(:search)
         OR book.isbn = :isbn)`,
-        { search: `%${search.toLowerCase()}%`, isbn: search }
+        { search: `%${search.toLowerCase()}%`, isbn: search },
       );
     }
 
@@ -241,7 +251,6 @@ export class BooksService {
     return response;
   }
 
-
   // Find a book by ID with relations
   async findOne(id: number): Promise<Book> {
     const cacheKey = this.getBookDetailCacheKey(id);
@@ -252,7 +261,7 @@ export class BooksService {
 
     const book = await this.bookRepository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['categories', 'subjects', 'copies', 'type', 'source']
+      relations: ['categories', 'subjects', 'copies', 'type', 'source'],
     });
 
     if (!book) {
@@ -273,7 +282,7 @@ export class BooksService {
     try {
       const book = await this.bookRepository.findOne({
         where: { id, deletedAt: IsNull() },
-        relations: ['categories', 'subjects']
+        relations: ['categories', 'subjects'],
       });
 
       if (!book) {
@@ -283,18 +292,18 @@ export class BooksService {
       // Update categories if provided
       if (updateBookDto.categories) {
         book.categories = await Promise.all(
-          updateBookDto.categories.map(cat =>
-            this.getOrCreateCategory(cat, queryRunner)
-          )
+          updateBookDto.categories.map((cat) =>
+            this.getOrCreateCategory(cat, queryRunner),
+          ),
         );
       }
 
       // Update subjects if provided
       if (updateBookDto.subjects) {
         book.subjects = await Promise.all(
-          updateBookDto.subjects.map(sub =>
-            this.getOrCreateSubject(sub, queryRunner)
-          )
+          updateBookDto.subjects.map((sub) =>
+            this.getOrCreateSubject(sub, queryRunner),
+          ),
         );
       }
 
@@ -305,19 +314,23 @@ export class BooksService {
       // Update copies if provided
       if (copies) {
         // Get current access numbers
-        const currentAccessNumbers = (await queryRunner.manager.find(BookCopy, {
-          where: { book: { id } },
-          select: ['accessNumber']
-        })).map(copy => copy.accessNumber);
+        const currentAccessNumbers = (
+          await queryRunner.manager.find(BookCopy, {
+            where: { book: { id } },
+            select: ['accessNumber'],
+          })
+        ).map((copy) => copy.accessNumber);
 
         // Filter out existing copies and prepare new ones
         const newCopies = copies
-          .filter(copy => !currentAccessNumbers.includes(copy.accessNumber || ''))
-          .map(copy => ({
+          .filter(
+            (copy) => !currentAccessNumbers.includes(copy.accessNumber || ''),
+          )
+          .map((copy) => ({
             ...copy,
             accessNumber: copy.accessNumber || '',
             book: { id },
-            status: BookCopyStatus.AVAILABLE
+            status: BookCopyStatus.AVAILABLE,
           }));
 
         // Add new copies
@@ -327,10 +340,12 @@ export class BooksService {
 
         // Update counts
         const updatedCopies = await queryRunner.manager.find(BookCopy, {
-          where: { book: { id } }
+          where: { book: { id } },
         });
 
-        book.availableCopies = updatedCopies.filter(c => c.status === BookCopyStatus.AVAILABLE).length;
+        book.availableCopies = updatedCopies.filter(
+          (c) => c.status === BookCopyStatus.AVAILABLE,
+        ).length;
         book.totalCopies = updatedCopies.length;
       }
 
@@ -351,7 +366,7 @@ export class BooksService {
   async remove(id: number): Promise<void> {
     const book = await this.bookRepository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['copies']
+      relations: ['copies'],
     });
 
     if (!book) {
@@ -359,13 +374,13 @@ export class BooksService {
     }
 
     // Check for borrowed copies
-    const borrowedCopies = book.copies?.filter(
-      copy => copy.status === BookCopyStatus.BORROWED
-    ) || [];
+    const borrowedCopies =
+      book.copies?.filter((copy) => copy.status === BookCopyStatus.BORROWED) ||
+      [];
 
     if (borrowedCopies.length > 0) {
       throw new BadRequestException(
-        `Cannot delete book with ID ${id} as it has ${borrowedCopies.length} borrowed copies`
+        `Cannot delete book with ID ${id} as it has ${borrowedCopies.length} borrowed copies`,
       );
     }
 
@@ -377,10 +392,10 @@ export class BooksService {
   // Helper method to get or create a category
   private async getOrCreateCategory(
     categoryDto: { name: string },
-    queryRunner: any
+    queryRunner: any,
   ): Promise<Category> {
     let category = await this.categoryRepository.findOne({
-      where: { name: categoryDto.name }
+      where: { name: categoryDto.name },
     });
 
     if (!category) {
@@ -394,10 +409,10 @@ export class BooksService {
   // Helper method to get or create a subject
   private async getOrCreateSubject(
     subjectDto: { name: string },
-    queryRunner: any
+    queryRunner: any,
   ): Promise<Subject> {
     let subject = await this.subjectRepository.findOne({
-      where: { name: subjectDto.name }
+      where: { name: subjectDto.name },
     });
 
     if (!subject) {
@@ -412,14 +427,14 @@ export class BooksService {
   private async createBookCopies(
     book: Book,
     copies: Array<{ accessNumber: string; notes?: string }>,
-    queryRunner: any
+    queryRunner: any,
   ): Promise<void> {
-    const bookCopies = copies.map(copy =>
+    const bookCopies = copies.map((copy) =>
       this.bookCopyRepository.create({
         ...copy,
         book,
-        status: BookCopyStatus.AVAILABLE
-      })
+        status: BookCopyStatus.AVAILABLE,
+      }),
     );
 
     const savedCopies = await queryRunner.manager.save(bookCopies);
@@ -435,23 +450,26 @@ export class BooksService {
   private async updateBookCopies(
     book: Book,
     copies: Array<{ id?: number; accessNumber: string; notes?: string }>,
-    queryRunner: any
+    queryRunner: any,
   ): Promise<void> {
     const existingCopies = await this.bookCopyRepository.find({
-      where: { book: { id: book.id } }
+      where: { book: { id: book.id } },
     });
 
     // Update existing copies
     const updatedCopies: BookCopy[] = [];
     for (const copyDto of copies) {
       if ('id' in copyDto && copyDto.id) {
-        const existingCopy = existingCopies.find(c => c.id === copyDto.id);
+        const existingCopy = existingCopies.find((c) => c.id === copyDto.id);
         if (existingCopy) {
           Object.assign(existingCopy, {
             accessNumber: copyDto.accessNumber,
-            notes: copyDto.notes
+            notes: copyDto.notes,
           });
-          const updatedCopy = await queryRunner.manager.save(BookCopy, existingCopy);
+          const updatedCopy = await queryRunner.manager.save(
+            BookCopy,
+            existingCopy,
+          );
           updatedCopies.push(updatedCopy);
         }
       } else {
@@ -460,7 +478,7 @@ export class BooksService {
           accessNumber: copyDto.accessNumber,
           notes: copyDto.notes,
           book,
-          status: BookCopyStatus.AVAILABLE
+          status: BookCopyStatus.AVAILABLE,
         });
         const savedCopy = await queryRunner.manager.save(BookCopy, newCopy);
         updatedCopies.push(savedCopy);
@@ -469,11 +487,11 @@ export class BooksService {
 
     // Delete copies not in the updated list
     const updatedCopyIds = copies
-      .map(c => 'id' in c ? c.id : null)
+      .map((c) => ('id' in c ? c.id : null))
       .filter((id): id is number => id !== null);
 
     const copiesToDelete = existingCopies.filter(
-      copy => !updatedCopyIds.includes(copy.id)
+      (copy) => !updatedCopyIds.includes(copy.id),
     );
 
     if (copiesToDelete.length > 0) {
@@ -482,7 +500,7 @@ export class BooksService {
 
     // Update book counts
     const availableCount = updatedCopies.filter(
-      (copy: BookCopy) => copy.status === BookCopyStatus.AVAILABLE
+      (copy: BookCopy) => copy.status === BookCopyStatus.AVAILABLE,
     ).length;
 
     book.totalCopies = updatedCopies.length;
@@ -499,7 +517,14 @@ export class BooksService {
 
     const book = await this.bookRepository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['copies', 'categories', 'subjects', 'type', 'source', 'metadata']
+      relations: [
+        'copies',
+        'categories',
+        'subjects',
+        'type',
+        'source',
+        'metadata',
+      ],
     });
 
     if (!book) {
@@ -509,7 +534,9 @@ export class BooksService {
     // Get current borrow status
     const currentBorrows = await this.bookCopyRepository
       .createQueryBuilder('copy')
-      .leftJoinAndSelect('copy.loans', 'loan', 'loan.status = :status', { status: 'ACTIVE' })
+      .leftJoinAndSelect('copy.loans', 'loan', 'loan.status = :status', {
+        status: 'ACTIVE',
+      })
       .leftJoinAndSelect('loan.user', 'user')
       .where('copy.bookId = :bookId', { bookId: id })
       .andWhere('loan.id IS NOT NULL')
@@ -518,72 +545,83 @@ export class BooksService {
     // Get borrow history (last 10 returns)
     const borrowHistory = await this.bookCopyRepository
       .createQueryBuilder('copy')
-      .leftJoinAndSelect('copy.loans', 'loan', 'loan.status = :status', { status: 'RETURNED' })
+      .leftJoinAndSelect('copy.loans', 'loan', 'loan.status = :status', {
+        status: 'RETURNED',
+      })
       .leftJoinAndSelect('loan.user', 'user')
       .where('copy.bookId = :bookId', { bookId: id })
       .andWhere('loan.id IS NOT NULL')
-      .orderBy('loan.returnedAt', 'DESC').getMany();
+      .orderBy('loan.returnedAt', 'DESC')
+      .getMany();
 
     // Get queue requests
     const queueRequests = await this.bookRepository
       .createQueryBuilder('book')
-      .leftJoinAndSelect('book.queueEntries', 'queue', 'queue.status = :queueStatus', { queueStatus: 'WAITING' })
+      .leftJoinAndSelect(
+        'book.queueEntries',
+        'queue',
+        'queue.status = :queueStatus',
+        { queueStatus: 'WAITING' },
+      )
       .leftJoinAndSelect('queue.user', 'user')
       .where('book.id = :bookId', { bookId: id })
       .orderBy('queue.position', 'ASC')
       .getOne();
 
     // Format current borrows
-    const currentBorrowsFormatted = currentBorrows.flatMap(copy =>
-      copy.loans?.map(loan => ({
-        copy_id: copy.id,
-        copy_access_number: copy.accessNumber,
-        borrower: {
-          user_id: loan.user.id,
-          name: `${loan.user.firstName} ${loan.user.lastName}`.trim(),
-          roll_number: loan.user.rollNumber,
-          email: loan.user.email,
-          phone: loan.user.phoneNumber
-        },
-        borrowed_at: loan.borrowedAt,
-        due_date: loan.dueDate,
-        is_overdue: loan.dueDate < new Date()
-      })) || []
+    const currentBorrowsFormatted = currentBorrows.flatMap(
+      (copy) =>
+        copy.loans?.map((loan) => ({
+          copy_id: copy.id,
+          copy_access_number: copy.accessNumber,
+          borrower: {
+            user_id: loan.user.id,
+            name: `${loan.user.firstName} ${loan.user.lastName}`.trim(),
+            roll_number: loan.user.rollNumber,
+            email: loan.user.email,
+            phone: loan.user.phoneNumber,
+          },
+          borrowed_at: loan.borrowedAt,
+          due_date: loan.dueDate,
+          is_overdue: loan.dueDate < new Date(),
+        })) || [],
     );
 
     // Format borrow history
-    const borrowHistoryFormatted = borrowHistory.flatMap(copy =>
-      copy.loans?.map(loan => ({
-        copy_id: copy.id,
-        copy_access_number: copy.accessNumber,
-        borrower: {
-          user_id: loan.user.id,
-          name: `${loan.user.firstName} ${loan.user.lastName}`.trim(),
-          roll_number: loan.user.rollNumber,
-          email: loan.user.email,
-          phone: loan.user.phoneNumber
-        },
-        borrowed_at: loan.borrowedAt,
-        returned_at: loan.returnedAt
-      })) || []
+    const borrowHistoryFormatted = borrowHistory.flatMap(
+      (copy) =>
+        copy.loans?.map((loan) => ({
+          copy_id: copy.id,
+          copy_access_number: copy.accessNumber,
+          borrower: {
+            user_id: loan.user.id,
+            name: `${loan.user.firstName} ${loan.user.lastName}`.trim(),
+            roll_number: loan.user.rollNumber,
+            email: loan.user.email,
+            phone: loan.user.phoneNumber,
+          },
+          borrowed_at: loan.borrowedAt,
+          returned_at: loan.returnedAt,
+        })) || [],
     );
 
     // Format queue requests
-    const queueRequestsFormatted = queueRequests?.queueEntries?.map((entry, index) => ({
-      position: index + 1,
-      user_id: entry.user.id,
-      name: `${entry.user.firstName} ${entry.user.lastName}`.trim(),
-      roll_number: entry.user.rollNumber,
-      email: entry.user.email,
-      phone: entry.user.phoneNumber,
-      requested_at: entry.createdAt
-    })) || [];
+    const queueRequestsFormatted =
+      queueRequests?.queueEntries?.map((entry, index) => ({
+        position: index + 1,
+        user_id: entry.user.id,
+        name: `${entry.user.firstName} ${entry.user.lastName}`.trim(),
+        roll_number: entry.user.rollNumber,
+        email: entry.user.email,
+        phone: entry.user.phoneNumber,
+        requested_at: entry.createdAt,
+      })) || [];
 
     return {
       book,
       current_borrows: currentBorrowsFormatted,
       borrow_history: borrowHistoryFormatted,
-      queue_requests: queueRequestsFormatted
+      queue_requests: queueRequestsFormatted,
     };
   }
 
@@ -591,13 +629,7 @@ export class BooksService {
   private async getBookWithRelations(id: number): Promise<Book> {
     const book = await this.bookRepository.findOne({
       where: { id },
-      relations: [
-        'categories',
-        'subjects',
-        'copies',
-        'type',
-        'source'
-      ]
+      relations: ['categories', 'subjects', 'copies', 'type', 'source'],
     });
 
     if (!book) {

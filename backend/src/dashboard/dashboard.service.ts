@@ -7,7 +7,10 @@ import { Book } from '../books/entities/book.entity';
 import { User } from '../users/entities/user.entity';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { BookLoan, LoanStatus } from '../books/entities/book-loan.entity';
-import { BookRequest, BookRequestStatus } from '../books/entities/book-request.entity';
+import {
+  BookRequest,
+  BookRequestStatus,
+} from '../books/entities/book-request.entity';
 
 export interface DashboardSummary {
   stats: DashboardStatsDto;
@@ -24,27 +27,37 @@ export class DashboardService {
   constructor(
     @InjectRepository(Book) private readonly bookRepository: Repository<Book>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    @InjectRepository(BookRequest) private readonly requestRepository: Repository<BookRequest>,
-    @InjectRepository(BookLoan) private readonly loanRepository: Repository<BookLoan>,
+    @InjectRepository(BookRequest)
+    private readonly requestRepository: Repository<BookRequest>,
+    @InjectRepository(BookLoan)
+    private readonly loanRepository: Repository<BookLoan>,
     @Inject(CACHE_MANAGER) private cacheManager: cacheManager.Cache,
   ) {}
 
   async getDashboardSummary(): Promise<DashboardSummary> {
     // Try cache first
-    const cached = await this.cacheManager.get<DashboardSummary>('dashboard_summary');
+    const cached =
+      await this.cacheManager.get<DashboardSummary>('dashboard_summary');
     if (cached) return cached;
 
     // Fetch all data concurrently
-    const [stats, recentBooks, topRatedBooks, mostBorrowedBooks, pendingRequests, recentOverdues, activeUsers] =
-      await Promise.all([
-        this.getStats(),
-        this.getRecentlyAdded(10),
-        this.getTopRated(10),
-        this.getMostBorrowed(10),
-        this.getPending(5),
-        this.getRecentOverdues(5),
-        this.getMostActive(5),
-      ]);
+    const [
+      stats,
+      recentBooks,
+      topRatedBooks,
+      mostBorrowedBooks,
+      pendingRequests,
+      recentOverdues,
+      activeUsers,
+    ] = await Promise.all([
+      this.getStats(),
+      this.getRecentlyAdded(10),
+      this.getTopRated(10),
+      this.getMostBorrowed(10),
+      this.getPending(5),
+      this.getRecentOverdues(5),
+      this.getMostActive(5),
+    ]);
 
     const result = {
       stats,
@@ -76,14 +89,14 @@ export class DashboardService {
         .where('loan.status = :status', { status: LoanStatus.ACTIVE })
         .andWhere('book.deletedAt IS NULL')
         .getCount(),
-      
+
       this.loanRepository
         .createQueryBuilder('loan')
         .innerJoin('loan.bookCopy', 'copy')
         .innerJoin('copy.book', 'book')
         .where('loan.status = :status', { status: LoanStatus.OVERDUE })
         .andWhere('book.deletedAt IS NULL')
-        .getCount()
+        .getCount(),
     ]);
 
     return {
@@ -131,16 +144,16 @@ export class DashboardService {
     }
 
     // Then fetch the complete book data for these IDs
-    const bookIds = bookLoanCounts.map(item => item.id);
+    const bookIds = bookLoanCounts.map((item) => item.id);
     const books = await this.bookRepository.find({
       where: { id: In(bookIds) },
       relations: ['categories', 'subjects', 'copies', 'type'],
     });
 
     // Sort the books to maintain the same order as in bookLoanCounts
-    const bookMap = new Map(books.map(book => [book.id, book]));
+    const bookMap = new Map(books.map((book) => [book.id, book]));
     return bookIds
-      .map(id => bookMap.get(id))
+      .map((id) => bookMap.get(id))
       .filter((book): book is Book => book !== undefined);
   }
 

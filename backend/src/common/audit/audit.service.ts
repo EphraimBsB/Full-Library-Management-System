@@ -24,9 +24,12 @@ export class AuditService {
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
-  ) { }
+  ) {}
 
-  private getClientInfo(req?: Request): { ipAddress: string | null; userAgent: string | null } {
+  private getClientInfo(req?: Request): {
+    ipAddress: string | null;
+    userAgent: string | null;
+  } {
     if (!req) return { ipAddress: null, userAgent: null };
 
     const ipAddress = (req.ip ||
@@ -39,7 +42,7 @@ export class AuditService {
 
     return {
       ipAddress: ipAddress || null,
-      userAgent: userAgent || null
+      userAgent: userAgent || null,
     };
   }
 
@@ -59,9 +62,8 @@ export class AuditService {
     try {
       const { ipAddress, userAgent } = this.getClientInfo(request);
 
-      const performedById = typeof performedBy === 'string'
-        ? performedBy
-        : performedBy?.id;
+      const performedById =
+        typeof performedBy === 'string' ? performedBy : performedBy?.id;
 
       // Create a new audit log entity with proper typing
       const auditLog = this.auditLogRepository.create({
@@ -109,7 +111,9 @@ export class AuditService {
     }
 
     if (entityId) {
-      query.andWhere('log.entityId = :entityId', { entityId: entityId.toString() });
+      query.andWhere('log.entityId = :entityId', {
+        entityId: entityId.toString(),
+      });
     }
 
     if (action) {
@@ -134,7 +138,15 @@ export class AuditService {
     limit = 100,
     offset = 0,
   ): Promise<{ data: AuditLog[]; total: number }> {
-    return this.getLogs(entityType, entityId, undefined, undefined, undefined, limit, offset);
+    return this.getLogs(
+      entityType,
+      entityId,
+      undefined,
+      undefined,
+      undefined,
+      limit,
+      offset,
+    );
   }
 
   async getUserActivity(

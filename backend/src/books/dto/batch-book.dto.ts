@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsArray, ValidateNested, IsOptional, IsInt, Min, Max } from 'class-validator';
+import {
+  IsArray,
+  ValidateNested,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { CreateBookDto } from './create-book.dto';
 import { UpdateBookDto } from './update-book.dto';
 

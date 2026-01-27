@@ -1,4 +1,8 @@
-import { OnGatewayConnection, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  OnGatewayConnection,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 
@@ -11,13 +15,17 @@ export class NotificationsGateway implements OnGatewayConnection {
 
   async handleConnection(client: Socket) {
     try {
-      const token = (client.handshake.auth?.token as string) || (client.handshake.query?.token as string);
+      const token =
+        (client.handshake.auth?.token as string) ||
+        (client.handshake.query?.token as string);
       if (!token) {
         client.disconnect(true);
         return;
       }
 
-      const payload: any = this.jwt.decode(token) || this.jwt.verify(token, { ignoreExpiration: false });
+      const payload: any =
+        this.jwt.decode(token) ||
+        this.jwt.verify(token, { ignoreExpiration: false });
       const userId = payload?.sub || payload?.id || payload?.userId;
       if (!userId) {
         client.disconnect(true);

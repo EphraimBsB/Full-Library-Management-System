@@ -1,12 +1,20 @@
-import { IsOptional, IsString, IsInt, Min, Max, IsArray, IsIn } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
+  IsIn,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 const SORT_FIELDS = [
-  'title', 
-  'author', 
-  'publicationYear', 
-  'createdAt', 
-  'updatedAt', 
+  'title',
+  'author',
+  'publicationYear',
+  'createdAt',
+  'updatedAt',
   'availableCopies',
   'totalCopies',
   'publisher',
@@ -15,10 +23,10 @@ const SORT_FIELDS = [
   'location',
   'shelf',
   'queueCount',
-  'rating'
+  'rating',
 ] as const;
 
-type SortField = typeof SORT_FIELDS[number];
+type SortField = (typeof SORT_FIELDS)[number];
 type SortOrder = 'ASC' | 'DESC';
 
 export class BookQueryDto {
@@ -83,13 +91,13 @@ export class BookQueryDto {
 
   @IsOptional()
   @IsIn(SORT_FIELDS, {
-    message: `sortBy must be one of: ${SORT_FIELDS.join(', ')}`
+    message: `sortBy must be one of: ${SORT_FIELDS.join(', ')}`,
   })
   sortBy?: SortField = 'title';
 
   @IsOptional()
   @IsIn(['ASC', 'DESC'], {
-    message: "sortOrder must be either 'ASC' or 'DESC'"
+    message: "sortOrder must be either 'ASC' or 'DESC'",
   })
   sortOrder?: SortOrder = 'ASC';
 }

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Location } from '../locations/entities/location.entity';
@@ -29,7 +33,10 @@ export class ShelvesService {
     await this.ensureLocation(createShelfDto.locationId);
 
     const existing = await this.shelfRepository.findOne({
-      where: { name: createShelfDto.name, locationId: createShelfDto.locationId },
+      where: {
+        name: createShelfDto.name,
+        locationId: createShelfDto.locationId,
+      },
     });
 
     if (existing) {

@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  Index,
+} from 'typeorm';
 import { Book } from './book.entity';
 import { User } from '../../users/entities/user.entity';
 import { BookRequest } from './book-request.entity';
@@ -54,18 +64,20 @@ export class QueueEntry {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Book, book => book.queueEntries)
+  @ManyToOne(() => Book, (book) => book.queueEntries)
   @JoinColumn({ name: 'bookId' })
   book: Book;
 
-  @ManyToOne(() => User, user => user.queueEntries)
+  @ManyToOne(() => User, (user) => user.queueEntries)
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @OneToOne(() => BookRequest, request => request.queueEntry, { nullable: true })
+  @OneToOne(() => BookRequest, (request) => request.queueEntry, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'bookRequestId' })
   bookRequest: BookRequest | null;
 
-  @OneToOne(() => BookLoan, loan => loan.queueEntry, { nullable: true })
+  @OneToOne(() => BookLoan, (loan) => loan.queueEntry, { nullable: true })
   loan: BookLoan | null;
 }

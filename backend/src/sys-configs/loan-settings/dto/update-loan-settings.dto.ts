@@ -3,7 +3,8 @@ import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 export class UpdateLoanSettingsDto {
   @ApiPropertyOptional({
-    description: 'Whether to automatically approve loans when a book becomes available from queue',
+    description:
+      'Whether to automatically approve loans when a book becomes available from queue',
     default: false,
   })
   @IsBoolean()
@@ -11,7 +12,8 @@ export class UpdateLoanSettingsDto {
   autoApproveQueueLoans?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Number of hours a user has to pick up a book after it becomes available',
+    description:
+      'Number of hours a user has to pick up a book after it becomes available',
     default: 24,
     minimum: 1,
   })

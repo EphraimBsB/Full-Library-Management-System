@@ -1,6 +1,9 @@
 import { DataSource } from 'typeorm';
 import { ISeeder, SeedResult } from '../base-seed.interface';
-import { Membership, MembershipStatus } from '../../../membership/entities/membership.entity';
+import {
+  Membership,
+  MembershipStatus,
+} from '../../../membership/entities/membership.entity';
 import { User } from '../../../users/entities/user.entity';
 import { MembershipType } from '../../../sys-configs/membership-types/entities/membership-type.entity';
 
@@ -16,15 +19,17 @@ export class MembershipsSeed implements ISeeder {
       userRepository.find({
         relations: ['role'],
         where: {
-          role: { name: 'Student' } // Only seed for students initially
+          role: { name: 'Student' }, // Only seed for students initially
         },
-        take: 5
+        take: 5,
       }),
-      membershipTypeRepository.find()
+      membershipTypeRepository.find(),
     ]);
 
     if (!users.length || !membershipTypes.length) {
-      console.warn('Skipping memberships seeding: No users or membership types found');
+      console.warn(
+        'Skipping memberships seeding: No users or membership types found',
+      );
       return { entity: 'Membership', count: 0 };
     }
 
@@ -44,27 +49,28 @@ export class MembershipsSeed implements ISeeder {
 
     const memberships: MembershipData[] = [];
     const now = new Date();
-    
+
     // Create memberships for each user
     for (const [index, user] of users.entries()) {
       // For variety, assign different membership types
       const membershipType = membershipTypes[index % membershipTypes.length];
-      
+
       // Calculate dates
       const startDate = new Date(now);
       startDate.setMonth(startDate.getMonth() - (index % 12)); // Vary start dates
-      
+
       const expiryDate = new Date(startDate);
       expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year membership
-      
+
       // Determine status based on dates
       let status = MembershipStatus.ACTIVE;
       if (expiryDate < now) {
         status = MembershipStatus.EXPIRED;
-      } else if (index % 5 === 0) { // 20% chance of being suspended
+      } else if (index % 5 === 0) {
+        // 20% chance of being suspended
         status = MembershipStatus.SUSPENDED;
       }
-      
+
       const membershipData: MembershipData = {
         membershipNumber: `MEM${String(index + 1).padStart(5, '0')}`,
         user: { id: user.id },
@@ -76,7 +82,7 @@ export class MembershipsSeed implements ISeeder {
         lastRenewalDate: index % 2 === 0 ? startDate : null,
         notes: `Membership for ${user.firstName} ${user.lastName}`,
         createdBy: 'system',
-        updatedBy: 'system'
+        updatedBy: 'system',
       };
       memberships.push(membershipData);
     }
@@ -85,10 +91,10 @@ export class MembershipsSeed implements ISeeder {
     for (const membershipData of memberships) {
       const exists = await membershipRepository.findOne({
         where: {
-          membershipNumber: membershipData.membershipNumber
-        }
+          membershipNumber: membershipData.membershipNumber,
+        },
       });
-      
+
       if (!exists) {
         const membership = membershipRepository.create(membershipData);
         await membershipRepository.save(membership);
@@ -98,7 +104,7 @@ export class MembershipsSeed implements ISeeder {
 
     return {
       entity: 'Membership',
-      count: created
+      count: created,
     };
   }
 }

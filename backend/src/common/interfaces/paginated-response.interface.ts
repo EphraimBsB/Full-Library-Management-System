@@ -7,10 +7,10 @@ export interface PaginatedResponse<T> {
 }
 
 export function createPaginatedResponse<T>(
-  items: T[], 
-  total: number, 
-  page: number, 
-  limit: number
+  items: T[],
+  total: number,
+  page: number,
+  limit: number,
 ): PaginatedResponse<T> {
   return {
     items,

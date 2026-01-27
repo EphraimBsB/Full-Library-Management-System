@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBookRequestDto {
@@ -7,7 +13,10 @@ export class CreateBookRequestDto {
   @IsNotEmpty()
   bookId: string;
 
-  @ApiProperty({ required: false, description: 'Optional reason for the request' })
+  @ApiProperty({
+    required: false,
+    description: 'Optional reason for the request',
+  })
   @IsString()
   @IsOptional()
   reason?: string;
@@ -19,12 +28,18 @@ export class ApproveRejectRequestDto {
   @IsOptional()
   notes?: string;
 
-  @ApiProperty({ description: 'Optional due date for the book if approved (ISO string)', required: false })
+  @ApiProperty({
+    description: 'Optional due date for the book if approved (ISO string)',
+    required: false,
+  })
   @IsDateString()
   @IsOptional()
   dueDate?: string;
 
-  @ApiProperty({ description: 'Optional preferred copy ID for the book if approved', required: false })
+  @ApiProperty({
+    description: 'Optional preferred copy ID for the book if approved',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   preferredCopyId?: string;

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 import { User } from '../../../users/entities/user.entity';
 
 export enum AuditAction {
@@ -16,7 +23,7 @@ export enum AuditAction {
   CANCEL_RESERVATION = 'CANCEL_RESERVATION',
   APPROVE = 'APPROVE',
   REJECT = 'REJECT',
-  SYSTEM = 'SYSTEM'
+  SYSTEM = 'SYSTEM',
 }
 
 @Entity('audit_logs')

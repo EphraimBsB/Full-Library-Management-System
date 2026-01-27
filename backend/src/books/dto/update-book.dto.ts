@@ -1,15 +1,15 @@
 import { Type } from 'class-transformer';
-import { 
-  IsArray, 
-  IsOptional, 
-  ValidateNested, 
-  IsString, 
-  IsNumber, 
-  Min, 
-  Max, 
-  IsInt, 
-  IsISBN, 
-  IsUrl, 
+import {
+  IsArray,
+  IsOptional,
+  ValidateNested,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+  IsInt,
+  IsISBN,
+  IsUrl,
 } from 'class-validator';
 import { CreateCategoryDto } from 'src/sys-configs/categories/dto/create-category.dto';
 import { CreateSubjectDto } from 'src/sys-configs/subjects/dto/create-subject.dto';
@@ -69,7 +69,7 @@ export class UpdateBookDto {
   @IsUrl({
     require_tld: false,
     require_protocol: true,
-    protocols: ['http', 'https']
+    protocols: ['http', 'https'],
   })
   coverImageUrl?: string;
 
@@ -105,7 +105,7 @@ export class UpdateBookDto {
   @IsUrl({
     require_tld: false,
     require_protocol: true,
-    protocols: ['http', 'https']
+    protocols: ['http', 'https'],
   })
   ebookUrl?: string;
 

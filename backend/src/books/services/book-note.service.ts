@@ -1,9 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BookNote } from '../entities/book-note.entity';
 import { Book } from '../entities/book.entity';
-import { CreateBookNoteDto, UpdateBookNoteDto, BookNoteResponseDto } from '../dto/book-note.dto';
+import {
+  CreateBookNoteDto,
+  UpdateBookNoteDto,
+  BookNoteResponseDto,
+} from '../dto/book-note.dto';
 import { PaginationOptions } from '../../common/interfaces/pagination-options.interface';
 
 @Injectable()
@@ -15,7 +23,11 @@ export class BookNoteService {
     private readonly bookRepository: Repository<Book>,
   ) {}
 
-  async createNote(userId: string, bookId: number, createDto: CreateBookNoteDto): Promise<BookNoteResponseDto> {
+  async createNote(
+    userId: string,
+    bookId: number,
+    createDto: CreateBookNoteDto,
+  ): Promise<BookNoteResponseDto> {
     // Check if book exists
     const book = await this.bookRepository.findOne({ where: { id: bookId } });
     if (!book) {
@@ -51,7 +63,9 @@ export class BookNoteService {
     }
 
     if (note.userId !== userId) {
-      throw new ForbiddenException('You are not authorized to update this note');
+      throw new ForbiddenException(
+        'You are not authorized to update this note',
+      );
     }
 
     const updatedNote = await this.bookNoteRepository.save({
@@ -76,13 +90,18 @@ export class BookNoteService {
     }
 
     if (note.userId !== userId) {
-      throw new ForbiddenException('You are not authorized to delete this note');
+      throw new ForbiddenException(
+        'You are not authorized to delete this note',
+      );
     }
 
     await this.bookNoteRepository.remove(note);
   }
 
-  async getUserNotes(userId: string, bookId?: number): Promise<BookNoteResponseDto[]> {
+  async getUserNotes(
+    userId: string,
+    bookId?: number,
+  ): Promise<BookNoteResponseDto[]> {
     const query = this.bookNoteRepository
       .createQueryBuilder('note')
       .where('note.userId = :userId', { userId })
@@ -137,7 +156,10 @@ export class BookNoteService {
     return [data, total];
   }
 
-  async getBookNotes(bookId: number, userId?: string): Promise<BookNoteResponseDto[]> {
+  async getBookNotes(
+    bookId: number,
+    userId?: string,
+  ): Promise<BookNoteResponseDto[]> {
     const query = this.bookNoteRepository
       .createQueryBuilder('note')
       .where('note.bookId = :bookId', { bookId })
@@ -146,7 +168,9 @@ export class BookNoteService {
 
     // If user is provided, include their private notes, otherwise only public ones
     if (userId) {
-      query.andWhere('(note.isPublic = true OR note.userId = :userId)', { userId });
+      query.andWhere('(note.isPublic = true OR note.userId = :userId)', {
+        userId,
+      });
     } else {
       query.andWhere('note.isPublic = true');
     }
@@ -162,7 +186,10 @@ export class BookNoteService {
     );
   }
 
-  async getNoteById(noteId: string, userId: string): Promise<BookNoteResponseDto> {
+  async getNoteById(
+    noteId: string,
+    userId: string,
+  ): Promise<BookNoteResponseDto> {
     const note = await this.bookNoteRepository.findOne({
       where: { id: noteId },
       relations: ['book', 'user'],

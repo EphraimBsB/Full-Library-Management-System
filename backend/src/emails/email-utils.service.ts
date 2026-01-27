@@ -25,14 +25,14 @@ export class EmailUtilsService {
     to: string,
     subject: string,
     template: string,
-    context: Record<string, any>
+    context: Record<string, any>,
   ): Promise<void> {
     try {
       await this.emailService.sendEmail(to, subject, template, context);
     } catch (error) {
       this.logger.error(
         `Failed to send ${template} email to ${to}: ${error.message}`,
-        error.stack
+        error.stack,
       );
       throw error; // Re-throw to allow caller to handle the error
     }
@@ -46,7 +46,7 @@ export class EmailUtilsService {
     book: Book,
     dueDate: Date,
     issueDate: Date,
-    loanId: string
+    loanId: string,
   ): Promise<void> {
     try {
       await this.emailService.sendEmail(
@@ -61,10 +61,13 @@ export class EmailUtilsService {
           dueDate: dueDate.toLocaleDateString(),
           loanId,
           supportEmail: 'library@example.com',
-        }
+        },
       );
     } catch (error) {
-      this.logger.error(`Failed to send loan confirmation email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send loan confirmation email: ${error.message}`,
+        error.stack,
+      );
       throw error; // Re-throw to allow caller to handle the error
     }
   }
@@ -77,7 +80,7 @@ export class EmailUtilsService {
     book: Book,
     dueDate: Date,
     issueDate: Date,
-    loanId: string
+    loanId: string,
   ): Promise<void> {
     try {
       await this.emailService.sendEmail(
@@ -92,10 +95,13 @@ export class EmailUtilsService {
           dueDate: dueDate.toLocaleDateString(),
           loanId,
           supportEmail: 'library@example.com',
-        }
+        },
       );
     } catch (error) {
-      this.logger.error(`Failed to send return reminder email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send return reminder email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -109,7 +115,7 @@ export class EmailUtilsService {
     dueDate: Date,
     issueDate: Date,
     loanId: string,
-    fineAmount: number
+    fineAmount: number,
   ): Promise<void> {
     try {
       await this.emailService.sendEmail(
@@ -125,10 +131,13 @@ export class EmailUtilsService {
           fineAmount: fineAmount.toFixed(2),
           loanId,
           supportEmail: 'library@example.com',
-        }
+        },
       );
     } catch (error) {
-      this.logger.error(`Failed to send overdue notice email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send overdue notice email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -141,48 +150,60 @@ export class EmailUtilsService {
     user: User,
     book: Book,
     dueDate: Date,
-    issueDate: Date
+    issueDate: Date,
   ): void {
     try {
       // Calculate when to send the reminder (1 day before due date)
       const reminderDate = new Date(dueDate);
       reminderDate.setDate(reminderDate.getDate() - this.loanReminderDays);
-      
+
       // If the due date is less than the reminder period from now, don't schedule a reminder
       if (reminderDate <= new Date()) {
-        this.logger.log(`Not scheduling reminder for loan ${loanId} as due date is within ${this.loanReminderDays} day(s)`);
+        this.logger.log(
+          `Not scheduling reminder for loan ${loanId} as due date is within ${this.loanReminderDays} day(s)`,
+        );
         return;
       }
 
       const timeout = reminderDate.getTime() - Date.now();
-      
+
       setTimeout(async () => {
         try {
           // Verify the loan is still active before sending reminder
           const loan = await this.bookLoanRepository.findOne({
             where: { id: loanId, status: LoanStatus.ACTIVE },
-            relations: ['bookCopy', 'user']
+            relations: ['bookCopy', 'user'],
           });
 
           if (loan) {
-            await this.sendReturnReminderEmail(user, book, dueDate, issueDate, loanId);
+            await this.sendReturnReminderEmail(
+              user,
+              book,
+              dueDate,
+              issueDate,
+              loanId,
+            );
             this.logger.log(`Sent return reminder for loan ${loanId}`);
           } else {
-            this.logger.log(`Loan ${loanId} is no longer active, skipping reminder`);
+            this.logger.log(
+              `Loan ${loanId} is no longer active, skipping reminder`,
+            );
           }
         } catch (error) {
           this.logger.error(
             `Error sending return reminder for loan ${loanId}: ${error.message}`,
-            error.stack
+            error.stack,
           );
         }
       }, timeout);
 
-      this.logger.log(`Scheduled return reminder for loan ${loanId} at ${reminderDate}`);
+      this.logger.log(
+        `Scheduled return reminder for loan ${loanId} at ${reminderDate}`,
+      );
     } catch (error) {
       this.logger.error(
         `Error scheduling return reminder for loan ${loanId}: ${error.message}`,
-        error.stack
+        error.stack,
       );
     }
   }
@@ -192,7 +213,7 @@ export class EmailUtilsService {
     book: Book,
     dueDate: Date,
     issueDate: Date,
-    loanId: string
+    loanId: string,
   ): Promise<void> {
     try {
       await this.emailService.sendEmail(
@@ -207,10 +228,13 @@ export class EmailUtilsService {
           dueDate: dueDate.toLocaleDateString(),
           loanId,
           supportEmail: 'library@example.com',
-        }
+        },
       );
     } catch (error) {
-      this.logger.error(`Failed to send return confirmation email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send return confirmation email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -219,7 +243,7 @@ export class EmailUtilsService {
     user: User,
     book: Book,
     reason: string,
-    rejectedById: string
+    rejectedById: string,
   ): Promise<void> {
     try {
       await this.emailService.sendEmail(
@@ -233,10 +257,13 @@ export class EmailUtilsService {
           reason,
           rejectedById,
           supportEmail: 'library@example.com',
-        }
+        },
       );
     } catch (error) {
-      this.logger.error(`Failed to send request rejected email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send request rejected email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

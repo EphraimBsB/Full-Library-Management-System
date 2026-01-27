@@ -1,5 +1,22 @@
-import { Controller, Get, UseGuards, Request, Query, Post, Body, Param, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Request,
+  Query,
+  Post,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,7 +41,10 @@ export class MembershipController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ): Promise<PaginatedResponseDto<Membership>> {
-    return this.membershipService.findAllMemberships(undefined, undefined, { page, limit });
+    return this.membershipService.findAllMemberships(undefined, undefined, {
+      page,
+      limit,
+    });
   }
 
   @Get('types')
@@ -37,8 +57,8 @@ export class MembershipController {
   @Get('my-membership')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user\'s active membership' })
-  @ApiResponse({ status: 200, description: 'Current user\'s active membership' })
+  @ApiOperation({ summary: "Get current user's active membership" })
+  @ApiResponse({ status: 200, description: "Current user's active membership" })
   async getMyMembership(@Request() req) {
     return this.membershipService.findActiveMembership(req.user.id);
   }
@@ -48,10 +68,7 @@ export class MembershipController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Check if user can borrow more books' })
   @ApiResponse({ status: 200, description: 'Borrowing status' })
-  async canBorrowBooks(
-    @Request() req,
-    @Query('count') count: number = 1,
-  ) {
+  async canBorrowBooks(@Request() req, @Query('count') count: number = 1) {
     return this.membershipService.canBorrowBooks(req.user.id, count);
   }
 
@@ -75,8 +92,13 @@ export class MembershipController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all memberships (Admin/Librarian only, paginated)' })
-  @ApiResponse({ status: 200, description: 'Paginated list of all memberships' })
+  @ApiOperation({
+    summary: 'Get all memberships (Admin/Librarian only, paginated)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of all memberships',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getAllMemberships(
@@ -85,6 +107,9 @@ export class MembershipController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ): Promise<PaginatedResponseDto<Membership>> {
-    return this.membershipService.findAllMemberships(status, userId, { page, limit });
+    return this.membershipService.findAllMemberships(status, userId, {
+      page,
+      limit,
+    });
   }
 }

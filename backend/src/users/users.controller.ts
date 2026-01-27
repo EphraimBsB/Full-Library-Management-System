@@ -1,5 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -25,7 +42,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User successfully created' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 409, description: 'User with email/roll number already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'User with email/roll number already exists',
+  })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
@@ -53,7 +73,11 @@ export class UsersController {
 
   @Get(':id/profile-summary')
   @ApiOperation({ summary: 'Get user profile summary' })
-  @ApiResponse({ status: 200, description: 'Profile summary retrieved successfully', type: UserProfileSummaryDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile summary retrieved successfully',
+    type: UserProfileSummaryDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getProfileSummary(@Param('id') userId: string) {
     return this.usersService.getUserProfileSummary(userId);
@@ -109,7 +133,10 @@ export class UsersController {
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Delete a user (soft delete)' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot delete user with active loans' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot delete user with active loans',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);

@@ -2,7 +2,7 @@ import { IsUUID, IsOptional, ValidateIf } from 'class-validator';
 
 export class CreateLoanDto {
   @IsUUID()
-  @ValidateIf(o => !o.preferredCopyId) // Only require bookId if preferredCopyId is not provided
+  @ValidateIf((o) => !o.preferredCopyId) // Only require bookId if preferredCopyId is not provided
   bookId?: string;
 
   @IsUUID()
@@ -15,7 +15,7 @@ export class CreateLoanDto {
   @IsUUID()
   @IsOptional()
   requestId?: string;
-  
+
   @IsUUID()
   @IsOptional()
   approvedById?: string;

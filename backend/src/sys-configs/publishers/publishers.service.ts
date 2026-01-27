@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePublisherDto } from './dto/create-publisher.dto';
@@ -45,7 +49,10 @@ export class PublishersService {
     return await this.publisherRepository.save(publisher);
   }
 
-  async update(id: number, updatePublisherDto: UpdatePublisherDto): Promise<Publisher> {
+  async update(
+    id: number,
+    updatePublisherDto: UpdatePublisherDto,
+  ): Promise<Publisher> {
     const publisher = await this.findOne(id);
 
     if (updatePublisherDto.name && updatePublisherDto.name !== publisher.name) {

@@ -19,7 +19,7 @@ import { StudentsModule } from './students/students.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
-        signOptions: { 
+        signOptions: {
           expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d',
         },
       }),
@@ -29,11 +29,6 @@ import { StudentsModule } from './students/students.module';
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
-  exports: [
-    AuthService,
-    JwtModule,
-    JwtStrategy,
-    PassportModule,
-  ],
+  exports: [AuthService, JwtModule, JwtStrategy, PassportModule],
 })
 export class AuthModule {}

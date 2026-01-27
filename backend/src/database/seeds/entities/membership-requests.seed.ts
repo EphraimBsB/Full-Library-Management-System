@@ -1,13 +1,22 @@
 import { DataSource, In } from 'typeorm';
 import { ISeeder, SeedResult } from '../base-seed.interface';
-import { MembershipRequest, MembershipRequestStatus } from '../../../membership/entities/membership-request.entity';
+import {
+  MembershipRequest,
+  MembershipRequestStatus,
+} from '../../../membership/entities/membership-request.entity';
 import { User } from '../../../users/entities/user.entity';
 import { MembershipType } from '../../../sys-configs/membership-types/entities/membership-type.entity';
 import { faker } from '@faker-js/faker';
 
 // Helper function to generate random document paths
 const generateDocumentPath = (): string => {
-  const docTypes = ['id', 'passport', 'student_id', 'employee_id', 'recommendation'];
+  const docTypes = [
+    'id',
+    'passport',
+    'student_id',
+    'employee_id',
+    'recommendation',
+  ];
   const ext = faker.helpers.arrayElement(['pdf', 'jpg', 'png']);
   return `/uploads/documents/${faker.string.uuid()}_${faker.helpers.arrayElement(docTypes)}.${ext}`;
 };
@@ -22,7 +31,7 @@ const generateRequestNotes = (user: User, type: string): string => {
     `Need extended borrowing privileges with ${type} membership.`,
     `Applying for ${type} membership as per faculty recommendation.`,
     `Requesting ${type} membership for thesis work.`,
-    `Need access to additional resources with ${type} membership.`
+    `Need access to additional resources with ${type} membership.`,
   ];
   return faker.helpers.arrayElement(notes);
 };
@@ -45,32 +54,34 @@ export class MembershipRequestsSeed implements ISeeder {
         userRepository.find({
           relations: ['role'],
           where: {
-            role: { 
-              name: In(['Student', 'Faculty', 'Researcher']) 
+            role: {
+              name: In(['Student', 'Faculty', 'Researcher']),
             },
-            isActive: true
+            isActive: true,
           },
-          take: 30 // Get more users for variety
+          take: 30, // Get more users for variety
         }),
         // Get all active membership types
         membershipTypeRepository.find({ where: { isActive: true } }),
         // Get admin/librarian users for processing requests
         userRepository.find({
           relations: ['role'],
-          where: [
-            { role: { name: 'Admin' } },
-            { role: { name: 'Librarian' } }
-          ],
-          take: 5
-        })
+          where: [{ role: { name: 'Admin' } }, { role: { name: 'Librarian' } }],
+          take: 5,
+        }),
       ]);
     } catch (error) {
       console.error('Error fetching data for membership requests:', error);
-      return { entity: 'MembershipRequest', count: 0, error: 'Failed to fetch required data' };
+      return {
+        entity: 'MembershipRequest',
+        count: 0,
+        error: 'Failed to fetch required data',
+      };
     }
 
     if (users.length === 0 || membershipTypes.length === 0) {
-      const errorMsg = 'Skipping membership requests seeding: No active users or membership types found';
+      const errorMsg =
+        'Skipping membership requests seeding: No active users or membership types found';
       console.warn(errorMsg);
       return { entity: 'MembershipRequest', count: 0, error: errorMsg };
     }
@@ -86,7 +97,7 @@ export class MembershipRequestsSeed implements ISeeder {
 
     // Create membership requests for a subset of users
     const usersToProcess = users.slice(0, Math.min(users.length, 50)); // Max 50 users
-    
+
     for (const [index, user] of usersToProcess.entries()) {
       try {
         // Skip some users to have a mix of users with and without requests
@@ -94,42 +105,48 @@ export class MembershipRequestsSeed implements ISeeder {
 
         // For variety, assign different membership types based on user role
         let eligibleTypes = [...membershipTypes];
-        
+
         // Filter types based on user role if needed
         if (user.role?.name === 'Student') {
-          eligibleTypes = membershipTypes.filter(t => 
-            !['Faculty', 'Researcher'].includes(t.name)
+          eligibleTypes = membershipTypes.filter(
+            (t) => !['Faculty', 'Researcher'].includes(t.name),
           );
         } else if (user.role?.name === 'Faculty') {
-          eligibleTypes = membershipTypes.filter(t => 
-            !['Student', 'Alumni'].includes(t.name)
+          eligibleTypes = membershipTypes.filter(
+            (t) => !['Student', 'Alumni'].includes(t.name),
           );
         }
 
         if (eligibleTypes.length === 0) continue;
 
         const membershipType = faker.helpers.arrayElement(eligibleTypes);
-        
+
         // Random request date within the last 3 months
-        const requestDate = faker.date.between({ 
-          from: threeMonthsAgo, 
-          to: now 
+        const requestDate = faker.date.between({
+          from: threeMonthsAgo,
+          to: now,
         });
 
         // Determine request status with weighted probabilities
         const status = this.getWeightedStatus(index);
         const isProcessed = status !== MembershipRequestStatus.PENDING;
-        const processedBy = isProcessed && adminUsers.length > 0 
-          ? faker.helpers.arrayElement(adminUsers) 
-          : null;
-        
+        const processedBy =
+          isProcessed && adminUsers.length > 0
+            ? faker.helpers.arrayElement(adminUsers)
+            : null;
+
         // Generate documents for the request
         const documentCount = faker.number.int({ min: 1, max: 3 });
         const documents = Array.from({ length: documentCount }, () => ({
           name: `document_${faker.string.uuid().substring(0, 8)}`,
           path: generateDocumentPath(),
           uploadedAt: requestDate,
-          type: faker.helpers.arrayElement(['id', 'proof_of_address', 'recommendation', 'other'])
+          type: faker.helpers.arrayElement([
+            'id',
+            'proof_of_address',
+            'recommendation',
+            'other',
+          ]),
         }));
 
         // Create a new request
@@ -148,10 +165,10 @@ export class MembershipRequestsSeed implements ISeeder {
           request.processedBy = processedBy;
           request.processedById = processedBy.id;
           request.processedAt = new Date(
-            requestDate.getTime() + 
-            faker.number.int({ min: 1, max: 7 }) * 24 * 60 * 60 * 1000 // 1-7 days later
+            requestDate.getTime() +
+              faker.number.int({ min: 1, max: 7 }) * 24 * 60 * 60 * 1000, // 1-7 days later
           );
-          
+
           if (status === MembershipRequestStatus.REJECTED) {
             request.rejectionReason = this.getRandomRejectionReason();
           } else if (status === MembershipRequestStatus.APPROVED) {
@@ -162,7 +179,10 @@ export class MembershipRequestsSeed implements ISeeder {
 
         requests.push(request);
       } catch (error) {
-        console.error(`Error creating membership request for user ${user.id}:`, error);
+        console.error(
+          `Error creating membership request for user ${user.id}:`,
+          error,
+        );
       }
     }
 
@@ -177,24 +197,25 @@ export class MembershipRequestsSeed implements ISeeder {
         [MembershipRequestStatus.PENDING]: 0,
         [MembershipRequestStatus.APPROVED]: 0,
         [MembershipRequestStatus.REJECTED]: 0,
-      }
+      },
     };
 
     for (let i = 0; i < requests.length; i += BATCH_SIZE) {
       const batch = requests.slice(i, i + BATCH_SIZE);
-      
+
       try {
         const savedRequests = await requestRepository.save(batch);
         created += savedRequests.length;
-        
+
         // Update statistics
-        savedRequests.forEach(req => {
-          results.byStatus[req.status] = (results.byStatus[req.status] || 0) + 1;
+        savedRequests.forEach((req) => {
+          results.byStatus[req.status] =
+            (results.byStatus[req.status] || 0) + 1;
         });
-        
+
         // Add a small delay between batches
         if (i + BATCH_SIZE < requests.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       } catch (error) {
         console.error(`Error saving batch starting at index ${i}:`, error);
@@ -203,10 +224,14 @@ export class MembershipRequestsSeed implements ISeeder {
           try {
             const saved = await requestRepository.save(req);
             created++;
-            results.byStatus[saved.status] = (results.byStatus[saved.status] || 0) + 1;
+            results.byStatus[saved.status] =
+              (results.byStatus[saved.status] || 0) + 1;
           } catch (individualError) {
             results.skipped++;
-            console.error(`Failed to save request for user ${req.userId}:`, individualError);
+            console.error(
+              `Failed to save request for user ${req.userId}:`,
+              individualError,
+            );
           }
         }
       }
@@ -228,28 +253,28 @@ export class MembershipRequestsSeed implements ISeeder {
     return {
       entity: 'MembershipRequest',
       count: created,
-      details: results
+      details: results,
     };
   }
 
   private getWeightedStatus(index: number): MembershipRequestStatus {
     // Weighted random status with higher probability for approved requests
     const weights = {
-      [MembershipRequestStatus.PENDING]: 0.2,    // 20% chance
-      [MembershipRequestStatus.APPROVED]: 0.6,   // 60% chance
-      [MembershipRequestStatus.REJECTED]: 0.15,  // 15% chance
+      [MembershipRequestStatus.PENDING]: 0.2, // 20% chance
+      [MembershipRequestStatus.APPROVED]: 0.6, // 60% chance
+      [MembershipRequestStatus.REJECTED]: 0.15, // 15% chance
     };
 
     const random = Math.random();
     let sum = 0;
-    
+
     for (const [status, weight] of Object.entries(weights)) {
       sum += weight;
       if (random <= sum) {
         return status as MembershipRequestStatus;
       }
     }
-    
+
     // Default to pending if something goes wrong
     return MembershipRequestStatus.PENDING;
   }
@@ -270,30 +295,48 @@ export class MembershipRequestsSeed implements ISeeder {
       'Incomplete payment of membership fees',
       'User has outstanding fines from previous membership',
       'Requested membership type is currently not available',
-      'User account is not in good standing'
+      'User account is not in good standing',
     ];
     return faker.helpers.arrayElement(reasons);
   }
 
   private getRejectionReasonDetails(reason: string): string {
     const details: Record<string, string> = {
-      'Incomplete application form': 'Please complete all required fields in the application form and resubmit.',
-      'Missing required identification documents': 'Please provide a valid government-issued ID and proof of address.',
-      'Does not meet minimum eligibility criteria': 'Your application does not meet the minimum requirements for this membership type.',
-      'Maximum membership limit already reached': 'The maximum number of memberships for this category has been reached.',
-      'Previous membership was revoked due to policy violations': 'Your previous membership was terminated due to violations of library policies.',
-      'Insufficient proof of address or identity': 'The provided documents do not sufficiently verify your identity or address.',
-      'Application contains inconsistent information': 'There are inconsistencies in the information provided. Please review and correct your application.',
-      'Membership type not available for the requested user category': 'The selected membership type is not available for your user category.',
-      'Duplicate application detected': 'We found another application from you that is currently being processed.',
-      'Required recommendation letter not provided': 'A recommendation letter from a faculty member is required for this membership type.',
-      'Application submitted after the deadline': 'The application was received after the submission deadline.',
-      'Incomplete payment of membership fees': 'The required membership fee has not been paid in full.',
-      'User has outstanding fines from previous membership': 'Please clear all outstanding fines before applying for a new membership.',
-      'Requested membership type is currently not available': 'The requested membership type is temporarily unavailable. Please check back later.',
-      'User account is not in good standing': 'Your account has been flagged due to previous policy violations.'
+      'Incomplete application form':
+        'Please complete all required fields in the application form and resubmit.',
+      'Missing required identification documents':
+        'Please provide a valid government-issued ID and proof of address.',
+      'Does not meet minimum eligibility criteria':
+        'Your application does not meet the minimum requirements for this membership type.',
+      'Maximum membership limit already reached':
+        'The maximum number of memberships for this category has been reached.',
+      'Previous membership was revoked due to policy violations':
+        'Your previous membership was terminated due to violations of library policies.',
+      'Insufficient proof of address or identity':
+        'The provided documents do not sufficiently verify your identity or address.',
+      'Application contains inconsistent information':
+        'There are inconsistencies in the information provided. Please review and correct your application.',
+      'Membership type not available for the requested user category':
+        'The selected membership type is not available for your user category.',
+      'Duplicate application detected':
+        'We found another application from you that is currently being processed.',
+      'Required recommendation letter not provided':
+        'A recommendation letter from a faculty member is required for this membership type.',
+      'Application submitted after the deadline':
+        'The application was received after the submission deadline.',
+      'Incomplete payment of membership fees':
+        'The required membership fee has not been paid in full.',
+      'User has outstanding fines from previous membership':
+        'Please clear all outstanding fines before applying for a new membership.',
+      'Requested membership type is currently not available':
+        'The requested membership type is temporarily unavailable. Please check back later.',
+      'User account is not in good standing':
+        'Your account has been flagged due to previous policy violations.',
     };
-    
-    return details[reason] || 'Your application could not be processed at this time. Please contact support for more information.';
+
+    return (
+      details[reason] ||
+      'Your application could not be processed at this time. Please contact support for more information.'
+    );
   }
 }

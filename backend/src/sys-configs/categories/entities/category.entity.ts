@@ -15,6 +15,6 @@ export class Category {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @ManyToMany(() => Book, book => book.categories)
+  @ManyToMany(() => Book, (book) => book.categories)
   books: Book[];
 }

@@ -1,4 +1,11 @@
-import { Controller, Post, Body, HttpStatus, HttpCode, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpStatus,
+  HttpCode,
+  UseGuards,
+} from '@nestjs/common';
 import { EmailService } from './email.service';
 import { TestEmailDto } from './dto/test-email.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -23,7 +30,7 @@ export class EmailController {
   @ApiResponse({ status: 500, description: 'Failed to send email' })
   async sendTestEmail(@Body() testEmailDto: TestEmailDto) {
     const now = new Date().toLocaleString();
-    
+
     await this.emailService.sendEmail(
       testEmailDto.to,
       'Test Email from Library System',
@@ -31,7 +38,7 @@ export class EmailController {
       {
         name: testEmailDto.name,
         now,
-      }
+      },
     );
 
     return {

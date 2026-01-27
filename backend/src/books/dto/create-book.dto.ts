@@ -10,7 +10,7 @@ import {
   ArrayNotEmpty,
   Min,
   IsNumber,
-  Max
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateCategoryDto } from 'src/sys-configs/categories/dto/create-category.dto';
@@ -63,7 +63,7 @@ export class CreateBookDto {
   @IsUrl({
     require_tld: false,
     require_protocol: true,
-    protocols: ['http', 'https']
+    protocols: ['http', 'https'],
   })
   coverImageUrl?: string;
 
@@ -99,7 +99,7 @@ export class CreateBookDto {
   @IsUrl({
     require_tld: false,
     require_protocol: true,
-    protocols: ['http', 'https']
+    protocols: ['http', 'https'],
   })
   ebookUrl?: string;
 

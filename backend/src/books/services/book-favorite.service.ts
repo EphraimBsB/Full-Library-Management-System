@@ -15,7 +15,10 @@ export class BookFavoriteService {
     private readonly bookRepository: Repository<Book>,
   ) {}
 
-  async toggleFavorite(userId: string, dto: ToggleBookFavoriteDto): Promise<{ isFavorite: boolean }> {
+  async toggleFavorite(
+    userId: string,
+    dto: ToggleBookFavoriteDto,
+  ): Promise<{ isFavorite: boolean }> {
     const { bookId } = dto;
 
     // Check if book exists
@@ -61,9 +64,7 @@ export class BookFavoriteService {
       order: { createdAt: 'DESC' },
     });
 
-    return favorites.map(
-      (favorite) => favorite.book,
-    );
+    return favorites.map((favorite) => favorite.book);
   }
 
   /**
@@ -85,7 +86,7 @@ export class BookFavoriteService {
       take: limit,
     });
 
-    const books = favorites.map(fav => fav.book);
+    const books = favorites.map((fav) => fav.book);
     return [books, total];
   }
 
@@ -113,30 +114,34 @@ export class BookFavoriteService {
 
   private async updateBookFavoritesCount(bookId: number): Promise<void> {
     const count = await this.getFavoritesCount(bookId);
-    
+
     // Update the favorites count in the book's metadata
-    await this.bookRepository.manager.transaction(async (transactionalEntityManager) => {
-      const book = await transactionalEntityManager.findOne(Book, {
-        where: { id: bookId },
-        relations: ['metadata'],
-      });
-      
-      if (book && book.metadata) {
-        book.metadata.favoriteCount = count;
-        await transactionalEntityManager.save(book.metadata);
-      }
-    });
+    await this.bookRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        const book = await transactionalEntityManager.findOne(Book, {
+          where: { id: bookId },
+          relations: ['metadata'],
+        });
+
+        if (book && book.metadata) {
+          book.metadata.favoriteCount = count;
+          await transactionalEntityManager.save(book.metadata);
+        }
+      },
+    );
   }
 
-  async getPopularBooks(limit: number = 10): Promise<{ 
-    book: { 
-      id: number; 
-      title: string; 
-      author: string; 
-      coverImageUrl?: string; 
-    }; 
-    favoritesCount: number; 
-  }[]> {
+  async getPopularBooks(limit: number = 10): Promise<
+    {
+      book: {
+        id: number;
+        title: string;
+        author: string;
+        coverImageUrl?: string;
+      };
+      favoritesCount: number;
+    }[]
+  > {
     const popularBooks = await this.bookRepository
       .createQueryBuilder('book')
       .select(['book.id', 'book.title', 'book.author', 'book.coverImageUrl'])

@@ -1,6 +1,6 @@
 export enum FileType {
   IMAGE = 'image',
-  EBOOK = 'ebook'
+  EBOOK = 'ebook',
 }
 
 export enum ImageVariant {
