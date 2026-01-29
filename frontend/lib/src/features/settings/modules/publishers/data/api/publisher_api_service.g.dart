@@ -12,7 +12,7 @@ part of 'publisher_api_service.dart';
 
 class _PublisherApiService implements PublisherApiService {
   _PublisherApiService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://localhost:3000/api/v1';
+    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
   }
 
   final Dio _dio;
