@@ -83,6 +83,69 @@ class _SourceDialogState extends ConsumerState<SourceDialog> {
     }
   }
 
+  Future<void> _handleDelete() async {
+    if (widget.source == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Source'),
+        content: const Text(
+          'Are you sure you want to delete this source? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+
+      try {
+        final notifier = ref.read(sourcesNotifierProvider.notifier);
+        final sourceId = widget.source!.id;
+        if (sourceId == null) return;
+
+        await notifier.deleteSource(sourceId);
+
+        if (mounted) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Source deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to delete source: $e',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -93,10 +156,11 @@ class _SourceDialogState extends ConsumerState<SourceDialog> {
             widget.source == null ? 'Add Source' : 'Edit Source',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.delete, color: AppTheme.accentColor),
-          ),
+          if (widget.source != null)
+            IconButton(
+              onPressed: _isLoading ? null : _handleDelete,
+              icon: Icon(Icons.delete, color: AppTheme.accentColor),
+            ),
         ],
       ),
       content: SingleChildScrollView(

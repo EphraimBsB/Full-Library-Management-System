@@ -64,34 +64,26 @@ class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
     setState(() => _isReturning = true);
 
     try {
-      final result = await ref
-          .read(loanRepositoryProvider)
-          .returnBook(widget.loan.id);
+      await ref.read(loanNotifierProvider.notifier).returnBook(widget.loan.id);
 
-      result.fold(
-        (failure) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to return book: ${failure.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        (returnedLoan) async {
-          if (mounted) {
-            ref.invalidate(allLoansProvider);
-            ref.invalidate(userLoansProvider);
-            if (widget.onUpdate != null) {
-              await widget.onUpdate!(returnedLoan);
-            }
-            if (mounted) {
-              Navigator.of(context).pop('RETURNED');
-            }
-          }
-        },
-      );
+      if (mounted) {
+        // userLoansProvider is still a FutureProvider, so we invalidate it
+        ref.invalidate(userLoansProvider);
+
+        if (widget.onUpdate != null) {
+          // We might need the updated loan object here.
+          // Since notifier doesn't return it easily without more changes,
+          // let's just use the loan from state if needed, or re-fetch it.
+          // For now, let's just use the current loan with updated status.
+          await widget.onUpdate!(
+            widget.loan.copyWith(status: LoanStatus.returned),
+          );
+        }
+
+        if (mounted) {
+          Navigator.of(context).pop('RETURNED');
+        }
+      }
     } catch (e) {
       if (mounted) {
         debugPrint('Error returning book: $e');
@@ -113,34 +105,21 @@ class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
     setState(() => _isRenewing = true);
 
     try {
-      final result = await ref
-          .read(loanRepositoryProvider)
-          .renewLoan(widget.loan.id);
+      await ref.read(loanNotifierProvider.notifier).renewLoan(widget.loan.id);
 
-      result.fold(
-        (failure) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to renew book: ${failure.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        (returnedLoan) async {
-          if (mounted) {
-            ref.invalidate(allLoansProvider);
-            ref.invalidate(userLoansProvider);
-            if (widget.onUpdate != null) {
-              await widget.onUpdate!(returnedLoan);
-            }
-            if (mounted) {
-              Navigator.of(context).pop('RENEWED');
-            }
-          }
-        },
-      );
+      if (mounted) {
+        // userLoansProvider is still a FutureProvider, so we invalidate it
+        ref.invalidate(userLoansProvider);
+
+        if (widget.onUpdate != null) {
+          // Simplified update for callback
+          await widget.onUpdate!(widget.loan);
+        }
+
+        if (mounted) {
+          Navigator.of(context).pop('RENEWED');
+        }
+      }
     } catch (e) {
       if (mounted) {
         debugPrint('Error renewing book: $e');

@@ -19,6 +19,9 @@ ImportResult _$ImportResultFromJson(Map<String, dynamic> json) => ImportResult(
       .toList(),
   duration: (json['duration'] as num).toInt(),
   timestamp: DateTime.parse(json['timestamp'] as String),
+  detailedStats: json['detailedStats'] == null
+      ? null
+      : DetailedStats.fromJson(json['detailedStats'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$ImportResultToJson(ImportResult instance) =>
@@ -31,6 +34,23 @@ Map<String, dynamic> _$ImportResultToJson(ImportResult instance) =>
       'warnings': instance.warnings,
       'duration': instance.duration,
       'timestamp': instance.timestamp.toIso8601String(),
+      'detailedStats': instance.detailedStats,
+    };
+
+DetailedStats _$DetailedStatsFromJson(Map<String, dynamic> json) =>
+    DetailedStats(
+      duplicates: (json['duplicates'] as num).toInt(),
+      emptyRows: (json['emptyRows'] as num).toInt(),
+      validationErrors: (json['validationErrors'] as num).toInt(),
+      worldcatEnriched: (json['worldcatEnriched'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$DetailedStatsToJson(DetailedStats instance) =>
+    <String, dynamic>{
+      'duplicates': instance.duplicates,
+      'emptyRows': instance.emptyRows,
+      'validationErrors': instance.validationErrors,
+      'worldcatEnriched': instance.worldcatEnriched,
     };
 
 ImportResultItem _$ImportResultItemFromJson(Map<String, dynamic> json) =>
@@ -43,6 +63,11 @@ ImportResultItem _$ImportResultItemFromJson(Map<String, dynamic> json) =>
           .toList(),
       createdId: (json['createdId'] as num?)?.toInt(),
       data: json['data'] as Map<String, dynamic>?,
+      status: json['status'] as String?,
+      isbn: json['isbn'] as String?,
+      author: json['author'] as String?,
+      publisher: json['publisher'] as String?,
+      publicationYear: (json['publicationYear'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ImportResultItemToJson(ImportResultItem instance) =>
@@ -53,4 +78,9 @@ Map<String, dynamic> _$ImportResultItemToJson(ImportResultItem instance) =>
       'errors': instance.errors,
       'createdId': instance.createdId,
       'data': instance.data,
+      'status': instance.status,
+      'isbn': instance.isbn,
+      'author': instance.author,
+      'publisher': instance.publisher,
+      'publicationYear': instance.publicationYear,
     };

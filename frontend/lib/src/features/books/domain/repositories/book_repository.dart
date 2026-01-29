@@ -83,4 +83,7 @@ abstract class BookRepository {
 
   /// Force end an in-house usage
   Future<Result<Map<String, dynamic>>> forceEndInhouseUsage(String id);
+
+  /// Get counts of in-house usages by status
+  Future<Result<Map<String, int>>> getInhouseUsageCounts();
 }

@@ -13,6 +13,7 @@ class ImportResult {
   final List<String> warnings;
   final int duration;
   final DateTime timestamp;
+  final DetailedStats? detailedStats;
 
   const ImportResult({
     required this.total,
@@ -23,12 +24,33 @@ class ImportResult {
     required this.warnings,
     required this.duration,
     required this.timestamp,
+    this.detailedStats,
   });
 
   factory ImportResult.fromJson(Map<String, dynamic> json) =>
       _$ImportResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$ImportResultToJson(this);
+}
+
+@JsonSerializable()
+class DetailedStats {
+  final int duplicates;
+  final int emptyRows;
+  final int validationErrors;
+  final int worldcatEnriched;
+
+  const DetailedStats({
+    required this.duplicates,
+    required this.emptyRows,
+    required this.validationErrors,
+    required this.worldcatEnriched,
+  });
+
+  factory DetailedStats.fromJson(Map<String, dynamic> json) =>
+      _$DetailedStatsFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DetailedStatsToJson(this);
 }
 
 @JsonSerializable()
@@ -39,6 +61,11 @@ class ImportResultItem {
   final List<String>? errors;
   final int? createdId;
   final Map<String, dynamic>? data;
+  final String? status;
+  final String? isbn;
+  final String? author;
+  final String? publisher;
+  final int? publicationYear;
 
   const ImportResultItem({
     required this.row,
@@ -47,6 +74,11 @@ class ImportResultItem {
     this.errors,
     this.createdId,
     this.data,
+    this.status,
+    this.isbn,
+    this.author,
+    this.publisher,
+    this.publicationYear,
   });
 
   factory ImportResultItem.fromJson(Map<String, dynamic> json) =>

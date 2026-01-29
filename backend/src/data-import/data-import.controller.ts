@@ -8,6 +8,7 @@ import {
   BadRequestException,
   HttpStatus,
   HttpException,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DataImportService } from './data-import.service';
@@ -98,15 +99,20 @@ export class DataImportController {
     status: 500,
     description: 'Internal server error',
   })
-  async importBooks(@UploadedFile() file: Express.Multer.File) {
+  async importBooks(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req,
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded or invalid file format');
     }
 
     try {
       const fileBuffer = fs.readFileSync(file.path);
-      const result =
-        await this.dataImportService.importBooksFromExcel(fileBuffer);
+      const result = await this.dataImportService.importBooksFromExcel(
+        fileBuffer,
+        req.user.id,
+      );
       return result;
     } catch (error) {
       throw new HttpException(

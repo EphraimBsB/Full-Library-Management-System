@@ -20,26 +20,105 @@ final loanRepositoryProvider = Provider<LoanRepository>((ref) {
   return LoanRepositoryImpl(apiService);
 });
 
-final allLoansProvider = FutureProvider.autoDispose<List<Loan>>((ref) async {
-  try {
-    final repository = ref.watch(loanRepositoryProvider);
-    final result = await repository.getLoans();
-    return result.fold((failure) {
-      if (kDebugMode) {
-        log('Error loading loans', error: failure);
-      }
-      return [];
-    }, (paginatedResponse) => paginatedResponse.data);
-  } catch (e, stackTrace) {
-    if (kDebugMode) {
-      log(
-        'Unexpected error in allLoansProvider',
-        error: e,
-        stackTrace: stackTrace,
-      );
-    }
-    return [];
+// Loan state
+class LoanState {
+  final List<Loan> loans;
+  final bool isLoading;
+  final String? error;
+
+  LoanState({this.loans = const [], this.isLoading = false, this.error});
+
+  LoanState copyWith({List<Loan>? loans, bool? isLoading, String? error}) {
+    return LoanState(
+      loans: loans ?? this.loans,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
   }
+}
+
+class LoanNotifier extends StateNotifier<LoanState> {
+  final LoanRepository _repository;
+
+  LoanNotifier(this._repository) : super(LoanState()) {
+    loadLoans();
+  }
+
+  Future<void> loadLoans({
+    String? status,
+    String? userId,
+    String? bookId,
+    bool? overdueOnly,
+    int? page,
+    int? limit,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+    final result = await _repository.getLoans(
+      status: status,
+      userId: userId,
+      bookId: bookId,
+      overdueOnly: overdueOnly,
+      page: page,
+      limit: limit,
+    );
+
+    state = result.fold(
+      (failure) => state.copyWith(isLoading: false, error: failure.message),
+      (paginatedResponse) =>
+          state.copyWith(loans: paginatedResponse.data, isLoading: false),
+    );
+  }
+
+  Future<void> createLoan(Loan loan) async {
+    final result = await _repository.createLoan(loan);
+    result.fold((failure) => throw failure, (newLoan) {
+      state = state.copyWith(loans: [newLoan, ...state.loans]);
+    });
+  }
+
+  Future<void> returnBook(String loanId) async {
+    final result = await _repository.returnBook(loanId);
+    result.fold((failure) => throw failure, (updatedLoan) {
+      state = state.copyWith(
+        loans: state.loans
+            .map((l) => l.id == loanId ? updatedLoan : l)
+            .toList(),
+      );
+    });
+  }
+
+  Future<void> renewLoan(String loanId) async {
+    final result = await _repository.renewLoan(loanId);
+    result.fold((failure) => throw failure, (updatedLoan) {
+      state = state.copyWith(
+        loans: state.loans
+            .map((l) => l.id == loanId ? updatedLoan : l)
+            .toList(),
+      );
+    });
+  }
+
+  Future<void> deleteLoan(String loanId) async {
+    final result = await _repository.deleteLoan(loanId);
+    result.fold((failure) => throw failure, (_) {
+      state = state.copyWith(
+        loans: state.loans.where((l) => l.id != loanId).toList(),
+      );
+    });
+  }
+}
+
+final loanNotifierProvider =
+    StateNotifierProvider.autoDispose<LoanNotifier, LoanState>((ref) {
+      return LoanNotifier(ref.watch(loanRepositoryProvider));
+    });
+
+final allLoansProvider = Provider.autoDispose<AsyncValue<List<Loan>>>((ref) {
+  final loanState = ref.watch(loanNotifierProvider);
+  if (loanState.isLoading) return const AsyncValue.loading();
+  if (loanState.error != null)
+    return AsyncValue.error(loanState.error!, StackTrace.current);
+  return AsyncValue.data(loanState.loans);
 });
 
 final userLoansProvider = FutureProvider.family

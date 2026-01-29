@@ -42,7 +42,13 @@ class CacheInterceptor extends Interceptor {
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    // Cache the response if applicable
+    // 1. Detect mutations and invalidate cache
+    final method = response.requestOptions.method;
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].contains(method)) {
+      _invalidateRelevantCache(response.requestOptions.path);
+    }
+
+    // 2. Cache the response if applicable
     if (_shouldCacheResponse(response.requestOptions)) {
       _cacheResponse(response);
     }
@@ -201,15 +207,44 @@ class CacheInterceptor extends Interceptor {
     final query = options.queryParameters;
     final headers = options.headers;
 
-    // Create a unique cache key based on URL, query params, and relevant headers
-    final keyParts = [
-      path,
-      query.toString(),
-      headers['authorization'] ??
-          '', // Include auth token for user-specific data
-    ];
+    // Determine prefix based on path
+    String prefix = 'api_cache_';
+    if (path.contains('/books'))
+      prefix += 'books_';
+    else if (path.contains('/loans'))
+      prefix += 'loans_';
+    else if (path.contains('/memberships'))
+      prefix += 'memberships_';
+    else if (path.contains('/categories'))
+      prefix += 'categories_';
+    else if (path.contains('/subjects'))
+      prefix += 'subjects_';
+    else if (path.contains('/types'))
+      prefix += 'types_';
+    else if (path.contains('/sources'))
+      prefix += 'sources_';
 
-    return 'api_cache_${keyParts.join('_').hashCode}';
+    // Create a unique cache key based on URL, query params, and relevant headers
+    final keyParts = [path, query.toString(), headers['authorization'] ?? ''];
+
+    return '${prefix}${keyParts.join('_').hashCode}';
+  }
+
+  void _invalidateRelevantCache(String path) {
+    String? prefix;
+    if (path.contains('/books'))
+      prefix = 'api_cache_books_';
+    else if (path.contains('/loans'))
+      prefix = 'api_cache_loans_';
+    else if (path.contains('/memberships'))
+      prefix = 'api_cache_memberships_';
+
+    if (prefix != null) {
+      _cacheService.clear(prefix: prefix);
+      _logger.i(
+        'Automatically invalidated cache for prefix: $prefix due to mutation at: $path',
+      );
+    }
   }
 
   Duration _getCacheDuration(RequestOptions options) {

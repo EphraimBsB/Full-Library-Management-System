@@ -85,6 +85,69 @@ class _LocationDialogState extends ConsumerState<LocationDialog> {
     }
   }
 
+  Future<void> _handleDelete() async {
+    if (widget.location == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Location'),
+        content: const Text(
+          'Are you sure you want to delete this location? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+
+      try {
+        final notifier = ref.read(locationsNotifierProvider.notifier);
+        final locationId = widget.location!.id;
+        if (locationId == null) return;
+
+        await notifier.deleteLocation(locationId);
+
+        if (mounted) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to delete location: $e',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -95,10 +158,11 @@ class _LocationDialogState extends ConsumerState<LocationDialog> {
             widget.location == null ? 'Add Location' : 'Edit Location',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.delete, color: AppTheme.accentColor),
-          ),
+          if (widget.location != null)
+            IconButton(
+              onPressed: _isLoading ? null : _handleDelete,
+              icon: Icon(Icons.delete, color: AppTheme.accentColor),
+            ),
         ],
       ),
       content: SingleChildScrollView(

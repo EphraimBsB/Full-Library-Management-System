@@ -12,7 +12,7 @@ part of 'storage_service.dart';
 
 class _StorageService implements StorageService {
   _StorageService(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://ilims.isbatuniversity.ac.ug/api/v1';
+    baseUrl ??= 'http://localhost:3000/api/v1';
   }
 
   final Dio _dio;
@@ -100,7 +100,7 @@ class _StorageService implements StorageService {
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
     late Uint8List _value;
     try {
-      _value = Uint8List.fromList(_result.data!.values.expand((e) => e as List<int>).toList());
+      _value = Uint8List.fromList(_result.data! as List<int>);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

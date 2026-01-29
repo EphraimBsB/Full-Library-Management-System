@@ -88,6 +88,69 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
     }
   }
 
+  Future<void> _handleDelete() async {
+    if (widget.bookType == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Book Type'),
+        content: const Text(
+          'Are you sure you want to delete this book type? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+
+      try {
+        final notifier = ref.read(bookTypesNotifierProvider.notifier);
+        final bookTypeId = widget.bookType!.id;
+        if (bookTypeId == null) return;
+
+        await notifier.deleteBookType(bookTypeId);
+
+        if (mounted) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Book type deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to delete book type: $e',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -98,10 +161,11 @@ class _BookTypeDialogState extends ConsumerState<BookTypeDialog> {
             widget.bookType == null ? 'Add Book Type' : 'Edit Book Type',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.delete, color: AppTheme.accentColor),
-          ),
+          if (widget.bookType != null)
+            IconButton(
+              onPressed: _isLoading ? null : _handleDelete,
+              icon: Icon(Icons.delete, color: AppTheme.accentColor),
+            ),
         ],
       ),
       content: SingleChildScrollView(

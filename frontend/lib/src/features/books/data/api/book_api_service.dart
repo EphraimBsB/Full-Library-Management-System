@@ -43,6 +43,13 @@ abstract class BookApiService {
   @DELETE('/books/{id}')
   Future<void> deleteBook(@Path('id') int id);
 
+  @PATCH('/books/{bookId}/copies/{copyId}')
+  Future<dynamic> updateBookCopy(
+    @Path('bookId') int bookId,
+    @Path('copyId') int copyId,
+    @Body() Map<String, dynamic> copyData,
+  );
+
   @POST('/books/{id}/borrow')
   Future<BookModel> borrowBook(
     @Path('id') String bookId,
@@ -93,4 +100,7 @@ abstract class BookApiService {
 
   @POST('/books/inhouse-usage/{id}/force-end')
   Future<Map<String, dynamic>> forceEndInhouseUsage(@Path('id') String id);
+
+  @GET('/books/inhouse-usage/counts')
+  Future<Map<String, int>> getInhouseUsageCounts();
 }

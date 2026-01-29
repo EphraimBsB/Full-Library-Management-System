@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { BooksModule } from '../books/books.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { DataImportController } from './data-import.controller';
 import { DataImportService } from './data-import.service';
 import { WorldCatService } from './worldcat.service';
 
 @Module({
-  imports: [BooksModule, HttpModule],
+  imports: [BooksModule, HttpModule, NotificationsModule],
   controllers: [DataImportController],
   providers: [DataImportService, WorldCatService],
 })

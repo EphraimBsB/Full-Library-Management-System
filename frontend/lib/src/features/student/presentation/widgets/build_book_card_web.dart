@@ -16,6 +16,7 @@ import 'package:management_side/src/features/books/domain/models/book_model_new.
 
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
 
+import 'package:management_side/src/core/utils/ui_utils.dart';
 import 'package:management_side/src/features/books/presentation/screens/ebook_reader_screen.dart';
 
 import 'package:management_side/src/features/requests/presentation/providers/book_request_provider.dart';
@@ -803,57 +804,37 @@ void _showCopySelectionDialog(
             if (selectedCopy != null)
               ElevatedButton(
                 onPressed: () async {
-                  final result = await ref.read(
-                    startInhouseUsageProvider({
-                      'bookId': book.id,
-
-                      'copyId': selectedCopy!.id,
-                    }).future,
-                  );
-
-                  if (result["statusCode"] != 201) {
-                    await showDialog(
-                      context: context,
-
-                      builder: (context) => AlertDialog(
-                        title: const Text('Error'),
-
-                        content: Text(
-                          result["message"],
-
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-
-                      barrierColor: AppTheme.errorColor,
+                  try {
+                    await ref.read(
+                      startInhouseUsageProvider({
+                        'bookId': book.id,
+                        'copyId': selectedCopy!.id,
+                      }).future,
                     );
-                  }
 
-                  if (context.mounted) {
-                    Navigator.pop(context);
+                    if (context.mounted) {
+                      Navigator.pop(context); // Close selection dialog
 
-                    if (result != null) {
                       await showDialog(
                         context: context,
-
                         builder: (context) => AlertDialog(
-                          title: const Text('Thank You'),
-
+                          title: const Text('Reading Session Started'),
                           content: const Text(
                             'Please enjoy your reading!, \nclick finish reading when you are done and return the book to the shelf. or on Librarian\'s desk.',
-
                             style: TextStyle(fontSize: 16),
                           ),
-
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-
-                              child: const Text('Finish Reading'),
+                              child: const Text('Start Reading'),
                             ),
                           ],
                         ),
                       );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      UiUtils.showErrorDialog(context, e);
                     }
                   }
                 },

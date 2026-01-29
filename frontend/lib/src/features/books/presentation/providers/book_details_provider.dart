@@ -22,6 +22,8 @@ class BookDetailsNotifier extends StateNotifier<AsyncValue<BookDetails>> {
     state = const AsyncValue.loading();
     final result = await _repository.getBookDetails(bookId);
 
+    if (!mounted) return;
+
     state = result.when(
       success: (bookDetails) => AsyncValue.data(bookDetails),
       failure: (error, stackTrace) => AsyncValue.error(error, stackTrace!),

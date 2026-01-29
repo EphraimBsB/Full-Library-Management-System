@@ -5,8 +5,8 @@ import { BooksService } from '../books/books.service';
 import { CreateBookDto } from '../books/dto/create-book.dto';
 import { ImportResultDto, ImportSummaryDto } from './dto/import-result.dto';
 import { WorldCatService } from './worldcat.service';
-import { validate } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 import { Book } from '../books/entities/book.entity';
 import { IsNull } from 'typeorm';
 
@@ -35,6 +35,7 @@ export class DataImportService {
   constructor(
     private readonly booksService: BooksService,
     private readonly worldCatService: WorldCatService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async checkISBNExists(isbn: string): Promise<Book | null> {
@@ -129,8 +130,9 @@ export class DataImportService {
 
   private validateRequiredFields(row: Record<string, any>): string[] {
     const errors: string[] = [];
-    if (!row.title) errors.push('Title is required');
-    if (!row.author) errors.push('Author is required');
+    if (!row.title?.toString()?.trim()) errors.push('Title is required');
+    if (!row.author?.toString()?.trim()) errors.push('Author is required');
+    if (!row.isbn?.toString()?.trim()) errors.push('ISBN is required');
     return errors;
   }
 
@@ -142,7 +144,9 @@ export class DataImportService {
     if (!dto.title?.trim()) errors.push('Title is required');
     if (!dto.author?.trim()) errors.push('Author is required');
 
-    if (dto.isbn) {
+    if (!dto.isbn) {
+      errors.push('ISBN is required');
+    } else {
       const isbn = dto.isbn.replace(/[\s-]/g, '');
       if (isbn.length !== 10 && isbn.length !== 13) {
         errors.push('ISBN must be 10 or 13 digits');
@@ -166,7 +170,10 @@ export class DataImportService {
     return errors;
   }
 
-  async importBooksFromExcel(buffer: Buffer): Promise<ImportSummaryDto> {
+  async importBooksFromExcel(
+    buffer: Buffer,
+    userId: string,
+  ): Promise<ImportSummaryDto> {
     const startTime = Date.now();
     const results: ImportResultDto[] = [];
     const errors: string[] = [];
@@ -207,7 +214,31 @@ export class DataImportService {
       errors.push(`Import failed: ${error.message}`);
     }
 
-    return this.buildSummary(results, errors, warnings, startTime);
+    const summary = this.buildSummary(results, errors, warnings, startTime);
+
+    // Notify user when done
+    try {
+      await this.notificationsService.create({
+        userId,
+        title: 'Data Import Complete',
+        message: `Import finished: ${summary.imported} books imported, ${summary.failed} failed.`,
+        type: NotificationType.GENERAL,
+        data: {
+          summary: {
+            total: summary.total,
+            imported: summary.imported,
+            failed: summary.failed,
+            duration: summary.duration,
+          },
+        },
+      });
+    } catch (notifError) {
+      this.logger.error(
+        `Failed to send import notification: ${notifError.message}`,
+      );
+    }
+
+    return summary;
   }
 
   private async processBatch(
@@ -232,6 +263,16 @@ export class DataImportService {
           (cell) => cell === '' || cell === null || cell === undefined,
         )
       ) {
+        // Add empty row to results for reporting
+        const emptyResult: ImportResultDto = {
+          row: rowNumber,
+          title: 'Empty Row',
+          success: false,
+          status: 'empty',
+          errors: ['Row is completely empty - skipped'],
+          data: {},
+        };
+        batchResults.push(emptyResult);
         continue;
       }
 
@@ -262,9 +303,15 @@ export class DataImportService {
           const existingBook = await this.checkISBNExists(dto.isbn);
 
           if (existingBook) {
-            // Skip existing ISBN without error or warning
-            // this.logger.log(`Book with ISBN ${dto.isbn} already exists, skipping`);
-            continue; // Skip to next row without adding to results
+            // Skip existing ISBN but add to results for reporting (no error message)
+            result.success = false;
+            result.status = 'duplicate';
+            result.isbn = dto.isbn;
+            result.title = dto.title || 'Unknown Title';
+            result.author = dto.author;
+            result.errors = []; // No error message, just status
+            batchResults.push(result);
+            continue;
           }
 
           // Step 2: Try to fetch from WorldCat to enrich data (description, cover, etc.)
@@ -297,10 +344,11 @@ export class DataImportService {
             // Debug: Log the final merged DTO
             // this.logger.log(`Final DTO after WorldCat enrichment:`, JSON.stringify(dto, null, 2));
 
-            // Add warning about auto-filled data
-            warnings.push(
-              `Row ${rowNumber}: Enriched with data from ISBN ${dto.isbn}`,
-            );
+            // Add warning about auto-filled data (commented out - no individual warnings)
+            // warnings.push(
+            //   `Row ${rowNumber}: Enriched with data from ISBN ${dto.isbn}`,
+            // );
+            result.status = 'worldcat_enriched';
           } else {
             // If no data found in WorldCat, continue with Excel data as-is (no warning)
             // this.logger.log(`No WorldCat data found for ISBN ${dto.isbn}, using Excel data`);
@@ -310,6 +358,7 @@ export class DataImportService {
         const validationErrors = await this.validateBookData(dto);
 
         if (validationErrors.length > 0) {
+          result.status = 'validation_error';
           result.errors = validationErrors;
           batchResults.push(result);
           continue;
@@ -317,7 +366,12 @@ export class DataImportService {
 
         const created = await this.booksService.create(dto as CreateBookDto);
         result.success = true;
+        result.status = 'imported';
         result.createdId = created.id;
+        result.isbn = dto.isbn;
+        result.author = dto.author;
+        result.publisher = dto.publisher;
+        result.publicationYear = dto.publicationYear;
       } catch (error) {
         this.logger.warn(
           `Failed to import row ${rowNumber}: ${error?.message}`,
@@ -409,6 +463,14 @@ export class DataImportService {
     const failed = results.length - imported;
     const duration = Date.now() - startTime;
 
+    // Calculate detailed statistics
+    const detailedStats = {
+      duplicates: results.filter(r => r.status === 'duplicate').length,
+      emptyRows: results.filter(r => r.status === 'empty').length,
+      validationErrors: results.filter(r => r.status === 'validation_error').length,
+      worldcatEnriched: results.filter(r => r.status === 'worldcat_enriched').length,
+    };
+
     const failedResults = results.filter((r) => !r.success);
     if (failedResults.length > 0) {
       const errorSummary = failedResults
@@ -429,6 +491,7 @@ export class DataImportService {
       warnings,
       duration,
       timestamp: new Date(),
+      detailedStats,
     };
   }
 
@@ -459,8 +522,8 @@ export class DataImportService {
     const publisher = findCell(['publisher', 'publication', 'bookpublication']);
     const year = findCell(['publicationyear', 'year', 'yearofpub', 'pubyear']);
     const category = findCell(['category', 'categories']);
-    const actualStock = findCell(['actualstock', 'stock', 'actual']);
-    const currentStock = findCell(['currentstock', 'current']);
+    const actualStock = findCell(['total copies', 'stock', 'actual']);
+    const currentStock = findCell(['available copies', 'current']);
     const callNo = findCell(['callno', 'callnumber', 'call']);
     const edition = findCell(['edition']);
     const description = findCell(['description', 'desc']);

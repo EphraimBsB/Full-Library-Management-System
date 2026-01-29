@@ -143,6 +143,17 @@ export class InhouseUsageController {
     return this.inhouseUsageService.getAllUsages(limit, offset, status);
   }
 
+  @Get('inhouse-usage/counts')
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+  @ApiOperation({ summary: 'Get in-house usage counts by status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Object containing counts for each status',
+  })
+  async getUsageCounts() {
+    return this.inhouseUsageService.getUsageCounts();
+  }
+
   @Get('inhouse-usage/history')
   @Roles(UserRole.STUDENT, UserRole.FACULTY, UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Get in-house usage history' })

@@ -6,15 +6,16 @@ import {
   Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, IsNull, Not, DataSource } from 'typeorm';
+import { Repository, IsNull, QueryRunner, DataSource } from 'typeorm';
 import { Book } from './entities/book.entity';
 import { BookCopy, BookCopyStatus } from './entities/book-copy.entity';
 import { Category } from 'src/sys-configs/categories/entities/category.entity';
 import { Subject } from 'src/sys-configs/subjects/entities/subject.entity';
 import { Type } from 'src/sys-configs/types/entities/type.entity';
 import { Source } from 'src/sys-configs/sources/entities/source.entity';
-import { BookCopiesDto, CreateBookDto } from './dto/create-book.dto';
+import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
 import { BookQueryDto } from './dto/book-query.dto';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -308,45 +309,64 @@ export class BooksService {
       }
 
       // Update other fields
-      const { categories, subjects, copies, ...bookData } = updateBookDto;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { categories, subjects, copies, totalCopies, ...bookData } = updateBookDto;
       Object.assign(book, bookData);
 
       // Update copies if provided
       if (copies) {
-        // Get current access numbers
-        const currentAccessNumbers = (
-          await queryRunner.manager.find(BookCopy, {
-            where: { book: { id } },
-            select: ['accessNumber'],
-          })
-        ).map((copy) => copy.accessNumber);
-
-        // Filter out existing copies and prepare new ones
-        const newCopies = copies
-          .filter(
-            (copy) => !currentAccessNumbers.includes(copy.accessNumber || ''),
-          )
-          .map((copy) => ({
-            ...copy,
-            accessNumber: copy.accessNumber || '',
-            book: { id },
-            status: BookCopyStatus.AVAILABLE,
-          }));
-
-        // Add new copies
-        if (newCopies.length > 0) {
-          await queryRunner.manager.save(BookCopy, newCopies);
-        }
-
-        // Update counts
-        const updatedCopies = await queryRunner.manager.find(BookCopy, {
+        // Get current copies for this book
+        const existingCopies = await queryRunner.manager.find(BookCopy, {
           where: { book: { id } },
         });
 
-        book.availableCopies = updatedCopies.filter(
+        const toSave: BookCopy[] = [];
+        let pool = [...existingCopies];
+
+        for (let i = 0; i < copies.length; i++) {
+          const incoming = copies[i];
+          // Try to match by ID first, then fallback to index matching for "simple" update
+          let target = incoming.id ? pool.find((e) => e.id === incoming.id) : null;
+
+          if (!target && i < existingCopies.length) {
+            // Index-based fallback: match with the original copy at this position if it hasn't been claimed by ID yet
+            target = pool.find((e) => e.id === existingCopies[i].id) || null;
+          }
+
+          if (target) {
+            if (incoming.accessNumber) target.accessNumber = incoming.accessNumber;
+            if (incoming.notes !== undefined) target.notes = incoming.notes;
+            toSave.push(target);
+            // Remove from pool so it's not reused or mistakenly deleted
+            pool = pool.filter((e) => e.id !== target!.id);
+          } else {
+            // New copy
+            toSave.push(
+              this.bookCopyRepository.create({
+                accessNumber: incoming.accessNumber || '',
+                notes: incoming.notes,
+                book: { id },
+                status: BookCopyStatus.AVAILABLE,
+                isActive: true,
+              }),
+            );
+          }
+        }
+
+        // Batch save for efficiency
+        const synchronizedCopies = await queryRunner.manager.save(BookCopy, toSave);
+
+        // Any copies remaining in the pool are those that were either explicitly removed (missing ID)
+        // or truncated (list length decreased)
+        if (pool.length > 0) {
+          await queryRunner.manager.softRemove(pool);
+        }
+
+        // Update counts on the book entity based on the final synchronized list
+        book.totalCopies = synchronizedCopies.length;
+        book.availableCopies = synchronizedCopies.filter(
           (c) => c.status === BookCopyStatus.AVAILABLE,
         ).length;
-        book.totalCopies = updatedCopies.length;
       }
 
       const updatedBook = await queryRunner.manager.save(book);
@@ -637,5 +657,78 @@ export class BooksService {
     }
 
     return book;
+  }
+
+  async updateBookCopy(
+    bookId: number,
+    copyId: number,
+    updateCopyDto: UpdateBookCopyDto,
+  ): Promise<{ success: boolean; message: string; data?: BookCopy }> {
+    try {
+      // Verify book exists
+      const book = await this.bookRepository.findOne({
+        where: { id: bookId },
+      });
+
+      if (!book) {
+        throw new NotFoundException(`Book with ID ${bookId} not found`);
+      }
+
+      // Find the specific copy
+      const copy = await this.bookCopyRepository.findOne({
+        where: { id: copyId, book: { id: bookId } },
+      });
+
+      if (!copy) {
+        throw new NotFoundException(`Book copy with ID ${copyId} not found for book ${bookId}`);
+      }
+
+      // Update copy fields
+      if (updateCopyDto.accessNumber !== undefined) {
+        copy.accessNumber = updateCopyDto.accessNumber;
+      }
+
+      if (updateCopyDto.status !== undefined) {
+        copy.status = updateCopyDto.status;
+      }
+
+      if (updateCopyDto.notes !== undefined) {
+        copy.notes = updateCopyDto.notes;
+      }
+
+      // Save the updated copy
+      const updatedCopy = await this.bookCopyRepository.save(copy);
+
+      // Update book's available copies count if status changed
+      if (updateCopyDto.status !== undefined) {
+        await this.updateBookAvailableCopies(bookId);
+      }
+
+      await this.resetCache();
+
+      return {
+        success: true,
+        message: 'Book copy updated successfully',
+        data: updatedCopy,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to update book copy: ${error.message}`);
+    }
+  }
+
+  private async updateBookAvailableCopies(bookId: number): Promise<void> {
+    const availableCount = await this.bookCopyRepository.count({
+      where: {
+        book: { id: bookId },
+        status: BookCopyStatus.AVAILABLE,
+      },
+    });
+
+    await this.bookRepository.update(bookId, {
+      availableCopies: availableCount,
+    });
   }
 }

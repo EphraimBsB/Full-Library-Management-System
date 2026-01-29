@@ -8,6 +8,7 @@ import 'package:management_side/src/features/books/domain/models/book_model_new.
 import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/books/domain/repositories/book_repository.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
+import 'package:management_side/src/core/services/cache_service.dart';
 
 class BookRepositoryImpl extends BaseRepository implements BookRepository {
   late final BookApiService _apiService;
@@ -58,6 +59,8 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
       // Convert the Book object to JSON before sending
       final bookJson = book.toCreateJson();
       final response = await _apiService.createBook(bookJson);
+      // Invalidate cache after successful creation
+      await CacheService().invalidateBookCaches();
       return response;
     }, errorMessage: 'Failed to create book');
   }
@@ -66,20 +69,16 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
   Future<Result<BookModel>> updateBook(BookModel book, int id) {
     return handleApiCall<BookModel>(() async {
       final bookJson = book.toCreateJson();
-      print('=== UPDATE BOOK REQUEST ===');
-      print('Endpoint: PATCH /books/$id');
-      print('Request Data:');
       bookJson.forEach((key, value) {
         print('  $key: $value (${value?.runtimeType})');
       });
 
       try {
         final response = await _apiService.updateBook(id, bookJson);
+        // Invalidate cache after successful update
+        await CacheService().invalidateBookCaches(bookId: id);
         return response;
       } on DioException catch (e) {
-        print('Status: ${e.response?.statusCode}');
-        print('Response: ${e.response?.data}');
-        print('Headers: ${e.response?.headers}');
         rethrow;
       } catch (e) {
         print('=== UNEXPECTED ERROR ===');
@@ -91,10 +90,11 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
 
   @override
   Future<Result<void>> deleteBook(int id) {
-    return handleApiCall(
-      () => _apiService.deleteBook(id),
-      errorMessage: 'Failed to delete book',
-    );
+    return handleApiCall(() async {
+      await _apiService.deleteBook(id);
+      // Invalidate cache after successful deletion
+      await CacheService().invalidateBookCaches(bookId: id);
+    }, errorMessage: 'Failed to delete book');
   }
 
   @override
@@ -218,6 +218,14 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
     return handleApiCall<Map<String, dynamic>>(
       () => _apiService.forceEndInhouseUsage(id),
       errorMessage: 'Failed to force end in-house usage',
+    );
+  }
+
+  @override
+  Future<Result<Map<String, int>>> getInhouseUsageCounts() {
+    return handleApiCall<Map<String, int>>(
+      () => _apiService.getInhouseUsageCounts(),
+      errorMessage: 'Failed to load in-house usage counts',
     );
   }
 }

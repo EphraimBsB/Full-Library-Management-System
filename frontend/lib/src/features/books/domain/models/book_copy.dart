@@ -72,6 +72,11 @@ class BookCopy {
   }
 
   Map<String, dynamic> toJson() {
-    return {'accessNumber': accessNumber, 'status': status, 'notes': notes};
+    return {
+      if (id != null) 'id': id,
+      'accessNumber': accessNumber,
+      'status': status,
+      'notes': notes,
+    };
   }
 }

@@ -11,6 +11,10 @@ import 'package:management_side/src/core/utils/responsive_utils.dart';
 import 'package:management_side/src/core/widgets/numbered_pagination_widget.dart';
 import 'package:management_side/src/features/student/presentation/widgets/build_book_card_web.dart';
 import 'package:management_side/src/features/student/presentation/widgets/membership_request_dialog.dart';
+import 'package:management_side/src/core/utils/date_utils.dart';
+import 'package:management_side/src/core/utils/ui_utils.dart';
+import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
+import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 
 class StudentHomeScreen extends ConsumerStatefulWidget {
   const StudentHomeScreen({super.key});
@@ -244,6 +248,8 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 15),
+            _buildActiveSessionBanner(ref),
             const SizedBox(height: 15),
             _buildSearchBar(ref),
             const SizedBox(height: 32),
@@ -502,5 +508,117 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
         }
       }
     });
+  }
+
+  Widget _buildActiveSessionBanner(WidgetRef ref) {
+    final activeSessionAsync = ref.watch(activeUserSessionProvider);
+
+    return activeSessionAsync.when(
+      data: (InhouseUsage? session) {
+        if (session == null) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.menu_book, color: AppTheme.primaryColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Currently Reading',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    Text(
+                      '${session.copy['book']['title']} (Copy #${session.copy['accessNumber']})',
+                      style: const TextStyle(fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Since: ${AppDateUtils.formatTime(session.startedAt)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Finish Reading?'),
+                      content: Text(
+                        'Are you sure you want to end your session for ${session.copy['book']['title']}?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.green,
+                          ),
+                          child: const Text('Finish'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed != true) return;
+
+                  try {
+                    await ref.read(endInhouseUsageProvider(session.id).future);
+                    if (context.mounted) {
+                      UiUtils.showSnackBar(
+                        context,
+                        'Session ended successfully!',
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      UiUtils.showErrorDialog(context, e);
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Finish', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
   }
 }

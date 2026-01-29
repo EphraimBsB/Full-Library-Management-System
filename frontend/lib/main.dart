@@ -8,6 +8,7 @@ import 'package:url_strategy/url_strategy.dart' show setPathUrlStrategy;
 // Core
 import 'src/core/theme/app_theme.dart';
 import 'src/core/services/cache_service.dart';
+import 'src/core/config/env_config.dart';
 
 // Desktop App
 import 'src/core/routes/app_routes.dart';
@@ -19,6 +20,9 @@ import 'src/features/student/app.dart' as student_app;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize environment variables
+  await EnvConfig.load();
 
   // Initialize cache service
   await CacheService().initialize();
@@ -59,6 +63,9 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Start listening to notifications
+    // ref.watch(notificationListenerProvider);
+
     if (_isLoading) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -76,6 +83,7 @@ class _MyAppState extends ConsumerState<MyApp> {
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.system,
       navigatorKey: NavigationService.navigatorKey,
+      scaffoldMessengerKey: NavigationService.messengerKey,
       onGenerateRoute: AppRoutes.generateRoute,
       home: _isAuthenticated ? const DashboardScreen() : const LoginScreen(),
     );
