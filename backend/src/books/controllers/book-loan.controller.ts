@@ -9,8 +9,10 @@ import {
   Delete,
   Query,
   Put,
+  NotFoundException,
 } from '@nestjs/common';
 import { BookLoanService } from '../services/book-loan.service';
+import { UsersService } from '../../users/users.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -27,6 +29,7 @@ import { LoanStatus } from '../entities/book-loan.entity';
 import { DataSource } from 'typeorm';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { PaginationOptions } from '../../common/interfaces/pagination-options.interface';
+import { IssueBookToUserDto } from '../dto/issue-book-to-user.dto';
 
 @Controller('loans')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -34,6 +37,7 @@ import { PaginationOptions } from '../../common/interfaces/pagination-options.in
 export class BookLoanController {
   constructor(
     private readonly bookLoanService: BookLoanService,
+    private readonly usersService: UsersService,
     private dataSource: DataSource,
   ) {}
 
@@ -83,6 +87,33 @@ export class BookLoanController {
     return this.bookLoanService.createLoan(this.dataSource.manager, {
       ...createLoanDto,
       userId,
+    });
+  }
+
+  @Post('issue-to-user')
+  @Roles(UserRole.LIBRARIAN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Issue a book to a specific user by roll number' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 201, description: 'Book issued successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'User or book not found' })
+  @ApiResponse({ status: 409, description: 'Book not available' })
+  async issueToUser(@Body() issueBookDto: IssueBookToUserDto): Promise<any> {
+    return this.dataSource.transaction(async (manager) => {
+      // 1. Find user by roll number
+      const user = await this.usersService.findByRollNumber(issueBookDto.rollNumber);
+      if (!user) {
+        throw new NotFoundException(`User with roll number ${issueBookDto.rollNumber} not found`);
+      }
+
+      // 2. Create loan using existing service within transaction
+      return this.bookLoanService.createLoan(manager, {
+        bookId: issueBookDto.bookId,
+        preferredCopyId: issueBookDto.accessNumber,
+        userId: user.id,
+      });
     });
   }
 

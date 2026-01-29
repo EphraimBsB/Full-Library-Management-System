@@ -17,6 +17,9 @@ import 'package:management_side/src/features/books/presentation/screens/edit_boo
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
 import 'package:management_side/src/features/books/presentation/providers/paginated_books_provider.dart';
 import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
+import 'package:management_side/src/features/books/presentation/widgets/issue_book_dialog.dart';
+import 'package:management_side/src/core/network/api_client.dart';
+import 'package:management_side/src/features/books/data/api/loan_api_service.dart';
 
 /// Shows a dialog with book details
 Future<void> showBookDetailsDialog({
@@ -135,12 +138,116 @@ class BookDetailsDialog extends ConsumerWidget {
     }
   }
 
-  void _handleIssueBook(BuildContext context) {
-    // TODO: Implement issue book functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Issue book functionality not implemented yet'),
-      ),
+  void _handleIssueBook(BuildContext context, WidgetRef ref) {
+    // Get book details from provider
+    final bookDetailsAsync = ref.watch(bookDetailsProvider(bookId));
+
+    if (bookDetailsAsync is AsyncLoading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading book details...'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (bookDetailsAsync is AsyncError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error loading book details: ${bookDetailsAsync.error}',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final bookDetails = bookDetailsAsync.value;
+    if (bookDetails == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Book details not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Get available copies' access numbers
+    final availableCopies =
+        bookDetails.book.copies
+            ?.where((copy) => copy.status == 'AVAILABLE')
+            .map((copy) => copy.accessNumber)
+            .toList() ??
+        [];
+
+    if (availableCopies.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No copies available for borrowing'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show issue book dialog
+    showIssueBookDialog(
+      context: context,
+      availableAccessNumbers: availableCopies,
+      onIssue: (rollNumber, accessNumber) async {
+        try {
+          // Find the copy by access number
+          final selectedCopy = bookDetails.book.copies?.firstWhere(
+            (copy) => copy.accessNumber == accessNumber,
+          );
+
+          // Create loan using the loan endpoint
+          final apiClient = ApiClient();
+          final loanApiService = LoanApiService(apiClient.dio);
+
+          final loanData = {
+            'rollNumber': rollNumber,
+            'bookId': bookId.toString(),
+            'accessNumber': selectedCopy?.id.toString(),
+          };
+
+          await loanApiService.issueBookToUser(loanData);
+
+          if (context.mounted) {
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Book issued successfully!\n'
+                  'Roll Number: $rollNumber\n'
+                  'Access Number: $accessNumber\n'
+                  'Book ID: $bookId',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+
+            // Refresh book details to update available copies
+            ref.invalidate(bookDetailsProvider(bookId));
+
+            // Close the dialog
+            Navigator.of(context).pop();
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error issuing book: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      },
     );
   }
 
@@ -744,7 +851,7 @@ class BookDetailsDialog extends ConsumerWidget {
               // if (book.type.name.toLowerCase() == 'physical')
               OutlinedButton.icon(
                 onPressed: book.availableCopies! > 0
-                    ? () => _handleIssueBook(context)
+                    ? () => _handleIssueBook(context, ref)
                     : null,
                 icon: const Icon(Icons.check_circle_outline),
                 label: Text(
