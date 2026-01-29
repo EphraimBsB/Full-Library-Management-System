@@ -16,6 +16,10 @@ import { CreateSubjectDto } from 'src/sys-configs/subjects/dto/create-subject.dt
 import { BookCopyStatus } from 'src/books/entities/book-copy.entity';
 
 class BookCopiesDto {
+  @IsNumber()
+  @IsOptional()
+  id?: number;
+
   @IsString()
   @IsOptional()
   accessNumber?: string;

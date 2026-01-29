@@ -145,6 +145,8 @@ class PaginatedBooksNotifier extends StateNotifier<PaginatedBooksState> {
         forceRefresh: forceRefresh,
       );
 
+      if (!mounted) return;
+
       state = state.copyWith(
         books: response.items,
         currentPage: response.currentPage,
@@ -242,6 +244,36 @@ class PaginatedBooksNotifier extends StateNotifier<PaginatedBooksState> {
   /// Clear error state
   void clearError() {
     state = state.copyWith(error: null);
+  }
+
+  /// Locally add a book (Optimistic Update)
+  void addBook(BookModel book) {
+    state = state.copyWith(
+      books: [book, ...state.books],
+      totalItems: state.totalItems + 1,
+    );
+  }
+
+  /// Locally update a book (Optimistic Update)
+  void updateBook(BookModel updatedBook) {
+    state = state.copyWith(
+      books: state.books
+          .map((b) => b.id == updatedBook.id ? updatedBook : b)
+          .toList(),
+    );
+  }
+
+  /// Locally delete a book (Optimistic Update)
+  void deleteBook(int bookId) {
+    final originalCount = state.books.length;
+    final updatedBooks = state.books.where((b) => b.id != bookId).toList();
+
+    if (updatedBooks.length < originalCount) {
+      state = state.copyWith(
+        books: updatedBooks,
+        totalItems: state.totalItems - 1,
+      );
+    }
   }
 }
 

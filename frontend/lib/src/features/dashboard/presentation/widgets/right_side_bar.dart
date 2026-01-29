@@ -5,6 +5,7 @@ import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
 import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
+import 'package:management_side/src/core/utils/date_utils.dart';
 
 class RightSideBarWidget extends ConsumerWidget {
   const RightSideBarWidget({super.key});
@@ -12,6 +13,7 @@ class RightSideBarWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inHouseReadings = ref.watch(inhouseUsagesProvider);
+    final countsAsync = ref.watch(inhouseUsageCountsProvider);
     final activeUsers = ref.watch(activeUsersProvider);
 
     return Container(
@@ -38,41 +40,95 @@ class RightSideBarWidget extends ConsumerWidget {
             Divider(color: AppTheme.textSecondaryColor, thickness: 0.5),
             const SizedBox(height: 8),
             // status chips filters
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: InhouseUsageStatus.values.map((status) {
-                final isSelected = ref.read(selectedStatus) == status;
-                return FilterChip(
-                  label: Text(
-                    status.name.toUpperCase(),
-                    style: TextStyle(
-                      color: isSelected ? Theme.of(context).primaryColor : null,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: InhouseUsageStatus.values.map((status) {
+                  final isSelected = ref.read(selectedStatus) == status;
+                  return FilterChip(
+                    label: countsAsync.when(
+                      data: (counts) {
+                        final count = counts[status.name] ?? 0;
+                        return Text(
+                          '${status.name.toUpperCase()} ($count)',
+                          style: TextStyle(
+                            color: isSelected
+                                ? Theme.of(context).primaryColor
+                                : null,
+                          ),
+                        );
+                      },
+                      loading: () => Text(
+                        status.name.toUpperCase(),
+                        style: TextStyle(
+                          color: isSelected
+                              ? Theme.of(context).primaryColor
+                              : null,
+                        ),
+                      ),
+                      error: (_, __) => Text(
+                        status.name.toUpperCase(),
+                        style: TextStyle(
+                          color: isSelected
+                              ? Theme.of(context).primaryColor
+                              : null,
+                        ),
+                      ),
                     ),
-                  ),
-                  labelStyle: const TextStyle(fontSize: 9),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: Color(0xFFEAECF0), width: 1),
-                  ),
-                  selected: isSelected,
-                  selectedColor: Theme.of(
-                    context,
-                  ).primaryColor.withValues(alpha: 0.1),
-                  checkmarkColor: Theme.of(context).primaryColor,
-                  showCheckmark: true,
-                  iconTheme: const IconThemeData(size: 12),
-                  onSelected: (selected) {
-                    ref.read(selectedStatus.notifier).state = (selected
-                        ? status
-                        : null)!;
-                  },
-                );
-              }).toList(),
+                    labelStyle: const TextStyle(fontSize: 11),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(
+                        color: Color(0xFFEAECF0),
+                        width: 1,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
+                    checkmarkColor: Theme.of(context).primaryColor,
+                    showCheckmark: true,
+                    iconTheme: const IconThemeData(size: 12),
+                    onSelected: (selected) {
+                      ref.read(selectedStatus.notifier).state = (selected
+                          ? status
+                          : null)!;
+                    },
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 8),
 
             inHouseReadings.when(
               data: (inHouseReadings) {
+                if (inHouseReadings.items.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.library_books_outlined,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'No readings found for this status',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -177,7 +233,7 @@ class RightSideBarWidget extends ConsumerWidget {
                                         const SizedBox(height: 2),
                                         // Due date
                                         Text(
-                                          'Since: ${formatToTime(inhouseUsage.startedAt)}',
+                                          'Since: ${AppDateUtils.formatTime(inhouseUsage.startedAt)}',
                                           style: const TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w600,
@@ -187,7 +243,7 @@ class RightSideBarWidget extends ConsumerWidget {
                                         const SizedBox(height: 2),
                                         if (inhouseUsage.endedAt != null)
                                           Text(
-                                            'Ended: ${formatToTime(inhouseUsage.endedAt!)}',
+                                            'Ended: ${AppDateUtils.formatTime(inhouseUsage.endedAt!)}',
                                             style: const TextStyle(
                                               fontSize: 10,
                                               fontWeight: FontWeight.w600,
@@ -467,11 +523,6 @@ class RightSideBarWidget extends ConsumerWidget {
       ),
     );
   }
-}
-
-// format to time: 11:20 AM
-String formatToTime(DateTime dateTime) {
-  return '${dateTime.hour}:${dateTime.minute} ${dateTime.hour < 12 ? 'AM' : 'PM'}';
 }
 
 MapEntry<Color, Color> _getStatusColors(InhouseUsageStatus status) {

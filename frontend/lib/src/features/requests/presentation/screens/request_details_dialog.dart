@@ -180,8 +180,13 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
           );
         },
         (response) {
-          ref.invalidate(pendingBookRequestsProvider);
-          ref.invalidate(allLoansProvider);
+          // Instant local update
+          ref
+              .read(pendingRequestsNotifierProvider.notifier)
+              .removeRequest(widget.request.id!);
+
+          // Refresh loans list in background
+          ref.read(loanNotifierProvider.notifier).loadLoans();
 
           scaffoldMessenger.showSnackBar(
             const SnackBar(
@@ -248,6 +253,11 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
           );
         },
         (_) {
+          // Instant local update
+          ref
+              .read(pendingRequestsNotifierProvider.notifier)
+              .removeRequest(widget.request.id!);
+
           scaffoldMessenger.showSnackBar(
             const SnackBar(
               content: Text('Request rejected'),

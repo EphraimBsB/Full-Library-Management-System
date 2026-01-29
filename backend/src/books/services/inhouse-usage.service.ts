@@ -1,14 +1,11 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
   BadRequestException,
   ForbiddenException,
-  forwardRef,
-  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   BookInhouseUsage,
   InhouseUsageStatus,
@@ -157,7 +154,7 @@ export class InhouseUsageService {
       .leftJoinAndSelect('inhouseUsage.user', 'user')
       .orderBy('inhouseUsage.startedAt', 'DESC')
       .skip(offset)
-      .take(3);
+      .take(limit);
 
     // Filter for records where startedAt is between today 00:00:00 and tomorrow 00:00:00
     // .where('inhouseUsage.startedAt >= :startOfDay', { startOfDay: today })
@@ -180,7 +177,7 @@ export class InhouseUsageService {
     const [items, total] = await this.inhouseUsageRepository.findAndCount({
       where: {
         user: { id: userId },
-        status: status || InhouseUsageStatus.COMPLETED,
+        ...(status ? { status } : {}),
       },
       relations: ['copy', 'copy.book', 'user'],
       order: { endedAt: 'DESC' },
@@ -192,6 +189,30 @@ export class InhouseUsageService {
       items: items.map((usage) => this.mapToResponseDto(usage)),
       total,
     };
+  }
+
+  async getUsageCounts(): Promise<Record<string, number>> {
+    const counts = await this.inhouseUsageRepository
+      .createQueryBuilder('usage')
+      .select('usage.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('usage.status')
+      .getRawMany();
+
+    const result: Record<string, number> = {
+      [InhouseUsageStatus.ACTIVE]: 0,
+      [InhouseUsageStatus.COMPLETED]: 0,
+      [InhouseUsageStatus.FORCE_ENDED]: 0,
+      [InhouseUsageStatus.CANCELLED]: 0,
+    };
+
+    counts.forEach((c: { status: string; count: string }) => {
+      if (result[c.status] !== undefined) {
+        result[c.status] = parseInt(c.count);
+      }
+    });
+
+    return result;
   }
 
   async deleteUsage(usageId: string): Promise<void> {

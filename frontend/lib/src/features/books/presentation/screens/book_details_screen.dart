@@ -13,6 +13,9 @@ import 'package:management_side/src/core/widgets/loading_view.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/books/presentation/screens/book_form_dialog.dart';
 import 'package:management_side/src/features/books/presentation/screens/ebook_reader_screen.dart';
+import 'package:management_side/src/features/books/presentation/screens/edit_book_copy_dialog.dart';
+import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
+import 'package:management_side/src/features/books/presentation/providers/paginated_books_provider.dart';
 import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 
 /// Shows a dialog with book details
@@ -44,7 +47,7 @@ class BookDetailsDialog extends ConsumerWidget {
     this.onBookUpdated,
   });
 
-  Future<void> _handleDelete(BuildContext context) async {
+  Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -69,15 +72,44 @@ class BookDetailsDialog extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      // TODO: Implement actual delete API call
-      await Future.delayed(const Duration(milliseconds: 500));
+      try {
+        final bookRepository = ref.read(bookRepositoryProvider);
+        final result = await bookRepository.deleteBook(bookId);
 
-      if (context.mounted) {
-        Navigator.of(context).pop(); // Close the details dialog
-        onBookDeleted?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Book deleted successfully')),
-        );
+        if (result.isSuccess) {
+          // Instant local updates
+          ref.read(booksNotifierProvider.notifier).deleteBook(bookId);
+          ref.read(paginatedBooksProvider.notifier).deleteBook(bookId);
+
+          // Still invalidate dashboard as it's complex to update locally
+          ref.invalidate(dashboardSummaryProvider);
+
+          if (context.mounted) {
+            Navigator.of(context).pop(); // Close the details dialog
+            onBookDeleted?.call();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Book deleted successfully')),
+            );
+          }
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to delete book: $result'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting book: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -258,6 +290,7 @@ class BookDetailsDialog extends ConsumerWidget {
     BuildContext context,
     BookModel book,
     BookDetails bookDetails,
+    WidgetRef ref,
   ) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
@@ -344,6 +377,7 @@ class BookDetailsDialog extends ConsumerWidget {
                           ? _buildBookCopiesList(
                               bookDetails.book.copies!,
                               bookDetails.currentBorrows,
+                              ref,
                             )
                           : _buildEmptyState('No copies available', Icons.book),
 
@@ -507,6 +541,7 @@ class BookDetailsDialog extends ConsumerWidget {
   Widget _buildBookCopiesList(
     List<BookCopy> copies,
     List<CurrentBorrow> borrows,
+    WidgetRef ref,
   ) {
     return GridView.builder(
       shrinkWrap: true,
@@ -541,7 +576,15 @@ class BookDetailsDialog extends ConsumerWidget {
           ),
           child: InkWell(
             onTap: () {
-              // Handle copy tap if needed
+              showEditBookCopyDialog(
+                context: context,
+                copy: copy,
+                bookId: bookId,
+                onCopyUpdated: () {
+                  // Refresh the book details to show updated copy information
+                  ref.invalidate(bookDetailsProvider(bookId));
+                },
+              );
             },
             borderRadius: BorderRadius.circular(8),
             child: Padding(
@@ -720,7 +763,7 @@ class BookDetailsDialog extends ConsumerWidget {
               const SizedBox(width: 8),
               // Delete button
               OutlinedButton.icon(
-                onPressed: () => _handleDelete(context),
+                onPressed: () => _handleDelete(context, ref),
                 icon: const Icon(Icons.delete_outline),
                 label: const Text('Delete'),
                 style: OutlinedButton.styleFrom(
@@ -795,7 +838,12 @@ class BookDetailsDialog extends ConsumerWidget {
                         ],
 
                         // Borrowing status card
-                        _buildBorrowingStatusCard(context, book, bookDetails),
+                        _buildBorrowingStatusCard(
+                          context,
+                          book,
+                          bookDetails,
+                          ref,
+                        ),
                       ],
                     ),
                   ),

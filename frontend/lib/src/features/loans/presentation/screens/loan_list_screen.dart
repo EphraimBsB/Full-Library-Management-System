@@ -8,6 +8,8 @@ import 'package:management_side/src/features/loans/presentation/providers/loan_p
 import 'package:management_side/src/features/loans/presentation/widgets/build_loan_card.dart';
 import 'package:management_side/src/features/requests/presentation/providers/pending_requests_provider.dart';
 import 'package:management_side/src/features/loans/presentation/widgets/request_card.dart';
+import 'package:management_side/src/core/utils/file_downloader.dart';
+import 'package:management_side/src/core/network/api_constants.dart';
 
 enum LoanSortOption {
   newestFirst,
@@ -37,7 +39,9 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
     setState(() => _isLoading = true);
     try {
       // Trigger a refresh of the data
-      await ref.refresh(allLoansProvider.future);
+      await ref
+          .read(loanNotifierProvider.notifier)
+          .loadLoans(status: _selectedStatus?.toString().split('.').last);
     } catch (e) {
       if (mounted) {
         // Handle error if needed
@@ -241,6 +245,47 @@ class _LoanListScreenState extends ConsumerState<LoanListScreen> {
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(8),
                             icon: const Icon(Icons.sort),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Export button
+                      SizedBox(
+                        height: 40,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            try {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Generating Excel report...'),
+                                ),
+                              );
+                              await FileDownloader.instance.downloadFile(
+                                '${ApiConstants.baseUrl}/reports/loans/export',
+                                'loans_report.xlsx',
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to download report: $e',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.file_download, size: 16),
+                          label: const Text(
+                            'Export',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
                       ),

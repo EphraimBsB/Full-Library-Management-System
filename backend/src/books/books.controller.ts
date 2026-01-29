@@ -27,6 +27,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
 import { BookQueryDto } from './dto/book-query.dto';
 import { Book } from './entities/book.entity';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
@@ -159,5 +160,28 @@ export class BooksController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book not found.' })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.booksService.remove(id);
+  }
+
+  @Patch(':bookId/copies/:copyId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update a book copy' })
+  @ApiParam({ name: 'bookId', description: 'Book ID' })
+  @ApiParam({ name: 'copyId', description: 'Copy ID' })
+  @ApiBody({ type: UpdateBookCopyDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'The book copy has been successfully updated.',
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book or copy not found.' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data.',
+  })
+  async updateBookCopy(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('copyId', ParseIntPipe) copyId: number,
+    @Body() updateCopyDto: UpdateBookCopyDto,
+  ): Promise<any> {
+    return this.booksService.updateBookCopy(bookId, copyId, updateCopyDto);
   }
 }

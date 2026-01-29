@@ -121,10 +121,15 @@ class CacheService {
     try {
       if (prefix != null) {
         // Clear cache entries with specific prefix
-        final keys = _prefs.getKeys().where((key) => key.startsWith(prefix));
-        for (final key in keys) {
-          await remove(key);
-        }
+        final keys = _prefs
+            .getKeys()
+            .where((key) => key.startsWith(prefix))
+            .toList();
+
+        // Parallelize removals
+        await Future.wait(keys.map((key) => remove(key)));
+
+        _logger.d('Cleared ${keys.length} entries with prefix: $prefix');
       } else {
         // Clear all cache
         _memoryCache.clear();
@@ -172,6 +177,11 @@ class CacheService {
   static String bookDetailsKey(int bookId) {
     return 'book_details_$bookId';
   }
+
+  // Predefined prefixes for invalidation
+  static const String booksListPrefix = 'books_list';
+  static const String booksSearchPrefix = 'books_search';
+  static const String bookDetailsPrefix = 'book_details_';
 
   // NEW: Comprehensive book cache invalidation
   static List<String> getBookRelatedCacheKeys(int? bookId) {
@@ -227,31 +237,31 @@ class CacheService {
     bool forceRefresh = true,
   }) async {
     try {
-      final keys = getBookRelatedCacheKeys(bookId);
+      _logger.i('Invalidating book-related caches...');
 
-      _logger.i('Invalidating ${keys.length} book-related cache keys');
+      // Use efficient prefix-based clearing instead of iterating 120+ keys
+      final prefixes = [
+        'books_',
+        'book_',
+        'popular_',
+        'search_',
+        'api_cache_books_',
+      ];
 
-      // Remove all book-related cache entries
-      for (final key in keys) {
-        await remove(key);
+      // Add specific book details key if needed
+      if (bookId != null) {
+        await remove(bookDetailsKey(bookId));
       }
 
-      // Also clear any cache entries with book-related prefixes
-      await clear(prefix: 'books_');
-      await clear(prefix: 'book_');
-      await clear(prefix: 'popular_');
-      await clear(prefix: 'search_');
+      // Parallelize all prefix-based clearing
+      await Future.wait(prefixes.map((p) => clear(prefix: p)));
 
-      // Force memory cache cleanup
+      // Extra safety for memory cache (synchronous)
       _memoryCache.removeWhere(
-        (key, value) =>
-            key.startsWith('books_') ||
-            key.startsWith('book_') ||
-            key.startsWith('popular_') ||
-            key.startsWith('search_'),
+        (key, value) => prefixes.any((p) => key.startsWith(p)),
       );
 
-      _logger.i('Book cache invalidation completed');
+      _logger.i('Book cache invalidation completed efficiently');
     } catch (e) {
       _logger.e('Error invalidating book caches: $e');
     }

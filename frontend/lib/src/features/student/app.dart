@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
+import 'package:management_side/src/core/services/navigation_service.dart';
+import 'package:management_side/src/core/providers/notification_provider.dart';
 import 'package:management_side/src/features/student/core/theme/routes.dart'
     as student_routes;
 
@@ -20,9 +22,13 @@ class _StudentAppState extends ConsumerState<StudentApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Start listening to notifications
+    ref.watch(notificationListenerProvider);
+
     return MaterialApp.router(
       title: 'ISBAT LMS - Student Portal',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: NavigationService.messengerKey,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

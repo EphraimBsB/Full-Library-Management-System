@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/core/utils/responsive_utils.dart';
+import 'package:management_side/src/core/utils/ui_utils.dart';
+import 'package:management_side/src/core/utils/date_utils.dart';
 import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
-import 'package:management_side/src/features/dashboard/presentation/widgets/right_side_bar.dart';
 
 class ReadingHistoryList extends ConsumerWidget {
   const ReadingHistoryList({super.key});
@@ -20,7 +21,7 @@ class ReadingHistoryList extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: InhouseUsageStatus.values.map((status) {
-              final isSelected = ref.read(selectedStatus) == status;
+              final isSelected = ref.read(historyStatus) == status;
 
               return FilterChip(
                 label: Text(
@@ -40,7 +41,7 @@ class ReadingHistoryList extends ConsumerWidget {
                 showCheckmark: true,
                 iconTheme: const IconThemeData(size: 14),
                 onSelected: (selected) {
-                  ref.read(selectedStatus.notifier).state = (selected
+                  ref.read(historyStatus.notifier).state = (selected
                       ? status
                       : null)!;
                 },
@@ -51,7 +52,7 @@ class ReadingHistoryList extends ConsumerWidget {
           inHouseReadingsHistory.when(
             data: (inHouseReadingsHistory) {
               if (inHouseReadingsHistory.items.isEmpty) {
-                final status = ref.read(selectedStatus);
+                final status = ref.read(historyStatus);
                 String message;
                 String subMessage;
 
@@ -252,7 +253,7 @@ class ReadingHistoryList extends ConsumerWidget {
                                       const SizedBox(height: 2),
                                       // Due date
                                       Text(
-                                        'Since: ${formatToTime(inhouseUsage.startedAt)}',
+                                        'Since: ${AppDateUtils.formatTime(inhouseUsage.startedAt)}',
                                         style: const TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
@@ -262,7 +263,7 @@ class ReadingHistoryList extends ConsumerWidget {
                                       const SizedBox(height: 2),
                                       if (inhouseUsage.endedAt != null)
                                         Text(
-                                          'Ended: ${formatToTime(inhouseUsage.endedAt!)}',
+                                          'Ended: ${AppDateUtils.formatTime(inhouseUsage.endedAt!)}',
                                           style: const TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w600,
@@ -354,47 +355,42 @@ class ReadingHistoryList extends ConsumerWidget {
 
                                     if (confirmed != true) return;
 
-                                    final result = ref.read(
-                                      endInhouseUsageProvider(inhouseUsage.id),
-                                    );
-
-                                    result.when(
-                                      data: (data) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'The session for ${inhouseUsage.copy['book']['title']} has been finished successfully, \nPlease make sure book is returned on the shelf or on librarian desk',
-                                            ),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                        ref.invalidate(inhouseUsagesProvider);
-                                      },
-                                      error: (error, stackTrace) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Error: ${error.toString()}',
-                                            ),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      },
-                                      loading: () {
+                                    try {
+                                      // Show loading indicator
+                                      if (context.mounted) {
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(
                                           const SnackBar(
                                             content: Text('Ending session...'),
-                                            backgroundColor: Colors.blue,
+                                            backgroundColor: AppTheme.infoColor,
+                                            duration: Duration(seconds: 1),
                                           ),
                                         );
-                                      },
-                                    );
+                                      }
+
+                                      await ref.read(
+                                        endInhouseUsageProvider(
+                                          inhouseUsage.id,
+                                        ).future,
+                                      );
+
+                                      if (context.mounted) {
+                                        UiUtils.showSnackBar(
+                                          context,
+                                          'The session for ${inhouseUsage.copy['book']['title']} has been finished successfully. Please return the book to the shelf or librarian desk.',
+                                        );
+                                        // Refresh both history and active providers
+                                        ref.invalidate(
+                                          historyInhouseUsagesProvider,
+                                        );
+                                        ref.invalidate(inhouseUsagesProvider);
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        UiUtils.showErrorDialog(context, e);
+                                      }
+                                    }
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
@@ -425,14 +421,31 @@ class ReadingHistoryList extends ConsumerWidget {
               );
             },
             error: (error, stackTrace) {
-              return const Center(
-                child: Text(
-                  'Error loading in-house readings',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondaryColor,
-                  ),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Error loading in-house readings',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () =>
+                          ref.invalidate(historyInhouseUsagesProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               );
             },

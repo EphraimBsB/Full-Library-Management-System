@@ -91,6 +91,69 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
     }
   }
 
+  Future<void> _handleDelete() async {
+    if (widget.degree == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Degree'),
+        content: const Text(
+          'Are you sure you want to delete this degree? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+
+      try {
+        final notifier = ref.read(degreesNotifierProvider.notifier);
+        final degreeId = widget.degree!.id;
+        if (degreeId == null) return;
+
+        await notifier.deleteDegree(degreeId);
+
+        if (mounted) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Degree deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to delete degree: $e',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -103,10 +166,11 @@ class _DegreeDialogState extends ConsumerState<DegreeDialog> {
                 : 'Edit School Degrees',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.delete, color: AppTheme.accentColor),
-          ),
+          if (widget.degree != null)
+            IconButton(
+              onPressed: _isLoading ? null : _handleDelete,
+              icon: Icon(Icons.delete, color: AppTheme.accentColor),
+            ),
         ],
       ),
       content: SingleChildScrollView(

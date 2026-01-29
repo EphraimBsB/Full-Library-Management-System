@@ -65,8 +65,13 @@ class MemberNotifier extends StateNotifier<AsyncValue<List<Membership>>> {
 
   Future<Membership> createMembership(Map<String, dynamic> data) async {
     final result = await _repository.createMembership(data);
-    await result.fold((failure) => throw failure, (_) => loadMemberships());
-    return Membership.fromJson(data);
+    return result.fold((failure) => throw failure, (newMember) {
+      // Optimistic/Local update
+      state.whenData((members) {
+        state = AsyncValue.data([...members, newMember]);
+      });
+      return newMember;
+    });
   }
 
   Future<Membership> updateMembership(
@@ -74,17 +79,29 @@ class MemberNotifier extends StateNotifier<AsyncValue<List<Membership>>> {
     Map<String, dynamic> updates,
   ) async {
     final result = await _repository.updateMembership(id, updates);
-    final membership = await result.fold(
-      (failure) => throw failure,
-      (membership) => membership,
-    );
-    await loadMemberships();
-    return membership;
+    return result.fold((failure) => throw failure, (updatedMember) {
+      // Optimistic/Local update
+      state.whenData((members) {
+        state = AsyncValue.data(
+          members
+              .map((m) => m.id.toString() == id ? updatedMember : m)
+              .toList(),
+        );
+      });
+      return updatedMember;
+    });
   }
 
   Future<void> deleteMembership(String id) async {
     final result = await _repository.deleteMembership(id);
-    await result.fold((failure) => throw failure, (_) => loadMemberships());
+    result.fold((failure) => throw failure, (_) {
+      // Optimistic/Local update
+      state.whenData((members) {
+        state = AsyncValue.data(
+          members.where((m) => m.id.toString() != id).toList(),
+        );
+      });
+    });
   }
 
   Future<Membership> activateMembership(String id) async {

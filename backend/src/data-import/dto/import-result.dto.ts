@@ -6,6 +6,11 @@ export class ImportResultDto {
   errors?: string[];
   createdId?: number;
   data?: Record<string, any>;
+  status?: 'imported' | 'duplicate' | 'empty' | 'validation_error' | 'worldcat_enriched';
+  isbn?: string;
+  author?: string;
+  publisher?: string;
+  publicationYear?: number;
 }
 
 export class ImportSummaryDto {
@@ -17,4 +22,10 @@ export class ImportSummaryDto {
   warnings: string[];
   duration: number;
   timestamp: Date;
+  detailedStats?: {
+    duplicates: number;
+    emptyRows: number;
+    validationErrors: number;
+    worldcatEnriched: number;
+  };
 }

@@ -28,6 +28,7 @@ import { LocationsModule } from './sys-configs/locations/locations.module';
 import { ShelvesModule } from './sys-configs/shelves/shelves.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { StudentsModule } from './auth/students/students.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { StudentsModule } from './auth/students/students.module';
     // Data import module for uploading book Excel files
     DataImportModule,
     StudentsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

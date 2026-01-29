@@ -6,6 +6,8 @@ import 'package:management_side/src/features/books/domain/repositories/book_repo
 import 'package:management_side/src/features/books/data/repositories/book_repository_impl.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 
+import 'package:management_side/src/core/services/cache_service.dart';
+
 // Debouncer for search
 class _Debouncer {
   final Duration delay;
@@ -34,25 +36,91 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 // Debounced search query
 final debouncedSearchQueryProvider = StateProvider<String>((ref) => '');
 
-// Books provider with search functionality
-final allBooksProvider = FutureProvider.autoDispose<List<BookModel>>((
-  ref,
-) async {
-  // Watch for changes to the debounced search query
-  final searchQuery = ref.watch(debouncedSearchQueryProvider);
-  final repository = ref.watch(bookRepositoryProvider);
+// Books state for non-paginated list
+class BooksState {
+  final List<BookModel> books;
+  final bool isLoading;
+  final String? error;
 
-  return repository
-      .getBooks(search: searchQuery.isEmpty ? null : searchQuery)
-      .then(
-        (result) => result.when(
-          success: (paginatedBooks) => paginatedBooks.items,
-          failure: (error, stackTrace) {
-            print('Error loading books: $error');
-            return [];
-          },
-        ),
-      );
+  BooksState({this.books = const [], this.isLoading = false, this.error});
+
+  BooksState copyWith({
+    List<BookModel>? books,
+    bool? isLoading,
+    String? error,
+  }) {
+    return BooksState(
+      books: books ?? this.books,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+}
+
+class BooksNotifier extends StateNotifier<BooksState> {
+  final BookRepository _repository;
+  final Ref _ref;
+
+  BooksNotifier(this._repository, this._ref) : super(BooksState()) {
+    loadBooks();
+
+    // Correctly listen to search changes to trigger re-fetch
+    _ref.listen(debouncedSearchQueryProvider, (previous, next) {
+      if (previous != next) {
+        loadBooks();
+      }
+    });
+  }
+
+  Future<void> loadBooks() async {
+    state = state.copyWith(isLoading: true, error: null);
+    final searchQuery = _ref.read(debouncedSearchQueryProvider);
+
+    final result = await _repository.getBooks(
+      search: searchQuery.isEmpty ? null : searchQuery,
+    );
+
+    if (!mounted) return;
+
+    state = result.when(
+      success: (paginatedBooks) =>
+          state.copyWith(books: paginatedBooks.items, isLoading: false),
+      failure: (error, stackTrace) =>
+          state.copyWith(isLoading: false, error: error.toString()),
+    );
+  }
+
+  void addBook(BookModel book) {
+    state = state.copyWith(books: [book, ...state.books]);
+  }
+
+  void updateBook(BookModel book) {
+    state = state.copyWith(
+      books: state.books.map((b) => b.id == book.id ? book : b).toList(),
+    );
+  }
+
+  void deleteBook(int id) {
+    state = state.copyWith(
+      books: state.books.where((b) => b.id != id).toList(),
+    );
+  }
+}
+
+final booksNotifierProvider =
+    StateNotifierProvider.autoDispose<BooksNotifier, BooksState>((ref) {
+      return BooksNotifier(ref.watch(bookRepositoryProvider), ref);
+    });
+
+// For backward compatibility and specialized use cases
+final allBooksProvider = Provider.autoDispose<AsyncValue<List<BookModel>>>((
+  ref,
+) {
+  final booksState = ref.watch(booksNotifierProvider);
+  if (booksState.isLoading) return const AsyncValue.loading();
+  if (booksState.error != null)
+    return AsyncValue.error(booksState.error!, StackTrace.current);
+  return AsyncValue.data(booksState.books);
 });
 
 // Search notifier with debouncing
@@ -154,6 +222,25 @@ final selectedStatus = StateProvider<InhouseUsageStatus>(
   (ref) => InhouseUsageStatus.active,
 );
 
+final historyStatus = StateProvider<InhouseUsageStatus>(
+  (ref) => InhouseUsageStatus.completed,
+);
+
+final activeUserSessionProvider = FutureProvider.autoDispose<InhouseUsage?>((
+  ref,
+) async {
+  final repository = ref.watch(bookRepositoryProvider);
+  final result = await repository.getHistoryInhouseUsages(
+    status: InhouseUsageStatus.active,
+  );
+
+  return result.when(
+    success: (response) =>
+        response.items.isNotEmpty ? response.items.first : null,
+    failure: (_, __) => null,
+  );
+});
+
 final inhouseUsagesProvider =
     FutureProvider.autoDispose<InhouseUsageListResponse>((ref) async {
       final repository = ref.watch(bookRepositoryProvider);
@@ -175,7 +262,7 @@ final inhouseUsagesProvider =
 final historyInhouseUsagesProvider =
     FutureProvider.autoDispose<InhouseUsageListResponse>((ref) async {
       final repository = ref.watch(bookRepositoryProvider);
-      final status = ref.watch(selectedStatus);
+      final status = ref.watch(historyStatus);
 
       return repository
           .getHistoryInhouseUsages(status: status)
@@ -198,10 +285,18 @@ final startInhouseUsageProvider =
       final repository = ref.watch(bookRepositoryProvider);
       final result = await repository.startInhouseUsage(data);
       return result.when(
-        success: (inhouseUsage) => inhouseUsage,
+        success: (inhouseUsage) async {
+          // Invalidate caches to show updated counts
+          await CacheService().invalidateBookCaches(bookId: data['bookId']);
+          ref.invalidate(inhouseUsagesProvider);
+          ref.invalidate(activeUserSessionProvider);
+          ref.invalidate(booksNotifierProvider);
+          ref.invalidate(inhouseUsageCountsProvider);
+          return inhouseUsage;
+        },
         failure: (error, stackTrace) {
           print('Error starting in-house usage: $error');
-          throw error; // Or handle the error as needed
+          throw error;
         },
       );
     });
@@ -211,9 +306,22 @@ final endInhouseUsageProvider =
       final repository = ref.watch(bookRepositoryProvider);
       final result = await repository.endInhouseUsage(id);
       return result.when(
-        success: (inhouseUsage) => inhouseUsage,
+        success: (inhouseUsage) async {
+          // Invalidate caches to show updated counts
+          // We need bookId for specific invalidation, but we can clear all books if not available
+          // Actually, inhouseUsage usually has copy.book.id
+          final bookId = inhouseUsage['copy']?['book']?['id'];
+          await CacheService().invalidateBookCaches(bookId: bookId);
+
+          ref.invalidate(inhouseUsagesProvider);
+          ref.invalidate(historyInhouseUsagesProvider);
+          ref.invalidate(activeUserSessionProvider);
+          ref.invalidate(booksNotifierProvider);
+          ref.invalidate(inhouseUsageCountsProvider);
+          return inhouseUsage;
+        },
         failure: (error, stackTrace) {
-          throw error; // Or handle the error as needed
+          throw error;
         },
       );
     });
@@ -223,9 +331,30 @@ final forceEndInhouseUsageProvider =
       final repository = ref.watch(bookRepositoryProvider);
       final result = await repository.forceEndInhouseUsage(id);
       return result.when(
-        success: (inhouseUsage) => inhouseUsage,
+        success: (inhouseUsage) {
+          ref.invalidate(inhouseUsagesProvider);
+          ref.invalidate(inhouseUsageCountsProvider);
+          return inhouseUsage;
+        },
         failure: (error, stackTrace) {
           throw error; // Or handle the error as needed
         },
       );
     });
+
+final inhouseUsageCountsProvider = FutureProvider.autoDispose<Map<String, int>>(
+  (ref) async {
+    final repository = ref.watch(bookRepositoryProvider);
+    final result = await repository.getInhouseUsageCounts();
+
+    return result.when(
+      success: (counts) => counts,
+      failure: (_, __) => {
+        'active': 0,
+        'completed': 0,
+        'force_ended': 0,
+        'cancelled': 0,
+      },
+    );
+  },
+);

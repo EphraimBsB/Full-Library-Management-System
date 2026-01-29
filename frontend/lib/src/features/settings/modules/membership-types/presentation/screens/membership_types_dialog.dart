@@ -99,6 +99,63 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
     }
   }
 
+  Future<void> _handleDelete() async {
+    if (widget.membershipType == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Membership Type'),
+        content: const Text(
+          'Are you sure you want to delete this membership type? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final notifier = ref.read(membershipTypesNotifierProvider.notifier);
+        final membershipTypeId = widget.membershipType!.id;
+        if (membershipTypeId == null) return;
+
+        await notifier.deleteMembershipType(membershipTypeId);
+
+        if (mounted) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Membership type deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to delete membership type: $e',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -111,10 +168,11 @@ class _MembershipTypeDialogState extends ConsumerState<MembershipTypeDialog> {
                 : 'Edit Membership Type',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.delete, color: AppTheme.accentColor),
-          ),
+          if (widget.membershipType != null)
+            IconButton(
+              onPressed: _handleDelete,
+              icon: Icon(Icons.delete, color: AppTheme.accentColor),
+            ),
         ],
       ),
       content: SingleChildScrollView(

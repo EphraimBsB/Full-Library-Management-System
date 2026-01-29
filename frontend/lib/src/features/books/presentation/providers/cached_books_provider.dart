@@ -88,6 +88,8 @@ class BooksListNotifier extends StateNotifier<BooksListState> {
         forceRefresh: refresh,
       );
 
+      if (!mounted) return;
+
       if (page == 1) {
         state = state.copyWith(
           books: response.items,
@@ -215,6 +217,9 @@ class BookDetailsNotifier extends StateNotifier<BookDetailsState> {
         _bookId,
         forceRefresh: refresh,
       );
+
+      if (!mounted) return;
+
       state = state.copyWith(book: book, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

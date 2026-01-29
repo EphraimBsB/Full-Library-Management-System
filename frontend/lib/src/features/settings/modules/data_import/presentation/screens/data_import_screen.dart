@@ -383,6 +383,77 @@ class _DataImportScreenState extends ConsumerState<DataImportScreen>
 
         const SizedBox(height: 20),
 
+        // Detailed Statistics
+        if (result.detailedStats != null) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.analytics, color: Colors.grey[700], size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Detailed Breakdown',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDetailStat(
+                        'Duplicates',
+                        result.detailedStats!.duplicates.toString(),
+                        Icons.content_copy,
+                        Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDetailStat(
+                        'Empty Rows',
+                        result.detailedStats!.emptyRows.toString(),
+                        Icons.delete_outline,
+                        Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDetailStat(
+                        'Validation Errors',
+                        result.detailedStats!.validationErrors.toString(),
+                        Icons.error_outline,
+                        Colors.red,
+                      ),
+                    ),
+                    // const SizedBox(width: 12),
+                    // Expanded(
+                    //   child: _buildDetailStat(
+                    //     'WorldCat Enriched',
+                    //     result.detailedStats!.worldcatEnriched.toString(),
+                    //     Icons.auto_awesome,
+                    //     Colors.purple,
+                    //   ),
+                    // ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+
         // Duration Info
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -404,11 +475,11 @@ class _DataImportScreenState extends ConsumerState<DataImportScreen>
 
         const SizedBox(height: 20),
 
-        // Warnings Section
-        if (result.warnings.isNotEmpty) ...[
+        // Warnings Section (only show non-enrichment warnings)
+        if (_getNonEnrichmentWarnings(result).isNotEmpty) ...[
           _buildMessageSection(
             'Warnings',
-            result.warnings,
+            _getNonEnrichmentWarnings(result),
             Icons.warning,
             Colors.orange,
             Colors.orange[50]!,
@@ -417,11 +488,11 @@ class _DataImportScreenState extends ConsumerState<DataImportScreen>
           const SizedBox(height: 16),
         ],
 
-        // Errors Section
-        if (result.errors.isNotEmpty) ...[
+        // Errors Section (only show non-duplicate errors)
+        if (_getNonDuplicateErrors(result).isNotEmpty) ...[
           _buildMessageSection(
             'Errors',
-            result.errors,
+            _getNonDuplicateErrors(result),
             Icons.error,
             Colors.red,
             Colors.red[50]!,
@@ -429,6 +500,60 @@ class _DataImportScreenState extends ConsumerState<DataImportScreen>
           ),
         ],
       ],
+    );
+  }
+
+  List<String> _getNonEnrichmentWarnings(ImportResult result) {
+    return result.warnings
+        .where((warning) => !warning.contains('Enriched with data from ISBN'))
+        .toList();
+  }
+
+  List<String> _getNonDuplicateErrors(ImportResult result) {
+    return result.results
+        .where(
+          (item) =>
+              item.status != 'duplicate' &&
+              item.errors != null &&
+              item.errors!.isNotEmpty,
+        )
+        .map((item) => 'Row ${item.row}: ${item.errors!.join('; ')}')
+        .toList();
+  }
+
+  Widget _buildDetailStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
