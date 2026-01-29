@@ -3,7 +3,7 @@
 
 #define MyAppName "Wonder Knowledge"
 #define MyAppVersion "1.0"
-#define MyAppPublisher "EFRA Lab, Inc."
+#define MyAppPublisher "Abstract, Inc."
 #define MyAppURL "https://www.efralab.com/"
 #define MyAppExeName "management_side.exe"
 
