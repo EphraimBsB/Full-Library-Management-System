@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:management_side/src/core/data/base_repository.dart';
-import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
+import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
+import 'package:management_side/src/features/books/domain/models/book_copy_response.dart';
 import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 import 'package:retrofit/retrofit.dart';
@@ -44,7 +45,7 @@ abstract class BookApiService {
   Future<void> deleteBook(@Path('id') int id);
 
   @PATCH('/books/{bookId}/copies/{copyId}')
-  Future<dynamic> updateBookCopy(
+  Future<BookCopyResponse> updateBookCopy(
     @Path('bookId') int bookId,
     @Path('copyId') int copyId,
     @Body() Map<String, dynamic> copyData,

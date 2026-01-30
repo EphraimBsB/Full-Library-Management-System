@@ -200,7 +200,7 @@ class _BookApiService implements BookApiService {
   }
 
   @override
-  Future<dynamic> updateBookCopy(
+  Future<BookCopyResponse> updateBookCopy(
     int bookId,
     int copyId,
     Map<String, dynamic> copyData,
@@ -210,7 +210,7 @@ class _BookApiService implements BookApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(copyData);
-    final _options = _setStreamType<dynamic>(
+    final _options = _setStreamType<BookCopyResponse>(
       Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -220,8 +220,14 @@ class _BookApiService implements BookApiService {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late BookCopyResponse _value;
+    try {
+      _value = BookCopyResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
     return _value;
   }
 
@@ -494,7 +500,7 @@ class _BookApiService implements BookApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, Map<String, dynamic>.from(v as Map<String, dynamic>)),
+            MapEntry(k, (v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -524,7 +530,7 @@ class _BookApiService implements BookApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, Map<String, dynamic>.from(v as Map<String, dynamic>)),
+            MapEntry(k, (v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -554,7 +560,7 @@ class _BookApiService implements BookApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, Map<String, dynamic>.from(v as Map<String, dynamic>)),
+            MapEntry(k, (v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

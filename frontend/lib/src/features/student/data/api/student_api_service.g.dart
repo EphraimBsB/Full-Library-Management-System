@@ -42,7 +42,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, Map<String, dynamic>.from(v as Map<String, dynamic>)),
+            MapEntry(k, (v as Map<String, dynamic>)),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

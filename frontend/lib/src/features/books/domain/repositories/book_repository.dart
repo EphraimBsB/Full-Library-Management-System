@@ -3,6 +3,7 @@ import 'package:management_side/src/core/utils/result.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart'
     as model;
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
+import 'package:management_side/src/features/books/domain/models/book_copy.dart';
 import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
 import 'package:management_side/src/features/student/domain/models/book_notes_model.dart';
 
@@ -28,6 +29,13 @@ abstract class BookRepository {
 
   /// Update an existing book
   Future<Result<model.BookModel>> updateBook(model.BookModel book, int id);
+
+  /// Update a book copy
+  Future<Result<BookCopy>> updateBookCopy(
+    int bookId,
+    int copyId,
+    Map<String, dynamic> copyData,
+  );
 
   /// Delete a book by ID
   Future<Result<void>> deleteBook(int id);

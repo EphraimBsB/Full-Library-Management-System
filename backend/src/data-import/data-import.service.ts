@@ -8,7 +8,9 @@ import { WorldCatService } from './worldcat.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
 import { Book } from '../books/entities/book.entity';
+import { Category } from '../sys-configs/categories/entities/category.entity';
 import { IsNull } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const SUPPORTED_MIME_TYPES = [
@@ -36,6 +38,7 @@ export class DataImportService {
     private readonly booksService: BooksService,
     private readonly worldCatService: WorldCatService,
     private readonly notificationsService: NotificationsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   private async checkISBNExists(isbn: string): Promise<Book | null> {
@@ -251,6 +254,9 @@ export class DataImportService {
   ): Promise<ImportResultDto[]> {
     const batchResults: ImportResultDto[] = [];
 
+    // Step 1: Pre-process all categories in the batch to avoid race conditions
+    await this.preProcessBatchCategories(rawRows, startRow, batchSize, headersByIndex, headerRow);
+
     for (let i = 0; i < batchSize; i++) {
       const rowIndex = startRow + i;
       if (rowIndex >= rawRows.length) break;
@@ -285,6 +291,8 @@ export class DataImportService {
         data: { ...rowObj },
       };
 
+      let dto: any;
+
       try {
         const requiredErrors = this.validateRequiredFields(rowObj);
         if (requiredErrors.length > 0) {
@@ -293,7 +301,7 @@ export class DataImportService {
           continue;
         }
 
-        const dto = this.mapRowToCreateDto(rowObj);
+        dto = this.mapRowToCreateDto(rowObj);
 
         // Enhanced ISBN validation and WorldCat integration
         if (dto.isbn) {
@@ -373,17 +381,107 @@ export class DataImportService {
         result.publisher = dto.publisher;
         result.publicationYear = dto.publicationYear;
       } catch (error) {
-        this.logger.warn(
-          `Failed to import row ${rowNumber}: ${error?.message}`,
-          error?.stack,
-        );
-        result.errors = [error?.message || 'Unknown error during import'];
+        // Handle duplicate ISBN silently
+        if (
+          error.message?.includes('already exists') ||
+          error.message?.includes('Conflict') ||
+          error.message?.includes('ISBN')
+        ) {
+          this.logger.log(`ISBN duplication: ${dto.isbn} - Skipping duplicate book`);
+          result.success = false;
+          result.status = 'duplicate';
+          result.isbn = dto.isbn;
+          result.title = dto.title || 'Unknown Title';
+          result.author = dto.author;
+          result.errors = []; // No error message, just status
+        } else {
+          // Log other errors normally
+          this.logger.warn(
+            `Failed to import row ${rowNumber}: ${error?.message}`,
+            error?.stack,
+          );
+          result.errors = [error?.message || 'Unknown error during import'];
+        }
       }
 
       batchResults.push(result);
     }
 
     return batchResults;
+  }
+
+  // Pre-process all categories in a batch to avoid race conditions
+  private async preProcessBatchCategories(
+    rawRows: any[][],
+    startRow: number,
+    batchSize: number,
+    headersByIndex: string[],
+    headerRow: any[],
+  ): Promise<void> {
+    const allCategoryNames = new Set<string>();
+
+    // Collect all unique category names from the batch
+    for (let i = 0; i < batchSize; i++) {
+      const rowIndex = startRow + i;
+      if (rowIndex >= rawRows.length) break;
+
+      const rowArr = rawRows[rowIndex] || [];
+      const rowObj = this.buildRowObject(rowArr, headersByIndex, headerRow);
+
+      // Skip empty rows
+      if (rowArr.every((cell) => cell === '' || cell === null || cell === undefined)) {
+        continue;
+      }
+
+      // Extract categories from this row
+      const category = this.getCellValue(rowObj, ['category', 'categories', 'subject', 'subjects']);
+      if (category) {
+        const categories = category
+          .toString()
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((c: string) => c);
+        
+        categories.forEach((catName: string) => {
+          if (catName) allCategoryNames.add(catName);
+        });
+      }
+    }
+
+    // Create all categories in a single transaction to avoid race conditions
+    if (allCategoryNames.size > 0) {
+      await this.createCategoriesInTransaction(Array.from(allCategoryNames));
+    }
+  }
+
+  // Create categories in a single transaction
+  private async createCategoriesInTransaction(categoryNames: string[]): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      for (const categoryName of categoryNames) {
+        // Check if category already exists within the transaction
+        const existingCategory = await queryRunner.manager.findOne(Category, {
+          where: { name: categoryName },
+        });
+
+        if (!existingCategory) {
+          // Create category within the transaction
+          const newCategory = queryRunner.manager.create(Category, { name: categoryName });
+          await queryRunner.manager.save(newCategory);
+        }
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Failed to pre-create categories: ${error.message}`, error.stack);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   private buildRowObject(

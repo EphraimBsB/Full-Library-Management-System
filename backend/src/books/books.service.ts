@@ -414,12 +414,12 @@ export class BooksService {
     categoryDto: { name: string },
     queryRunner: any,
   ): Promise<Category> {
-    let category = await this.categoryRepository.findOne({
+    let category = await queryRunner.manager.findOne(Category, {
       where: { name: categoryDto.name },
     });
 
     if (!category) {
-      category = this.categoryRepository.create(categoryDto);
+      category = queryRunner.manager.create(Category, categoryDto);
       await queryRunner.manager.save(category);
     }
 
@@ -431,12 +431,12 @@ export class BooksService {
     subjectDto: { name: string },
     queryRunner: any,
   ): Promise<Subject> {
-    let subject = await this.subjectRepository.findOne({
+    let subject = await queryRunner.manager.findOne(Subject, {
       where: { name: subjectDto.name },
     });
 
     if (!subject) {
-      subject = this.subjectRepository.create(subjectDto);
+      subject = queryRunner.manager.create(Subject, subjectDto);
       await queryRunner.manager.save(subject);
     }
 
