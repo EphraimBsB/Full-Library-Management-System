@@ -3,8 +3,6 @@ import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:management_side/src/features/books/domain/models/book_copy.dart';
-import 'package:management_side/src/features/books/data/api/book_api_service.dart';
-import 'package:management_side/src/core/network/api_client.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_details_provider.dart';
 
 class EditBookCopyDialog extends ConsumerStatefulWidget {
@@ -83,9 +81,6 @@ class _EditBookCopyDialogState extends ConsumerState<EditBookCopyDialog> {
     });
 
     try {
-      final apiClient = ApiClient();
-      final bookApiService = BookApiService(apiClient.dio);
-
       final copyData = {
         'accessNumber': _accessNumberController.text.trim(),
         'status': _selectedStatus,
@@ -94,29 +89,13 @@ class _EditBookCopyDialogState extends ConsumerState<EditBookCopyDialog> {
             : _notesController.text.trim(),
       };
 
-      final result = await bookApiService.updateBookCopy(
-        widget.bookId,
-        widget.copy.id!,
-        copyData,
-      );
+      // Use the provider pattern
+      final result = await ref
+          .read(bookDetailsProvider(widget.bookId).notifier)
+          .updateBookCopy(widget.copy.id!, copyData);
 
       if (mounted) {
-        // Handle different response types
-        bool success = false;
-        String message = 'Unknown response';
-
-        if (result is Map<String, dynamic>) {
-          success = result['success'] == true;
-          message = result['message'] ?? 'Unknown error';
-        } else if (result is bool) {
-          success = result;
-          message = success
-              ? 'Book copy updated successfully'
-              : 'Failed to update copy';
-        }
-
-        if (success) {
-          ref.invalidate(bookDetailsProvider(widget.bookId));
+        if (result.isSuccess) {
           Navigator.of(context).pop();
           widget.onCopyUpdated?.call();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -128,7 +107,7 @@ class _EditBookCopyDialogState extends ConsumerState<EditBookCopyDialog> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to update copy: $message'),
+              content: Text('Failed to update copy: ${result.failureOrNull}'),
               backgroundColor: Colors.red,
             ),
           );

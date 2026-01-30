@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:management_side/src/core/utils/result.dart';
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
+import 'package:management_side/src/features/books/domain/models/book_copy.dart';
 import 'package:management_side/src/features/books/domain/repositories/book_repository.dart';
 import 'package:management_side/src/features/books/presentation/providers/book_list_providers.dart';
 
@@ -32,6 +34,20 @@ class BookDetailsNotifier extends StateNotifier<AsyncValue<BookDetails>> {
 
   Future<void> refresh() async {
     await _loadBookDetails();
+  }
+
+  // Update a book copy
+  Future<Result<BookCopy>> updateBookCopy(
+    int copyId,
+    Map<String, dynamic> copyData,
+  ) async {
+    final result = await _repository.updateBookCopy(bookId, copyId, copyData);
+
+    if (result.isSuccess) {
+      await _loadBookDetails(); // Refresh book details to show updated copy
+    }
+
+    return result;
   }
 
   // Add methods for actions like borrow, return, etc.
