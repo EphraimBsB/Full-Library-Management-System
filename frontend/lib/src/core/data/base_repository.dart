@@ -18,6 +18,10 @@ abstract class BaseRepository {
     try {
       final result = await apiCall();
       return Success(result);
+    } on DioException catch (e) {
+      // Convert DioException to ApiException using the same logic as ApiClient
+      final apiException = _handleDioError(e);
+      return Failure(apiException);
     } on ApiException catch (e) {
       return Failure(e);
     } catch (e, stackTrace) {
@@ -25,6 +29,84 @@ abstract class BaseRepository {
         ApiException(message: errorMessage ?? 'An unexpected error occurred'),
         stackTrace,
       );
+    }
+  }
+
+  // Handle Dio errors (copied from ApiClient)
+  ApiException _handleDioError(dynamic error) {
+    if (error is DioException) {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+          return ApiException(message: 'Connection timeout');
+        case DioExceptionType.sendTimeout:
+          return ApiException(message: 'Send timeout');
+        case DioExceptionType.receiveTimeout:
+          return ApiException(message: 'Receive timeout');
+        case DioExceptionType.badCertificate:
+          return ApiException(message: 'Bad certificate');
+        case DioExceptionType.badResponse:
+          return _handleResponseError(error.response!);
+        case DioExceptionType.cancel:
+          return ApiException(message: 'Request cancelled');
+        case DioExceptionType.connectionError:
+          return ApiException(message: 'Connection error');
+        case DioExceptionType.unknown:
+          return ApiException(message: 'Unknown error occurred');
+      }
+    }
+    return ApiException(message: error.toString());
+  }
+
+  // Handle HTTP error responses (copied from ApiClient)
+  ApiException _handleResponseError(Response response) {
+    final statusCode = response.statusCode;
+    final data = response.data;
+
+    String message = 'An error occurred';
+    dynamic originalData = data;
+
+    if (data != null && data is Map<String, dynamic>) {
+      // Handle different error message formats
+      if (data['message'] != null) {
+        if (data['message'] is List) {
+          // Handle array of messages
+          message = (data['message'] as List).join(', ');
+        } else {
+          message = data['message'].toString();
+        }
+      } else if (data['error'] != null) {
+        message = data['error'].toString();
+      }
+    }
+
+    switch (statusCode) {
+      case 400:
+        return BadRequestException(message: message, data: originalData);
+      case 401:
+        return UnauthorizedException(message: message, data: originalData);
+      case 403:
+        return ForbiddenException(message: message, data: originalData);
+      case 404:
+        return NotFoundException(message: message, data: originalData);
+      case 422:
+        return ValidationException(
+          message: 'Validation failed',
+          errors: data is Map<String, dynamic>
+              ? data['errors'] as Map<String, dynamic>? ?? {}
+              : {},
+          data: originalData,
+        );
+      case 500:
+        return ServerException(
+          message: 'Internal server error',
+          data: originalData,
+        );
+      default:
+        return ApiException(
+          message: 'Request failed with status: $statusCode',
+          statusCode: statusCode,
+          data: originalData,
+        );
     }
   }
 

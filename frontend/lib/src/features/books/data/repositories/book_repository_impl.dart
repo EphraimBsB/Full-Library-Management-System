@@ -4,7 +4,6 @@ import 'package:management_side/src/core/network/api_client.dart';
 import 'package:management_side/src/core/utils/result.dart';
 import 'package:management_side/src/features/books/data/api/book_api_service.dart';
 import 'package:management_side/src/features/books/domain/models/book_copy.dart';
-import 'package:management_side/src/features/books/domain/models/book_copy_response.dart';
 import 'package:management_side/src/features/books/domain/models/book_details.dart';
 import 'package:management_side/src/features/books/domain/models/book_model_new.dart';
 import 'package:management_side/src/features/books/domain/models/inhouse_usage_model.dart';
@@ -83,8 +82,6 @@ class BookRepositoryImpl extends BaseRepository implements BookRepository {
       } on DioException catch (e) {
         rethrow;
       } catch (e) {
-        print('=== UNEXPECTED ERROR ===');
-        print('Error: $e');
         rethrow;
       }
     }, errorMessage: 'Failed to update book');

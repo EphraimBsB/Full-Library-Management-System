@@ -474,6 +474,7 @@ export class BookLoanService {
         ),
       );
 
+      await this.resetCache();
       return updatedLoan;
     });
   }

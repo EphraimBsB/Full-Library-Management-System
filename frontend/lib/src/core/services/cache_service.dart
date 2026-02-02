@@ -267,6 +267,55 @@ class CacheService {
     }
   }
 
+  // NEW: Comprehensive loan cache invalidation
+  Future<void> invalidateLoanCaches({
+    String? loanId,
+    String? userId,
+    bool forceRefresh = true,
+  }) async {
+    try {
+      _logger.i('Invalidating loan-related caches...');
+
+      // Use efficient prefix-based clearing
+      final prefixes = [
+        'loans_',
+        'loan_',
+        'user_loans_',
+        'overdue_loans_',
+        'api_cache_loans_',
+      ];
+
+      // Add specific loan details key if needed
+      if (loanId != null) {
+        await remove(loanDetailsKey(loanId));
+      }
+
+      // Add specific user loans keys if needed
+      if (userId != null) {
+        await remove(userLoansKey(userId));
+        await remove(userLoansKey(userId, status: 'active'));
+        await remove(userLoansKey(userId, status: 'overdue'));
+        await remove(userLoansKey(userId, status: 'returned'));
+        await remove(overdueLoansKey(userId: userId));
+      }
+
+      // Clear loan statistics
+      await remove(loanStatsKey());
+
+      // Parallelize all prefix-based clearing
+      await Future.wait(prefixes.map((p) => clear(prefix: p)));
+
+      // Extra safety for memory cache (synchronous)
+      _memoryCache.removeWhere(
+        (key, value) => prefixes.any((p) => key.startsWith(p)),
+      );
+
+      _logger.i('Loan cache invalidation completed efficiently');
+    } catch (e) {
+      _logger.e('Error invalidating loan caches: $e');
+    }
+  }
+
   static String membershipsListKey({
     int page = 1,
     int limit = 10,
@@ -282,6 +331,20 @@ class CacheService {
   static String loansListKey({int page = 1, int limit = 10, String? status}) {
     return 'loans_list_${page}_${limit}_${status ?? 'null'}';
   }
+
+  static String loanDetailsKey(String loanId) {
+    return 'loan_details_$loanId';
+  }
+
+  static String userLoansKey(String userId, {String? status}) {
+    return 'user_loans_${userId}_${status ?? 'null'}';
+  }
+
+  static String overdueLoansKey({String? userId}) {
+    return 'overdue_loans_${userId ?? 'all'}';
+  }
+
+  static String loanStatsKey() => 'loan_stats';
 
   static String categoriesKey() => 'categories_list';
   static String subjectsKey() => 'subjects_list';

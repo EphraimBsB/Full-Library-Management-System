@@ -7,6 +7,9 @@ import 'package:management_side/src/features/loans/data/api/loan_api_service.dar
 import 'package:management_side/src/features/loans/data/repositories/loan_repository_impl.dart';
 import 'package:management_side/src/features/loans/domain/models/loan_model.dart';
 import 'package:management_side/src/features/loans/domain/repositories/loan_repository.dart';
+import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
+import 'package:management_side/src/features/books/presentation/providers/book_details_provider.dart';
+import 'package:management_side/src/features/loans/presentation/utils/loan_cache_invalidation.dart';
 
 // API Service Provider
 final loanApiServiceProvider = Provider<LoanApiService>((ref) {
@@ -39,8 +42,9 @@ class LoanState {
 
 class LoanNotifier extends StateNotifier<LoanState> {
   final LoanRepository _repository;
+  final Ref _ref;
 
-  LoanNotifier(this._repository) : super(LoanState()) {
+  LoanNotifier(this._repository, this._ref) : super(LoanState()) {
     loadLoans();
   }
 
@@ -73,6 +77,23 @@ class LoanNotifier extends StateNotifier<LoanState> {
     final result = await _repository.createLoan(loan);
     result.fold((failure) => throw failure, (newLoan) {
       state = state.copyWith(loans: [newLoan, ...state.loans]);
+
+      // Use comprehensive cache invalidation
+      LoanCacheInvalidator.invalidateLoanOperationCaches(
+        loanId: newLoan.id,
+        userId: newLoan.userId,
+      );
+
+      // Invalidate dashboard summary to refresh stats
+      _ref.invalidate(dashboardSummaryProvider);
+
+      // Invalidate book details if book copy contains book ID
+      if (newLoan.bookCopy != null && newLoan.bookCopy!['book'] != null) {
+        final bookId = newLoan.bookCopy!['book']['id'] as int?;
+        if (bookId != null) {
+          _ref.invalidate(bookDetailsProvider(bookId));
+        }
+      }
     });
   }
 
@@ -84,6 +105,24 @@ class LoanNotifier extends StateNotifier<LoanState> {
             .map((l) => l.id == loanId ? updatedLoan : l)
             .toList(),
       );
+
+      // Use comprehensive cache invalidation
+      LoanCacheInvalidator.invalidateLoanOperationCaches(
+        loanId: loanId,
+        userId: updatedLoan.userId,
+      );
+
+      // Invalidate dashboard summary to refresh stats
+      _ref.invalidate(dashboardSummaryProvider);
+
+      // Invalidate book details if book copy contains book ID
+      if (updatedLoan.bookCopy != null &&
+          updatedLoan.bookCopy!['book'] != null) {
+        final bookId = updatedLoan.bookCopy!['book']['id'] as int?;
+        if (bookId != null) {
+          _ref.invalidate(bookDetailsProvider(bookId));
+        }
+      }
     });
   }
 
@@ -95,22 +134,53 @@ class LoanNotifier extends StateNotifier<LoanState> {
             .map((l) => l.id == loanId ? updatedLoan : l)
             .toList(),
       );
+
+      // Invalidate dashboard summary to refresh stats
+      _ref.invalidate(dashboardSummaryProvider);
+
+      // Invalidate book details if book copy contains book ID
+      if (updatedLoan.bookCopy != null &&
+          updatedLoan.bookCopy!['book'] != null) {
+        final bookId = updatedLoan.bookCopy!['book']['id'] as int?;
+        if (bookId != null) {
+          _ref.invalidate(bookDetailsProvider(bookId));
+        }
+      }
     });
   }
 
   Future<void> deleteLoan(String loanId) async {
     final result = await _repository.deleteLoan(loanId);
     result.fold((failure) => throw failure, (_) {
+      final deletedLoan = state.loans.firstWhere((l) => l.id == loanId);
       state = state.copyWith(
         loans: state.loans.where((l) => l.id != loanId).toList(),
       );
+
+      // Use comprehensive cache invalidation
+      LoanCacheInvalidator.invalidateLoanOperationCaches(
+        loanId: loanId,
+        userId: deletedLoan.userId,
+      );
+
+      // Invalidate dashboard summary to refresh stats
+      _ref.invalidate(dashboardSummaryProvider);
+
+      // Invalidate book details if book copy contains book ID
+      if (deletedLoan.bookCopy != null &&
+          deletedLoan.bookCopy!['book'] != null) {
+        final bookId = deletedLoan.bookCopy!['book']['id'] as int?;
+        if (bookId != null) {
+          _ref.invalidate(bookDetailsProvider(bookId));
+        }
+      }
     });
   }
 }
 
 final loanNotifierProvider =
     StateNotifierProvider.autoDispose<LoanNotifier, LoanState>((ref) {
-      return LoanNotifier(ref.watch(loanRepositoryProvider));
+      return LoanNotifier(ref.watch(loanRepositoryProvider), ref);
     });
 
 final allLoansProvider = Provider.autoDispose<AsyncValue<List<Loan>>>((ref) {
