@@ -584,7 +584,7 @@ void _showCopySelectionDialog(
           backgroundColor: Colors.white,
 
           title: Text(
-            selectedCopy == null ? 'Select Copy' : 'Confirm Selection',
+            selectedCopy == null ? 'Select Acc.No' : 'Confirm Selection',
           ),
 
           content: SizedBox(
@@ -608,7 +608,7 @@ void _showCopySelectionDialog(
                   const SizedBox(height: 16),
                 ] else ...[
                   const Text(
-                    'Selected Copy:',
+                    'Selected Acc.No:',
 
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
@@ -633,7 +633,7 @@ void _showCopySelectionDialog(
                         const SizedBox(width: 8),
 
                         Text(
-                          'Copy #${selectedCopy!.accessNumber}',
+                          'Acc.No #${selectedCopy!.accessNumber}',
 
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
@@ -730,7 +730,7 @@ void _showCopySelectionDialog(
                                     const SizedBox(width: 6),
 
                                     Text(
-                                      'Copy #${copy.accessNumber}',
+                                      'Acc.No #${copy.accessNumber}',
 
                                       style: TextStyle(
                                         fontWeight: isSelected

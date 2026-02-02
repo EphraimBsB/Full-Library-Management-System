@@ -106,7 +106,7 @@ const ActiveSessionBanner = ({ session, onSessionEnd }) => {
                 whiteSpace: 'nowrap',
               }}
             >
-              {session.copy?.book?.title} (Copy #{session.copy?.accessNumber})
+              {session.copy?.book?.title} (Acc.No #{session.copy?.accessNumber})
             </Typography>
             
             <Typography

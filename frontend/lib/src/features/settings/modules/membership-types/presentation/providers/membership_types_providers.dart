@@ -4,6 +4,7 @@ import 'package:management_side/src/features/settings/modules/membership-types/d
 import 'package:management_side/src/features/settings/modules/membership-types/data/repositories/membership_type_repository_impl.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/domain/models/membership_type_model.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/domain/repositories/membership_type_repository.dart';
+import 'package:management_side/src/features/settings/presentation/utils/system_config_cache_invalidation.dart';
 
 // Repository Provider
 final membershipTypeRepositoryProvider = Provider<MembershipTypeRepository>((
@@ -41,22 +42,50 @@ class MembershipTypesNotifier
 
   Future<void> addMembershipType(MembershipType membershipType) async {
     final result = await _repository.createMembershipType(membershipType);
-    await result.fold((failure) => throw failure, (_) => loadMembershipTypes());
+    await result.fold((failure) => throw failure, (
+      createdMembershipType,
+    ) async {
+      // Invalidate caches after successful creation
+      await SystemConfigCacheInvalidator.invalidateMembershipTypesCaches(
+        membershipTypeId: createdMembershipType.id,
+      );
+      await loadMembershipTypes();
+    });
   }
 
   Future<void> updateMembershipType(MembershipType membershipType) async {
     final result = await _repository.updateMembershipType(membershipType);
-    await result.fold((failure) => throw failure, (_) => loadMembershipTypes());
+    await result.fold((failure) => throw failure, (
+      updatedMembershipType,
+    ) async {
+      // Invalidate caches after successful update
+      await SystemConfigCacheInvalidator.invalidateMembershipTypesCaches(
+        membershipTypeId: membershipType.id,
+      );
+      await loadMembershipTypes();
+    });
   }
 
   Future<void> deleteMembershipType(int id) async {
     final result = await _repository.deleteMembershipType(id);
-    await result.fold((failure) => throw failure, (_) => loadMembershipTypes());
+    await result.fold((failure) => throw failure, (_) async {
+      // Invalidate caches after successful deletion
+      await SystemConfigCacheInvalidator.invalidateMembershipTypesCaches(
+        membershipTypeId: id,
+      );
+      await loadMembershipTypes();
+    });
   }
 
   Future<void> toggleMembershipTypeStatus(int id, bool isActive) async {
     final result = await _repository.toggleMembershipTypeStatus(id, isActive);
-    await result.fold((failure) => throw failure, (_) => loadMembershipTypes());
+    await result.fold((failure) => throw failure, (_) async {
+      // Invalidate caches after successful status toggle
+      await SystemConfigCacheInvalidator.invalidateMembershipTypesCaches(
+        membershipTypeId: id,
+      );
+      await loadMembershipTypes();
+    });
   }
 }
 

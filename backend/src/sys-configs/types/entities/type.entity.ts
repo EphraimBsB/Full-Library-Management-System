@@ -4,6 +4,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 export enum BookFormat {
   PHYSICAL = 'physical',
   DIGITAL = 'digital',
+  BOTH = 'both',
 }
 
 @Entity('types')

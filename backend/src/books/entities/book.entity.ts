@@ -60,7 +60,7 @@ export class Book {
   @IsString()
   author: string;
 
-  @Column({ nullable: true, unique: true })
+  @Column({ nullable: true, unique: false })
   @IsOptional()
   @IsString()
   @IsISBN()

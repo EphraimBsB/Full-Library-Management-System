@@ -12,14 +12,9 @@ export class TypesSeed implements ISeeder {
 
     const types = [
       {
-        name: 'Hardcover',
+        name: 'Physical',
         format: BookFormat.PHYSICAL,
-        description: 'Hardcover book with dust jacket',
-      },
-      {
-        name: 'Paperback',
-        format: BookFormat.PHYSICAL,
-        description: 'Softcover book',
+        description: 'Physical book with dust jacket',
       },
       {
         name: 'E-book',
@@ -27,39 +22,9 @@ export class TypesSeed implements ISeeder {
         description: 'Digital book format',
       },
       {
-        name: 'Audiobook',
-        format: BookFormat.DIGITAL,
-        description: 'Audio version of the book',
-      },
-      {
-        name: 'Reference',
-        format: BookFormat.PHYSICAL,
-        description: 'Reference materials',
-      },
-      {
-        name: 'Textbook',
-        format: BookFormat.PHYSICAL,
-        description: 'Educational textbook',
-      },
-      {
-        name: 'Periodical',
-        format: BookFormat.PHYSICAL,
-        description: 'Magazines and journals',
-      },
-      {
-        name: 'Thesis',
-        format: BookFormat.DIGITAL,
-        description: 'Academic theses and dissertations',
-      },
-      {
-        name: 'Rare Book',
-        format: BookFormat.PHYSICAL,
-        description: 'Rare and collectible books',
-      },
-      {
-        name: 'Graphic Novel',
-        format: BookFormat.PHYSICAL,
-        description: 'Comics and graphic novels',
+        name: 'Physical and E-book',
+        format: BookFormat.BOTH,
+        description: 'Physical and digital book format',
       },
     ];
 

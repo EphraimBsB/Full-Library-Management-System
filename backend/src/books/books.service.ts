@@ -76,7 +76,7 @@ export class BooksService {
         const existingBook = await this.bookRepository.findOne({
           where: { isbn: createBookDto.isbn, deletedAt: IsNull() },
         });
-        if (existingBook) {
+        if (existingBook && createBookDto.isbn !== 'N/A') {
           throw new ConflictException('A book with this ISBN already exists');
         }
       }

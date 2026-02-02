@@ -4,6 +4,7 @@ import 'package:management_side/src/features/settings/modules/book_sources/data/
 import 'package:management_side/src/features/settings/modules/book_sources/data/repositories/source_repository_impl.dart';
 import 'package:management_side/src/features/settings/modules/book_sources/domain/models/source_model.dart';
 import 'package:management_side/src/features/settings/modules/book_sources/domain/repositories/source_repository.dart';
+import 'package:management_side/src/features/settings/presentation/utils/system_config_cache_invalidation.dart';
 
 // Repository Provider
 final sourceRepositoryProvider = Provider<SourceRepository>((ref) {
@@ -40,22 +41,42 @@ class SourcesNotifier extends StateNotifier<AsyncValue<List<Source>>> {
 
   Future<void> addSource(Source source) async {
     final result = await _repository.createSource(source);
-    await result.fold((failure) => throw failure, (_) => loadSources());
+    await result.fold((failure) => throw failure, (createdSource) async {
+      // Invalidate caches after successful creation
+      await SystemConfigCacheInvalidator.invalidateSourcesCaches(
+        sourceId: createdSource.id,
+      );
+      await loadSources();
+    });
   }
 
   Future<void> updateSource(Source source) async {
     final result = await _repository.updateSource(source);
-    await result.fold((failure) => throw failure, (_) => loadSources());
+    await result.fold((failure) => throw failure, (updatedSource) async {
+      // Invalidate caches after successful update
+      await SystemConfigCacheInvalidator.invalidateSourcesCaches(
+        sourceId: source.id,
+      );
+      await loadSources();
+    });
   }
 
   Future<void> deleteSource(int id) async {
     final result = await _repository.deleteSource(id);
-    await result.fold((failure) => throw failure, (_) => loadSources());
+    await result.fold((failure) => throw failure, (_) async {
+      // Invalidate caches after successful deletion
+      await SystemConfigCacheInvalidator.invalidateSourcesCaches(sourceId: id);
+      await loadSources();
+    });
   }
 
   Future<void> toggleSourceStatus(int id, bool isActive) async {
     final result = await _repository.toggleSourceStatus(id, isActive);
-    await result.fold((failure) => throw failure, (_) => loadSources());
+    await result.fold((failure) => throw failure, (_) async {
+      // Invalidate caches after successful status toggle
+      await SystemConfigCacheInvalidator.invalidateSourcesCaches(sourceId: id);
+      await loadSources();
+    });
   }
 }
 

@@ -336,22 +336,29 @@ export class UsersSeed implements ISeeder {
       };
     });
 
-    // Librarian users (5)
-    const librarianUsers = Array.from({ length: 5 }, (_, i) => {
-      const gender = Math.random() > 0.5 ? 'male' : ('female' as const);
-      const { firstName, lastName } = generateUgandanName(gender);
-
-      return {
-        firstName,
-        lastName,
-        email: `librarian${i + 1}@isbat.edu`,
-        rollNumber: `LIB${String(i + 1).padStart(3, '0')}`,
+    // Librarian users (2)
+    const librarianUsers = [
+      {
+        firstName: 'Okello',
+        lastName: 'Gilbert',
+        email: 'Okello.library@isbatuniversity.com',
+        rollNumber: 'LIB001',
         role: librarianRole,
         roleId: librarianRole.id,
         ...commonUserData,
-        ...generateAcademicInfo(librarianRole, i),
-      };
-    });
+        ...generateAcademicInfo(librarianRole, 0),
+      },
+      {
+        firstName: 'Esiau',
+        lastName: 'Vicent',
+        email: 'vicent.library@isbatuniversity.com',
+        rollNumber: 'LIB002',
+        role: librarianRole,
+        roleId: librarianRole.id,
+        ...commonUserData,
+        ...generateAcademicInfo(librarianRole, 1),
+      },
+    ];
 
     // Faculty users (15)
     const facultyUsers = Array.from({ length: 15 }, (_, i) => {

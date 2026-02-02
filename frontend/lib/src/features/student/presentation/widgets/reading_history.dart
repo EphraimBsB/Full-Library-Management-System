@@ -234,7 +234,7 @@ class ReadingHistoryList extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Book Copy Number: ${inhouseUsage.copy['accessNumber']}',
+                                        'Acc.No: ${inhouseUsage.copy['accessNumber']}',
                                         style: const TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w500,

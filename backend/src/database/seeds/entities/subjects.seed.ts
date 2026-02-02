@@ -14,276 +14,226 @@ export class SubjectsSeed implements ISeeder {
     const repository = dataSource.getRepository(Subject);
 
     const subjects: SubjectData[] = [
-      // Mathematics & Statistics
+      // Management & Business
       {
-        name: 'Algebra',
-        category: 'Mathematics',
-        description:
-          'Study of mathematical symbols and rules for manipulating these symbols',
+        name: 'MANAGEMENT',
+        category: 'Business',
+        description: 'Study of business management principles and practices',
       },
       {
-        name: 'Calculus',
-        category: 'Mathematics',
-        description: 'Mathematical study of continuous change',
+        name: 'RESEARCH',
+        category: 'Business',
+        description: 'Study of research methodologies and business analysis',
       },
       {
-        name: 'Statistics',
-        category: 'Mathematics',
-        description: 'Study of data collection, analysis, and interpretation',
+        name: 'ADVERTISING',
+        category: 'Business',
+        description: 'Study of advertising strategies and promotional techniques',
       },
       {
-        name: 'Discrete Mathematics',
-        category: 'Mathematics',
-        description:
-          'Study of mathematical structures that are fundamentally discrete',
+        name: 'MARKETING',
+        category: 'Business',
+        description: 'Study of marketing principles and customer engagement',
       },
       {
-        name: 'Linear Algebra',
-        category: 'Mathematics',
-        description: 'Study of vectors, vector spaces, and linear mappings',
+        name: 'COMMERCE',
+        category: 'Business',
+        description: 'Study of commercial activities and trade',
+      },
+      {
+        name: 'ECONOMICS',
+        category: 'Business',
+        description: 'Study of economic principles and market behavior',
+      },
+      {
+        name: 'FINANCE',
+        category: 'Business',
+        description: 'Study of financial management and investment strategies',
+      },
+      {
+        name: 'ACCOUNTING',
+        category: 'Business',
+        description: 'Study of financial recording and reporting',
+      },
+      {
+        name: 'HUMAN RESOURCE',
+        category: 'Business',
+        description: 'Study of human resource management and personnel development',
+      },
+      {
+        name: 'PRODUCTION MANAGEMENT',
+        category: 'Business',
+        description: 'Study of production planning and operational management',
+      },
+      {
+        name: 'HOTEL MANAGEMENT',
+        category: 'Business',
+        description: 'Study of hospitality and hotel administration',
+      },
+      {
+        name: 'BUSINESS ETHICS',
+        category: 'Business',
+        description: 'Study of ethical principles in business practices',
+      },
+      {
+        name: 'INVESTMENT',
+        category: 'Business',
+        description: 'Study of investment strategies and portfolio management',
+      },
+      {
+        name: 'SECURITY ANALYSIS',
+        category: 'Business',
+        description: 'Study of financial securities and market analysis',
+      },
+      {
+        name: 'MICROECONOMICS',
+        category: 'Business',
+        description: 'Study of individual economic behavior and markets',
+      },
+      {
+        name: 'BUSINESS ECONOMICS',
+        category: 'Business',
+        description: 'Study of economic principles applied to business',
+      },
+      {
+        name: 'BUSINESS COMMUNICATION',
+        category: 'Business',
+        description: 'Study of communication in business contexts',
+      },
+      {
+        name: 'PRODUCTION & OPERATIONS',
+        category: 'Business',
+        description: 'Study of production systems and operational efficiency',
+      },
+      {
+        name: 'FINANCIAL ACCOUNTING',
+        category: 'Business',
+        description: 'Study of financial reporting and analysis',
+      },
+      {
+        name: 'INTERNATIONAL BUSINESS',
+        category: 'Business',
+        description: 'Study of global business operations and trade',
+      },
+      {
+        name: 'BUSINESS RESEARCH METHODS',
+        category: 'Business',
+        description: 'Study of research techniques for business analysis',
+      },
+      {
+        name: 'ENTREPRENEURSHIP',
+        category: 'Business',
+        description: 'Study of entrepreneurship and new venture creation',
+      },
+      {
+        name: 'ADVERTISING MANAGEMENT',
+        category: 'Business',
+        description: 'Study of managing advertising campaigns and strategies',
+      },
+      {
+        name: 'TAXATION',
+        category: 'Business',
+        description: 'Study of tax systems and compliance',
+      },
+      {
+        name: 'COST ACCOUNTING',
+        category: 'Business',
+        description: 'Study of cost analysis and management accounting',
+      },
+      {
+        name: 'MANAGEMENT ACCOUNTING',
+        category: 'Business',
+        description: 'Study of accounting for managerial decision-making',
       },
 
-      // Physical Sciences
+      // Computer Science & Technology
       {
-        name: 'Classical Mechanics',
-        category: 'Physics',
-        description: 'Study of motion of bodies under the action of forces',
+        name: 'CYBER SECURITY',
+        category: 'Technology',
+        description: 'Study of cybersecurity principles and network protection',
       },
       {
-        name: 'Quantum Physics',
-        category: 'Physics',
-        description: 'Study of matter and energy at the smallest scales',
+        name: 'ARTIFICIAL INTELLIGENCE',
+        category: 'Technology',
+        description: 'Study of AI systems and machine learning',
       },
       {
-        name: 'Thermodynamics',
-        category: 'Physics',
-        description: 'Study of heat, work, and energy transfer',
+        name: 'DATABASE MANAGEMENT',
+        category: 'Technology',
+        description: 'Study of database design and administration',
       },
       {
-        name: 'Electromagnetism',
-        category: 'Physics',
-        description: 'Study of electromagnetic force and fields',
+        name: 'JAVA PROGRAMING',
+        category: 'Technology',
+        description: 'Study of Java programming language and development',
       },
       {
-        name: 'Astrophysics',
-        category: 'Physics',
-        description: 'Study of celestial objects and phenomena',
-      },
-
-      // Life Sciences
-      {
-        name: 'Genetics',
-        category: 'Biology',
-        description: 'Study of genes, genetic variation, and heredity',
+        name: 'COMPUTER',
+        category: 'Technology',
+        description: 'Study of computer fundamentals and applications',
       },
       {
-        name: 'Microbiology',
-        category: 'Biology',
-        description: 'Study of microscopic organisms',
+        name: 'OPERATING SYSTEMS',
+        category: 'Technology',
+        description: 'Study of operating system design and management',
       },
       {
-        name: 'Ecology',
-        category: 'Biology',
-        description: 'Study of organisms and their environment',
+        name: 'COMPUTER SECURITY',
+        category: 'Technology',
+        description: 'Study of computer security and protection systems',
       },
       {
-        name: 'Neuroscience',
-        category: 'Biology',
-        description: 'Scientific study of the nervous system',
-      },
-      {
-        name: 'Biochemistry',
-        category: 'Biology',
-        description: 'Study of chemical processes within living organisms',
-      },
-
-      // Computer Science
-      {
-        name: 'Algorithms',
-        category: 'Computer Science',
-        description: 'Study of step-by-step procedures for calculations',
-      },
-      {
-        name: 'Data Structures',
-        category: 'Computer Science',
-        description: 'Study of organizing and storing data',
-      },
-      {
-        name: 'Artificial Intelligence',
-        category: 'Computer Science',
-        description: 'Development of intelligent machines',
-      },
-      {
-        name: 'Computer networks',
-        category: 'Computer Science',
-        description: 'Study of communication between computers',
-      },
-      {
-        name: 'Database Systems',
-        category: 'Computer Science',
-        description: 'Study of database management systems',
+        name: 'COMPUTER APPLICATIONS',
+        category: 'Technology',
+        description: 'Study of computer applications and software usage',
       },
 
       // Engineering
       {
-        name: 'Electrical Engineering',
+        name: 'ENGINEERING',
         category: 'Engineering',
-        description: 'Study of electricity and electronics',
-      },
-      {
-        name: 'Mechanical Engineering',
-        category: 'Engineering',
-        description: 'Study of mechanical systems',
-      },
-      {
-        name: 'Civil Engineering',
-        category: 'Engineering',
-        description: 'Design and construction of infrastructure',
-      },
-      {
-        name: 'Chemical Engineering',
-        category: 'Engineering',
-        description: 'Application of chemistry to industrial processes',
-      },
-      {
-        name: 'Biomedical Engineering',
-        category: 'Engineering',
-        description: 'Application of engineering principles to medicine',
+        description: 'Study of engineering principles and applications',
       },
 
-      // Humanities
+      // Social Sciences & Law
       {
-        name: 'African History',
-        category: 'History',
-        description: 'Study of African historical events and societies',
-      },
-      {
-        name: 'World History',
-        category: 'History',
-        description: 'Study of global historical events',
-      },
-      {
-        name: 'Political Science',
+        name: 'POLITICAL SCIENCE',
         category: 'Social Sciences',
-        description: 'Study of politics and political systems',
+        description: 'Study of political systems and governance',
       },
       {
-        name: 'Sociology',
+        name: 'LAW',
         category: 'Social Sciences',
-        description: 'Study of human society and social behavior',
-      },
-      {
-        name: 'Anthropology',
-        category: 'Social Sciences',
-        description: 'Study of human societies and cultures',
+        description: 'Study of legal systems and jurisprudence',
       },
 
-      // Business & Economics
+      // Languages & Communication
       {
-        name: 'Microeconomics',
-        category: 'Economics',
-        description: 'Study of individual economic behavior',
-      },
-      {
-        name: 'Macroeconomics',
-        category: 'Economics',
-        description: 'Study of economy-wide phenomena',
-      },
-      {
-        name: 'Financial Accounting',
-        category: 'Business',
-        description: 'Recording and reporting financial transactions',
-      },
-      {
-        name: 'Marketing',
-        category: 'Business',
-        description: 'Process of promoting and selling products',
-      },
-      {
-        name: 'Entrepreneurship',
-        category: 'Business',
-        description: 'Process of designing and running a new business',
-      },
-
-      // Languages & Literatures
-      {
-        name: 'English Literature',
-        category: 'Literature',
-        description: 'Study of literature written in English',
-      },
-      {
-        name: 'African Literatures',
-        category: 'Literature',
-        description: 'Literature from the African continent',
-      },
-      {
-        name: 'Linguistics',
+        name: 'ENGLISH LANGUAGE',
         category: 'Languages',
-        description: 'Scientific study of language',
+        description: 'Study of English language and literature',
       },
       {
-        name: 'French',
+        name: 'COMMUNICATION SKILLS',
         category: 'Languages',
-        description: 'Study of the French language',
+        description: 'Study of effective communication techniques',
       },
       {
-        name: 'Swahili',
+        name: 'LITERATURE',
         category: 'Languages',
-        description: 'Study of the Swahili language',
+        description: 'Study of literary works and analysis',
       },
 
-      // Law & Politics
+      // Mathematics & Statistics
       {
-        name: 'Constitutional Law',
-        category: 'Law',
-        description: 'Study of fundamental principles of governance',
+        name: 'MATHEMATICS',
+        category: 'Sciences',
+        description: 'Study of mathematical concepts and applications',
       },
       {
-        name: 'International Law',
-        category: 'Law',
-        description: 'Laws governing relations between nations',
-      },
-      {
-        name: 'Human Rights Law',
-        category: 'Law',
-        description: 'Laws concerning basic human rights',
-      },
-      {
-        name: 'Comparative Politics',
-        category: 'Political Science',
-        description: 'Comparison of different political systems',
-      },
-      {
-        name: 'Public Administration',
-        category: 'Political Science',
-        description: 'Implementation of government policy',
-      },
-
-      // Health Sciences
-      {
-        name: 'Anatomy',
-        category: 'Medicine',
-        description: 'Study of the structure of organisms',
-      },
-      {
-        name: 'Physiology',
-        category: 'Medicine',
-        description: 'Study of normal functions of living organisms',
-      },
-      {
-        name: 'Pharmacology',
-        category: 'Medicine',
-        description: 'Study of drug action',
-      },
-      {
-        name: 'Public Health',
-        category: 'Medicine',
-        description: 'Prevention of disease and health promotion',
-      },
-      {
-        name: 'Nutrition',
-        category: 'Health Sciences',
-        description: 'Study of nutrients in food',
+        name: 'STATISTICS',
+        category: 'Sciences',
+        description: 'Study of statistical analysis and data interpretation',
       },
     ];
 

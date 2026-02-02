@@ -18,22 +18,6 @@ export class LocationsSeed implements ISeeder {
         description: 'Downtown branch serving urban students and professionals',
         address: '456 City Center Plaza, Kampala, Uganda',
       },
-      {
-        name: 'Science & Technology Library',
-        description: 'Specialized library for STEM disciplines',
-        address: '789 Tech Park Road, Kampala, Uganda',
-      },
-      {
-        name: 'Medical Campus Library',
-        description: 'Health sciences and medical literature collection',
-        address: '321 Medical Center Drive, Kampala, Uganda',
-      },
-      {
-        name: 'Distance Learning Center',
-        description:
-          'Library services for online and distance education students',
-        address: '654 Online Learning Boulevard, Kampala, Uganda',
-      },
     ];
 
     let created = 0;

@@ -127,7 +127,7 @@ class _BorrowHistoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       _InfoRow(
-                        label: 'Book Copy',
+                        label: 'Acc.No',
                         value:
                             history.bookCopy?['accessNumber'].toString() ?? '',
                       ),

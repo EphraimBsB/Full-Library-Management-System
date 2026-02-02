@@ -346,10 +346,189 @@ class CacheService {
 
   static String loanStatsKey() => 'loan_stats';
 
+  // System Configuration Cache Keys
   static String categoriesKey() => 'categories_list';
   static String subjectsKey() => 'subjects_list';
   static String typesKey() => 'types_list';
   static String sourcesKey() => 'sources_list';
+  static String publishersKey() => 'publishers_list';
+  static String locationsKey() => 'locations_list';
+  static String shelvesKey() => 'shelves_list';
+  static String degreesKey() => 'degrees_list';
+  static String userRolesKey() => 'user_roles_list';
+  static String membershipTypesKey() => 'membership_types_list';
+
+  // Detailed cache keys for individual items
+  static String categoryDetailsKey(int id) => 'category_details_$id';
+  static String subjectDetailsKey(int id) => 'subject_details_$id';
+  static String typeDetailsKey(int id) => 'type_details_$id';
+  static String sourceDetailsKey(int id) => 'source_details_$id';
+  static String publisherDetailsKey(int id) => 'publisher_details_$id';
+  static String locationDetailsKey(int id) => 'location_details_$id';
+  static String shelfDetailsKey(int id) => 'shelf_details_$id';
+  static String degreeDetailsKey(int id) => 'degree_details_$id';
+  static String userRoleDetailsKey(int id) => 'user_role_details_$id';
+  static String membershipTypeDetailsKey(int id) =>
+      'membership_type_details_$id';
+
+  // NEW: Comprehensive System Configuration cache invalidation
+  Future<void> invalidateSystemConfigCaches({
+    String? moduleType, // 'categories', 'subjects', 'types', etc.
+    int? itemId,
+    bool forceRefresh = true,
+  }) async {
+    try {
+      _logger.i('Invalidating System Configuration caches...');
+
+      // Use efficient prefix-based clearing for all system configs
+      final prefixes = [
+        // Application-level cache prefixes
+        'categories_',
+        'subjects_',
+        'types_',
+        'sources_',
+        'publishers_',
+        'locations_',
+        'shelves_',
+        'degrees_',
+        'user_roles_',
+        'membership_types_',
+        // API cache interceptor prefixes
+        'api_cache_categories_',
+        'api_cache_subjects_',
+        'api_cache_types_',
+        'api_cache_sources_',
+        'api_cache_publishers_',
+        'api_cache_locations_',
+        'api_cache_shelves_',
+        'api_cache_degrees_',
+        'api_cache_user_roles_',
+        'api_cache_membership_types_',
+      ];
+
+      // Clear specific module caches if moduleType is specified
+      if (moduleType != null) {
+        await _invalidateSpecificModule(moduleType, itemId);
+      }
+
+      // Clear all list caches
+      await remove(categoriesKey());
+      await remove(subjectsKey());
+      await remove(typesKey());
+      await remove(sourcesKey());
+      await remove(publishersKey());
+      await remove(locationsKey());
+      await remove(shelvesKey());
+      await remove(degreesKey());
+      await remove(userRolesKey());
+      await remove(membershipTypesKey());
+
+      // Clear specific item details if itemId is provided
+      if (itemId != null && moduleType != null) {
+        await _invalidateItemDetails(moduleType, itemId);
+      }
+
+      // Parallelize all prefix-based clearing
+      await Future.wait(prefixes.map((p) => clear(prefix: p)));
+
+      // Extra safety for memory cache (synchronous)
+      _memoryCache.removeWhere(
+        (key, value) => prefixes.any((p) => key.startsWith(p)),
+      );
+
+      _logger.i(
+        'System Configuration cache invalidation completed efficiently',
+      );
+    } catch (e) {
+      _logger.e('Error invalidating System Configuration caches: $e');
+    }
+  }
+
+  // Helper method to invalidate specific module caches
+  Future<void> _invalidateSpecificModule(String moduleType, int? itemId) async {
+    switch (moduleType.toLowerCase()) {
+      case 'categories':
+        await remove(categoriesKey());
+        if (itemId != null) await remove(categoryDetailsKey(itemId));
+        break;
+      case 'subjects':
+        await remove(subjectsKey());
+        if (itemId != null) await remove(subjectDetailsKey(itemId));
+        break;
+      case 'types':
+      case 'book_types':
+        await remove(typesKey());
+        if (itemId != null) await remove(typeDetailsKey(itemId));
+        break;
+      case 'sources':
+      case 'book_sources':
+        await remove(sourcesKey());
+        if (itemId != null) await remove(sourceDetailsKey(itemId));
+        break;
+      case 'publishers':
+        await remove(publishersKey());
+        if (itemId != null) await remove(publisherDetailsKey(itemId));
+        break;
+      case 'locations':
+        await remove(locationsKey());
+        if (itemId != null) await remove(locationDetailsKey(itemId));
+        break;
+      case 'shelves':
+        await remove(shelvesKey());
+        if (itemId != null) await remove(shelfDetailsKey(itemId));
+        break;
+      case 'degrees':
+        await remove(degreesKey());
+        if (itemId != null) await remove(degreeDetailsKey(itemId));
+        break;
+      case 'user_roles':
+        await remove(userRolesKey());
+        if (itemId != null) await remove(userRoleDetailsKey(itemId));
+        break;
+      case 'membership_types':
+        await remove(membershipTypesKey());
+        if (itemId != null) await remove(membershipTypeDetailsKey(itemId));
+        break;
+    }
+  }
+
+  // Helper method to invalidate specific item details
+  Future<void> _invalidateItemDetails(String moduleType, int itemId) async {
+    switch (moduleType.toLowerCase()) {
+      case 'categories':
+        await remove(categoryDetailsKey(itemId));
+        break;
+      case 'subjects':
+        await remove(subjectDetailsKey(itemId));
+        break;
+      case 'types':
+      case 'book_types':
+        await remove(typeDetailsKey(itemId));
+        break;
+      case 'sources':
+      case 'book_sources':
+        await remove(sourceDetailsKey(itemId));
+        break;
+      case 'publishers':
+        await remove(publisherDetailsKey(itemId));
+        break;
+      case 'locations':
+        await remove(locationDetailsKey(itemId));
+        break;
+      case 'shelves':
+        await remove(shelfDetailsKey(itemId));
+        break;
+      case 'degrees':
+        await remove(degreeDetailsKey(itemId));
+        break;
+      case 'user_roles':
+        await remove(userRoleDetailsKey(itemId));
+        break;
+      case 'membership_types':
+        await remove(membershipTypeDetailsKey(itemId));
+        break;
+    }
+  }
 
   // Cache statistics
   Map<String, dynamic> getStats() {

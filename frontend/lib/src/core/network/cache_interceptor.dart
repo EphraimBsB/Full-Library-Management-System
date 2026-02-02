@@ -215,6 +215,7 @@ class CacheInterceptor extends Interceptor {
       prefix += 'loans_';
     else if (path.contains('/memberships'))
       prefix += 'memberships_';
+    // System Configuration modules
     else if (path.contains('/categories'))
       prefix += 'categories_';
     else if (path.contains('/subjects'))
@@ -223,6 +224,18 @@ class CacheInterceptor extends Interceptor {
       prefix += 'types_';
     else if (path.contains('/sources'))
       prefix += 'sources_';
+    else if (path.contains('/publishers'))
+      prefix += 'publishers_';
+    else if (path.contains('/locations'))
+      prefix += 'locations_';
+    else if (path.contains('/shelves'))
+      prefix += 'shelves_';
+    else if (path.contains('/degrees'))
+      prefix += 'degrees_';
+    else if (path.contains('/user_roles'))
+      prefix += 'user_roles_';
+    else if (path.contains('/membership_types'))
+      prefix += 'membership_types_';
 
     // Create a unique cache key based on URL, query params, and relevant headers
     final keyParts = [path, query.toString(), headers['authorization'] ?? ''];
@@ -238,6 +251,27 @@ class CacheInterceptor extends Interceptor {
       prefix = 'api_cache_loans_';
     else if (path.contains('/memberships'))
       prefix = 'api_cache_memberships_';
+    // System Configuration modules
+    else if (path.contains('/categories'))
+      prefix = 'api_cache_categories_';
+    else if (path.contains('/subjects'))
+      prefix = 'api_cache_subjects_';
+    else if (path.contains('/types'))
+      prefix = 'api_cache_types_';
+    else if (path.contains('/sources'))
+      prefix = 'api_cache_sources_';
+    else if (path.contains('/publishers'))
+      prefix = 'api_cache_publishers_';
+    else if (path.contains('/locations'))
+      prefix = 'api_cache_locations_';
+    else if (path.contains('/shelves'))
+      prefix = 'api_cache_shelves_';
+    else if (path.contains('/degrees'))
+      prefix = 'api_cache_degrees_';
+    else if (path.contains('/user_roles'))
+      prefix = 'api_cache_user_roles_';
+    else if (path.contains('/membership_types'))
+      prefix = 'api_cache_membership_types_';
 
     if (prefix != null) {
       _cacheService.clear(prefix: prefix);

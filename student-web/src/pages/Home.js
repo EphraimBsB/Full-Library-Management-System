@@ -108,8 +108,8 @@ const Home = () => {
         )}
 
         {/* Hero Section */}
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2, color: '#000000', fontSize: 18 }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, color: '#000000', fontSize: 18 }}>
             Find a book
           </Typography>
           <Typography
@@ -146,7 +146,7 @@ const Home = () => {
                     Currently Reading
                   </Typography>
                   <Typography variant="body2" sx={{ fontSize: 13 }}>
-                    {activeSession[0].copy?.book?.title} (Copy #{activeSession[0].copy?.accessNumber})
+                    {activeSession[0].copy?.book?.title} (Acc.No #{activeSession[0].copy?.accessNumber})
                   </Typography>
                   <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 500, color: '#666666' }}>
                     Since: {new Date(activeSession[0].startedAt).toLocaleString()}

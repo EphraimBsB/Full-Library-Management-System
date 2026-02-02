@@ -9,29 +9,14 @@ export class SourcesSeed implements ISeeder {
 
     const sources = [
       {
-        name: 'Publisher Direct',
-        supplier: 'Various Publishers',
+        name: 'Purchased',
+        supplier: 'Purchased from supplier',
         dateAcquired: new Date('2023-01-15'),
       },
       {
-        name: 'Book Fair',
-        supplier: 'International Book Fair 2023',
-        dateAcquired: new Date('2023-03-20'),
-      },
-      {
         name: 'Donation',
-        supplier: 'Alumni Association',
+        supplier: 'Donated by donor',
         dateAcquired: new Date('2023-02-10'),
-      },
-      {
-        name: 'Online Retailer',
-        supplier: 'Amazon Books',
-        dateAcquired: new Date('2023-04-05'),
-      },
-      {
-        name: 'Auction',
-        supplier: 'Library Clearance Auction',
-        dateAcquired: new Date('2023-01-30'),
       },
     ];
 

@@ -4,6 +4,7 @@ import 'package:management_side/src/features/settings/modules/categories/data/ap
 import 'package:management_side/src/features/settings/modules/categories/data/repositories/category_repository_impl.dart';
 import 'package:management_side/src/features/settings/modules/categories/domain/models/category_model.dart';
 import 'package:management_side/src/features/settings/modules/categories/domain/repositories/category_repository.dart';
+import 'package:management_side/src/features/settings/presentation/utils/system_config_cache_invalidation.dart';
 
 // Repository Provider
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
@@ -40,42 +41,54 @@ class CategoriesNotifier extends StateNotifier<AsyncValue<List<Category>>> {
 
   Future<void> addCategory(Category category) async {
     final result = await _repository.createCategory(category);
-    await result.fold(
-      (failure) => throw failure,
-      (_) => loadCategories(),
-    );
+    await result.fold((failure) => throw failure, (createdCategory) async {
+      // Invalidate caches after successful creation
+      await SystemConfigCacheInvalidator.invalidateCategoriesCaches(
+        categoryId: createdCategory.id,
+      );
+      await loadCategories();
+    });
   }
 
   Future<void> updateCategory(Category category) async {
     final result = await _repository.updateCategory(category);
-    await result.fold(
-      (failure) => throw failure,
-      (_) => loadCategories(),
-    );
+    await result.fold((failure) => throw failure, (updatedCategory) async {
+      // Invalidate caches after successful update
+      await SystemConfigCacheInvalidator.invalidateCategoriesCaches(
+        categoryId: category.id,
+      );
+      await loadCategories();
+    });
   }
 
   Future<void> deleteCategory(int id) async {
     final result = await _repository.deleteCategory(id);
-    await result.fold(
-      (failure) => throw failure,
-      (_) => loadCategories(),
-    );
+    await result.fold((failure) => throw failure, (_) async {
+      // Invalidate caches after successful deletion
+      await SystemConfigCacheInvalidator.invalidateCategoriesCaches(
+        categoryId: id,
+      );
+      await loadCategories();
+    });
   }
 
   Future<void> toggleCategoryStatus(int id, bool isActive) async {
     final result = await _repository.toggleCategoryStatus(id, isActive);
-    await result.fold(
-      (failure) => throw failure,
-      (_) => loadCategories(),
-    );
+    await result.fold((failure) => throw failure, (_) async {
+      // Invalidate caches after successful status toggle
+      await SystemConfigCacheInvalidator.invalidateCategoriesCaches(
+        categoryId: id,
+      );
+      await loadCategories();
+    });
   }
 }
 
 // State Notifier Provider
 final categoriesNotifierProvider =
-    StateNotifierProvider<CategoriesNotifier, AsyncValue<List<Category>>>(
-  (ref) {
-    final repository = ref.watch(categoryRepositoryProvider);
-    return CategoriesNotifier(repository);
-  },
-);
+    StateNotifierProvider<CategoriesNotifier, AsyncValue<List<Category>>>((
+      ref,
+    ) {
+      final repository = ref.watch(categoryRepositoryProvider);
+      return CategoriesNotifier(repository);
+    });
