@@ -421,8 +421,8 @@ export class UsersSeed implements ISeeder {
     const users = [
       ...adminUsers,
       ...librarianUsers,
-      ...facultyUsers,
-      ...studentUsers,
+      // ...facultyUsers,
+      // ...studentUsers,
     ];
 
     // Create users in the database with batch processing
