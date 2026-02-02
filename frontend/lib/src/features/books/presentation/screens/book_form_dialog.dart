@@ -25,6 +25,7 @@ import 'package:management_side/src/features/settings/modules/subjects/domain/mo
 import 'package:management_side/src/features/books/presentation/widgets/build_publishers.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_locations.dart';
 import 'package:management_side/src/features/books/presentation/widgets/build_shelves.dart';
+import 'package:management_side/src/core/utils/error_handler.dart';
 
 class BookFormDialog extends ConsumerStatefulWidget {
   final BookModel? book;
@@ -192,7 +193,7 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to fetch book information: $e'),
+          content: Text('Error: ${ErrorHandler.getErrorMessage(e)}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -309,22 +310,19 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
             );
           }
         } else {
+          final error = result.failureOrNull;
+          final errorMessage = ErrorHandler.getErrorMessage(error);
+
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $result'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
           );
         }
       }
-    } catch (e, stackTrace) {
-      debugPrint('Error in _submitForm: $e\n$stackTrace');
+    } catch (e) {
       if (mounted) {
+        final errorMessage = ErrorHandler.getErrorMessage(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('An error occurred: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -396,9 +394,9 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ErrorHandler.getErrorMessage(e))),
+        );
       }
     } finally {
       if (mounted) {}
@@ -416,9 +414,9 @@ class _BookFormDialogState extends ConsumerState<BookFormDialog> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to upload ebook: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ErrorHandler.getErrorMessage(e))),
+        );
       }
     } finally {
       if (mounted) {}

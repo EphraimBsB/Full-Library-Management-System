@@ -19,6 +19,7 @@ import 'package:management_side/src/features/books/presentation/providers/pagina
 import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 import 'package:management_side/src/features/books/presentation/widgets/issue_book_dialog.dart';
 import 'package:management_side/src/core/network/api_client.dart';
+import 'package:management_side/src/core/utils/error_handler.dart';
 import 'package:management_side/src/features/books/data/api/loan_api_service.dart';
 
 /// Shows a dialog with book details
@@ -132,7 +133,7 @@ class BookDetailsDialog extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating book: ${e.toString()}')),
+          SnackBar(content: Text(ErrorHandler.getErrorMessage(e))),
         );
       }
     }
@@ -452,69 +453,74 @@ class BookDetailsDialog extends ConsumerWidget {
 
           // Tabs
           const SizedBox(height: 16),
-          DefaultTabController(
-            length: 4, // Number of tabs
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TabBar(
-                  isScrollable: false,
-                  labelColor: theme.primaryColor,
-                  unselectedLabelColor: Colors.grey[600],
-                  indicatorColor: theme.primaryColor,
-                  dividerColor: Colors.grey[200],
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: const [
-                    Tab(text: 'Book Copies'),
-                    Tab(text: 'Currently Borrowed By'),
-                    Tab(text: 'Borrow History'),
-                    Tab(text: 'Requests Queue'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 200, // Fixed height for the tab content
-                  child: TabBarView(
-                    children: [
-                      // Book Copies Tab
-                      bookDetails.book.copies!.isNotEmpty
-                          ? _buildBookCopiesList(
-                              bookDetails.book.copies!,
-                              bookDetails.currentBorrows,
-                              ref,
-                            )
-                          : _buildEmptyState('No copies available', Icons.book),
-
-                      // Currently Borrowed By Tab
-                      bookDetails.currentBorrows.isNotEmpty
-                          ? _buildBorrowedByList(bookDetails.currentBorrows)
-                          : _buildEmptyState(
-                              'No active borrows',
-                              Icons.hourglass_empty,
-                            ),
-
-                      // Borrow History Tab
-                      bookDetails.borrowHistory.isNotEmpty
-                          ? _buildBorrowHistoryList(bookDetails.borrowHistory)
-                          : _buildEmptyState(
-                              'No borrow history',
-                              Icons.history,
-                            ),
-
-                      // Queue Requests Tab
-                      bookDetails.queueRequests.isNotEmpty
-                          ? _buildQueueRequestsList(bookDetails.queueRequests)
-                          : _buildEmptyState(
-                              'No queue requests',
-                              Icons.people_outline,
-                            ),
+          SizedBox(
+            height: 500, // Fixed height for tab content
+            child: DefaultTabController(
+              length: 4, // Number of tabs
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TabBar(
+                    isScrollable: false,
+                    labelColor: theme.primaryColor,
+                    unselectedLabelColor: Colors.grey[600],
+                    indicatorColor: theme.primaryColor,
+                    dividerColor: Colors.grey[200],
+                    labelStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    tabs: const [
+                      Tab(text: 'Book Copies'),
+                      Tab(text: 'Currently Borrowed By'),
+                      Tab(text: 'Borrow History'),
+                      Tab(text: 'Requests Queue'),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        // Book Copies Tab
+                        bookDetails.book.copies!.isNotEmpty
+                            ? _buildBookCopiesList(
+                                bookDetails.book.copies!,
+                                bookDetails.currentBorrows,
+                                ref,
+                              )
+                            : _buildEmptyState(
+                                'No copies available',
+                                Icons.book,
+                              ),
+
+                        // Currently Borrowed By Tab
+                        bookDetails.currentBorrows.isNotEmpty
+                            ? _buildBorrowedByList(bookDetails.currentBorrows)
+                            : _buildEmptyState(
+                                'No active borrows',
+                                Icons.hourglass_empty,
+                              ),
+
+                        // Borrow History Tab
+                        bookDetails.borrowHistory.isNotEmpty
+                            ? _buildBorrowHistoryList(bookDetails.borrowHistory)
+                            : _buildEmptyState(
+                                'No borrow history',
+                                Icons.history,
+                              ),
+
+                        // Queue Requests Tab
+                        bookDetails.queueRequests.isNotEmpty
+                            ? _buildQueueRequestsList(bookDetails.queueRequests)
+                            : _buildEmptyState(
+                                'No queue requests',
+                                Icons.people_outline,
+                              ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -652,7 +658,7 @@ class BookDetailsDialog extends ConsumerWidget {
   ) {
     return GridView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 6, // Number of items per row
         crossAxisSpacing: 12, // Spacing between columns

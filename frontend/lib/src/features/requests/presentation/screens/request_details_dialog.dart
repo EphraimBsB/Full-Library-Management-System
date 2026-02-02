@@ -7,6 +7,9 @@ import 'package:management_side/src/features/requests/domain/models/book_request
 import 'package:management_side/src/features/requests/presentation/providers/book_request_provider.dart';
 import 'package:management_side/src/features/requests/presentation/providers/pending_requests_provider.dart';
 import 'package:management_side/src/features/requests/presentation/widgets/show_confirmation_dialog.dart';
+import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
+import 'package:management_side/src/features/books/presentation/providers/book_details_provider.dart';
+import 'package:management_side/src/features/loans/presentation/utils/loan_cache_invalidation.dart';
 
 class RequestDetailsDialog extends ConsumerStatefulWidget {
   final BookRequest request;
@@ -63,9 +66,25 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
 
   Widget _buildAvailableCopiesSection(List<dynamic>? copies) {
     if (copies == null || copies.isEmpty) {
-      return const Text(
-        'No copies available',
-        style: TextStyle(color: Colors.grey),
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'No copies available',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -74,47 +93,139 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
         .toList();
 
     if (availableCopies.isEmpty) {
-      return const Text(
-        'No available copies',
-        style: TextStyle(color: Colors.orange),
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.orange[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_outlined,
+              size: 16,
+              color: Colors.orange[600],
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'No available copies',
+                style: TextStyle(color: Colors.orange[600], fontSize: 12),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Available Copies:',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: availableCopies.map((copy) {
-            final isSelected = _selectedCopyId == copy['id'].toString();
-            return ChoiceChip(
-              label: Text(
-                'Copy #${copy['accessNumber']}',
-                style: const TextStyle(fontSize: 12),
+        // Improved title with count
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.library_books_outlined,
+              size: 16,
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'Available Copies (${availableCopies.length}):',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Theme.of(context).primaryColor,
+                ),
               ),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedCopyId = selected ? copy['id'].toString() : null;
-                });
-              },
-              selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-              labelStyle: TextStyle(
-                color: isSelected ? Theme.of(context).primaryColor : null,
-              ),
-            );
-          }).toList(),
+            ),
+          ],
         ),
+        const SizedBox(height: 10),
+
+        // Improved Wrap with better spacing and constraints
+        Container(
+          constraints: const BoxConstraints(maxHeight: 120),
+          child: SingleChildScrollView(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: availableCopies.map((copy) {
+                final isSelected = _selectedCopyId == copy['id'].toString();
+                return ChoiceChip(
+                  label: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 60),
+                    child: Text(
+                      '#${copy['accessNumber']}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedCopyId = selected ? copy['id'].toString() : null;
+                    });
+                  },
+                  selectedColor: Theme.of(
+                    context,
+                  ).primaryColor.withOpacity(0.15),
+                  pressElevation: 2,
+                  side: BorderSide(
+                    color: isSelected
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey[400]!,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                  labelStyle: TextStyle(
+                    color: isSelected
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey[700],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+
         const SizedBox(height: 8),
-        Text(
-          "Please select a copy to approve this request",
-          style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 10),
+
+        // Improved instruction text
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.touch_app_outlined, size: 12, color: Colors.blue[600]),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  "Select a copy to approve this request",
+                  style: TextStyle(
+                    color: Colors.blue[600],
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -188,6 +299,21 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
           // Refresh loans list in background
           ref.read(loanNotifierProvider.notifier).loadLoans();
 
+          // Use comprehensive loan cache invalidation
+          LoanCacheInvalidator.invalidateAllLoanCaches(
+            userId: widget.request.user!['id'].toString(),
+          );
+
+          // Invalidate dashboard summary to refresh stats
+          ref.invalidate(dashboardSummaryProvider);
+
+          // Invalidate book details if book ID is available
+          if (widget.request.book != null &&
+              widget.request.book!['id'] != null) {
+            final bookId = widget.request.book!['id'] as int;
+            ref.invalidate(bookDetailsProvider(bookId));
+          }
+
           scaffoldMessenger.showSnackBar(
             const SnackBar(
               content: Text('Request approved successfully'),
@@ -257,6 +383,21 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
           ref
               .read(pendingRequestsNotifierProvider.notifier)
               .removeRequest(widget.request.id!);
+
+          // Use comprehensive loan cache invalidation
+          LoanCacheInvalidator.invalidateAllLoanCaches(
+            userId: widget.request.user!['id'].toString(),
+          );
+
+          // Invalidate dashboard summary to refresh stats
+          ref.invalidate(dashboardSummaryProvider);
+
+          // Invalidate book details if book ID is available
+          if (widget.request.book != null &&
+              widget.request.book!['id'] != null) {
+            final bookId = widget.request.book!['id'] as int;
+            ref.invalidate(bookDetailsProvider(bookId));
+          }
 
           scaffoldMessenger.showSnackBar(
             const SnackBar(
@@ -343,6 +484,7 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
                         context,
                         title: 'Book Information',
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
@@ -359,28 +501,35 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
                               ),
                             ),
                             const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildDetailRow(
-                                  'Title',
-                                  book['title'] ?? 'N/A',
-                                ),
-                                _buildDetailRow(
-                                  'Author',
-                                  book['author'] ?? 'N/A',
-                                ),
-                                _buildDetailRow('ISBN', book['isbn'] ?? 'N/A'),
-                                _buildDetailRow('DDC', book['ddc'] ?? 'N/A'),
-                                _buildDetailRow(
-                                  'Publisher',
-                                  book['publisher'] ?? 'N/A',
-                                ),
-                                const SizedBox(height: 8),
-                                if (widget.isAdmin &&
-                                    widget.request.status == 'PENDING')
-                                  _buildAvailableCopiesSection(book['copies']),
-                              ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildDetailRow(
+                                    'Title',
+                                    book['title'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Author',
+                                    book['author'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'ISBN',
+                                    book['isbn'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow('DDC', book['ddc'] ?? 'N/A'),
+                                  _buildDetailRow(
+                                    'Publisher',
+                                    book['publisher'] ?? 'N/A',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  if (widget.isAdmin &&
+                                      widget.request.status == 'PENDING')
+                                    _buildAvailableCopiesSection(
+                                      book['copies'],
+                                    ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -410,42 +559,44 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
                               ),
                             ),
                             const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildDetailRow(
-                                  'Name',
-                                  '${user['firstName']} ${user['lastName']}',
-                                ),
-                                _buildDetailRow(
-                                  'Roll Number',
-                                  user['rollNumber'] ?? 'N/A',
-                                ),
-                                _buildDetailRow(
-                                  'Phone',
-                                  user['phoneNumber'] ?? 'N/A',
-                                ),
-                                _buildDetailRow(
-                                  'Email',
-                                  user['email'] ?? 'N/A',
-                                ),
-                                _buildDetailRow(
-                                  'Degree',
-                                  user['degree'] ?? 'N/A',
-                                ),
-                                _buildDetailRow(
-                                  'Course',
-                                  user['course'] ?? 'N/A',
-                                ),
-                                _buildDetailRow(
-                                  'Joined Date',
-                                  user['joinDate'] ?? 'N/A',
-                                ),
-                                _buildDetailRow(
-                                  'Active Loan Count',
-                                  user['activeLoansCount'].toString(),
-                                ),
-                              ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildDetailRow(
+                                    'Name',
+                                    '${user['firstName']} ${user['lastName']}',
+                                  ),
+                                  _buildDetailRow(
+                                    'Roll Number',
+                                    user['rollNumber'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Phone',
+                                    user['phoneNumber'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Email',
+                                    user['email'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Degree',
+                                    user['degree'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Course',
+                                    user['course'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Joined Date',
+                                    user['joinDate'] ?? 'N/A',
+                                  ),
+                                  _buildDetailRow(
+                                    'Active Loan Count',
+                                    user['activeLoansCount'].toString(),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -604,31 +755,33 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
             ),
           ),
           const SizedBox(width: 8),
-          isStatus
-              ? Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(value),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    value.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+          Flexible(
+            child: isStatus
+                ? Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
                     ),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(value),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      value.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: TextStyle(color: valueColor),
+                    maxLines: isMultiline ? 2 : 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                )
-              : Text(
-                  value,
-                  style: TextStyle(color: valueColor),
-                  maxLines: isMultiline ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+          ),
         ],
       ),
     );

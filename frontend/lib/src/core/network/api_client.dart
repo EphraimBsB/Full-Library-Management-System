@@ -236,33 +236,49 @@ class ApiClient {
     final data = response.data;
 
     String message = 'An error occurred';
+    dynamic originalData = data;
 
     if (data != null && data is Map<String, dynamic>) {
-      message = data['message'] ?? data['error'] ?? message;
+      // Handle different error message formats
+      if (data['message'] != null) {
+        if (data['message'] is List) {
+          // Handle array of messages
+          message = (data['message'] as List).join(', ');
+        } else {
+          message = data['message'].toString();
+        }
+      } else if (data['error'] != null) {
+        message = data['error'].toString();
+      }
     }
 
     switch (statusCode) {
       case 400:
-        return BadRequestException(message: message);
+        return BadRequestException(message: message, data: originalData);
       case 401:
-        return UnauthorizedException(message: message);
+        return UnauthorizedException(message: message, data: originalData);
       case 403:
-        return ForbiddenException(message: message);
+        return ForbiddenException(message: message, data: originalData);
       case 404:
-        return NotFoundException(message: message);
+        return NotFoundException(message: message, data: originalData);
       case 422:
         return ValidationException(
           message: 'Validation failed',
           errors: data is Map<String, dynamic>
               ? data['errors'] as Map<String, dynamic>? ?? {}
               : {},
+          data: originalData,
         );
       case 500:
-        return ServerException(message: 'Internal server error');
+        return ServerException(
+          message: 'Internal server error',
+          data: originalData,
+        );
       default:
         return ApiException(
           message: 'Request failed with status: $statusCode',
           statusCode: statusCode,
+          data: originalData,
         );
     }
   }
