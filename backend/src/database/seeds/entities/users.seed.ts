@@ -385,7 +385,7 @@ export class UsersSeed implements ISeeder {
     });
 
     // Student users (50)
-    const studentUsers = Array.from({ length: 50 }, (_, i) => {
+    const studentUsers = Array.from({ length: 4 }, (_, i) => {
       const gender = Math.random() > 0.5 ? 'male' : ('female' as const);
       const { firstName, lastName } = generateUgandanName(gender);
 
@@ -422,7 +422,7 @@ export class UsersSeed implements ISeeder {
       ...adminUsers,
       ...librarianUsers,
       // ...facultyUsers,
-      // ...studentUsers,
+      ...studentUsers,
     ];
 
     // Create users in the database with batch processing

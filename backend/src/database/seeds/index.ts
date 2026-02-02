@@ -51,7 +51,7 @@ export class DatabaseSeeder {
 
       // Then users and memberships
       new UsersSeed(),
-      // new MembershipsSeed(),
+      new MembershipsSeed(),
       // new MembershipRequestsSeed(),
 
       // Then books and related entities
