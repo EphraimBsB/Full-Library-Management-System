@@ -376,7 +376,7 @@ class BookDetailsDialog extends ConsumerWidget {
               if (book.categories != null && book.categories!.isNotEmpty) ...[
                 _buildInfoRow(
                   'Categories',
-                  book.categories!.map((c) => c.name ?? 'Unknown').join(", "),
+                  book.categories!.map((c) => c.name).join(", "),
                 ),
               ],
 
@@ -384,7 +384,7 @@ class BookDetailsDialog extends ConsumerWidget {
               if (book.subjects != null && book.subjects!.isNotEmpty) ...[
                 _buildInfoRow(
                   'Subjects',
-                  book.subjects!.map((s) => s.name ?? 'Unknown').join(", "),
+                  book.subjects!.map((s) => s.name).join(", "),
                 ),
               ],
             ],
@@ -717,7 +717,7 @@ class BookDetailsDialog extends ConsumerWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Copy #${copy.accessNumber}',
+                        'Acc.No #${copy.accessNumber}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,

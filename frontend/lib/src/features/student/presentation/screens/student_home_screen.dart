@@ -543,7 +543,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
                       ),
                     ),
                     Text(
-                      '${session.copy['book']['title']} (Copy #${session.copy['accessNumber']})',
+                      '${session.copy['book']['title']} (Acc.No #${session.copy['accessNumber']})',
                       style: const TextStyle(fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

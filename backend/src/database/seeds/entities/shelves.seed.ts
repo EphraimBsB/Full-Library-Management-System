@@ -28,54 +28,29 @@ export class ShelvesSeed implements ISeeder {
 
     const shelves = [
       {
-        name: 'Reference Collection',
-        description: 'Dictionaries, encyclopedias, and reference materials',
+        name: 'Shelf 1',
+        description: 'ICT, Computer Science, Networking',
         locationId: mainCampus?.id ?? 1,
       },
       {
-        name: 'General Fiction',
-        description: 'Popular fiction and literature collection',
+        name: 'Shelf 2',
+        description: 'ICT, Computer Science, Networking',
         locationId: mainCampus?.id ?? 1,
       },
       {
-        name: 'Computer Science',
-        description: 'Programming, algorithms, and software engineering books',
+        name: 'Shelf 3',
+        description: 'Health Science, Engineering, statistics, Accounting, Managemnt',
+        locationId: mainCampus?.id ?? 1,
+      },
+      {
+        name: 'Shelf 4',
+        description: 'Business and Commerce',
         locationId: scienceLibrary?.id ?? 3,
       },
       {
-        name: 'Engineering',
-        description: 'Civil, mechanical, and electrical engineering texts',
-        locationId: scienceLibrary?.id ?? 3,
-      },
-      {
-        name: 'Medical Reference',
-        description: 'Medical textbooks and clinical references',
+        name: 'Shelf 5',
+        description: 'Students Projects',
         locationId: medicalLibrary?.id ?? 4,
-      },
-      {
-        name: 'Nursing Collection',
-        description: 'Nursing textbooks and practice guides',
-        locationId: medicalLibrary?.id ?? 4,
-      },
-      {
-        name: 'Business & Economics',
-        description: 'Business management, finance, and economics books',
-        locationId: cityCampus?.id ?? 2,
-      },
-      {
-        name: 'Periodicals',
-        description: 'Journals, magazines, and newspapers',
-        locationId: cityCampus?.id ?? 2,
-      },
-      {
-        name: 'Digital Resources',
-        description: 'E-books and online resource access terminals',
-        locationId: distanceCenter?.id ?? 5,
-      },
-      {
-        name: 'Study Materials',
-        description: 'Course materials and study guides for distance learners',
-        locationId: distanceCenter?.id ?? 5,
       },
     ];
 

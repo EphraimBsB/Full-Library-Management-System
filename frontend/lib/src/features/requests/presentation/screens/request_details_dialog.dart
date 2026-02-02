@@ -216,7 +216,7 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  "Select a copy to approve this request",
+                  "Select an Acc.No to approve this request",
                   style: TextStyle(
                     color: Colors.blue[600],
                     fontSize: 11,
@@ -238,7 +238,9 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Selection Required'),
-            content: const Text('Please select a copy to approve this request'),
+            content: const Text(
+              'Please select an Acc.No to approve this request',
+            ),
             actions: [
               TextButton(
                 onPressed: Navigator.of(context).pop,
@@ -255,7 +257,7 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
       context: context,
       title: 'Approve Request',
       content:
-          'Are you sure you want to approve this book request with the selected copy?',
+          'Are you sure you want to approve this book request with the selected Acc.No?',
       confirmButtonText: 'APPROVE',
       confirmButtonColor: Colors.green,
       notesHint: 'Add any notes about this approval...',

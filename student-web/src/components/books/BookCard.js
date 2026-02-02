@@ -467,12 +467,12 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
       {/* Copy Selection Dialog */}
       <Dialog open={copyDialogOpen} onClose={() => setCopyDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          {selectedCopy ? 'Confirm Selection' : 'Select Copy'}
+          {selectedCopy ? 'Confirm Selection' : 'Select Acc.No'}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              Check on the side of the book to find the copy you want to read.
+              Check on the side of the book to find the Acc.No you want to read.
             </Typography>
           </Box>
 
@@ -481,7 +481,7 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <MenuBook sx={{ color: '#2e7d32' }} />
                 <Typography variant="subtitle1" fontWeight="bold">
-                  Selected Copy: #{selectedCopy.accessNumber}
+                  Selected Acc.No: #{selectedCopy.accessNumber}
                 </Typography>
               </Box>
             </Box>
@@ -512,7 +512,7 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
                         <LockOutlined color="disabled" />
                       )}
                       <Typography variant="body2" sx={{ fontWeight: isSelected ? 'bold' : 'normal' }}>
-                        Copy #{copy.accessNumber}
+                        Acc.No #{copy.accessNumber}
                       </Typography>
                     </Box>
                     <Chip

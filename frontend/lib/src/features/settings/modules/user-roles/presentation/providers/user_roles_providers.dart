@@ -5,6 +5,7 @@ import 'package:management_side/src/core/network/api_client.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/data/repositories/user_role_repository_impl.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/domain/models/user_role_model.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/domain/repositories/user_role_repository.dart';
+import 'package:management_side/src/features/settings/presentation/utils/system_config_cache_invalidation.dart';
 
 final userRoleRepositoryProvider = Provider<UserRoleRepository>((ref) {
   final apiClient = ApiClient();
@@ -43,10 +44,13 @@ class UserRolesNotifier extends StateNotifier<AsyncValue<List<UserRole>>> {
   Future<void> toggleRoleStatus(int id, bool isActive) async {
     try {
       final result = await _repository.toggleRoleStatus(id, isActive);
-      await result.fold(
-        (failure) => throw failure,
-        (_) async => await loadRoles(),
-      );
+      await result.fold((failure) => throw failure, (_) async {
+        // Invalidate caches after successful status toggle
+        await SystemConfigCacheInvalidator.invalidateUserRolesCaches(
+          roleId: id,
+        );
+        await loadRoles();
+      });
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;
@@ -56,10 +60,13 @@ class UserRolesNotifier extends StateNotifier<AsyncValue<List<UserRole>>> {
   Future<void> createRole(UserRole role) async {
     try {
       final result = await _repository.createRole(role);
-      await result.fold(
-        (failure) => throw failure,
-        (_) async => await loadRoles(),
-      );
+      await result.fold((failure) => throw failure, (createdRole) async {
+        // Invalidate caches after successful creation
+        await SystemConfigCacheInvalidator.invalidateUserRolesCaches(
+          roleId: createdRole.id,
+        );
+        await loadRoles();
+      });
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;
@@ -69,10 +76,13 @@ class UserRolesNotifier extends StateNotifier<AsyncValue<List<UserRole>>> {
   Future<void> updateRole(UserRole role) async {
     try {
       final result = await _repository.updateRole(role);
-      await result.fold(
-        (failure) => throw failure,
-        (_) async => await loadRoles(),
-      );
+      await result.fold((failure) => throw failure, (updatedRole) async {
+        // Invalidate caches after successful update
+        await SystemConfigCacheInvalidator.invalidateUserRolesCaches(
+          roleId: role.id,
+        );
+        await loadRoles();
+      });
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;
@@ -82,10 +92,13 @@ class UserRolesNotifier extends StateNotifier<AsyncValue<List<UserRole>>> {
   Future<void> deleteRole(int id) async {
     try {
       final result = await _repository.deleteRole(id);
-      await result.fold(
-        (failure) => throw failure,
-        (_) async => await loadRoles(),
-      );
+      await result.fold((failure) => throw failure, (_) async {
+        // Invalidate caches after successful deletion
+        await SystemConfigCacheInvalidator.invalidateUserRolesCaches(
+          roleId: id,
+        );
+        await loadRoles();
+      });
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;
