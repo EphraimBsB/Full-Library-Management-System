@@ -204,7 +204,7 @@ const Header = () => {
                   Sign In
                 </Button>
               )}
-              <Button
+              {/* <Button
                 variant="contained"
                 onClick={() => navigate('/signup')}
                 sx={{
@@ -216,7 +216,7 @@ const Header = () => {
                 }}
               >
                 Sign Up
-              </Button>
+              </Button> */}
             </Box>
           )}
         </Toolbar>

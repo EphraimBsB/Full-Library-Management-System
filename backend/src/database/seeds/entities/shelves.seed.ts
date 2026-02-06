@@ -39,18 +39,18 @@ export class ShelvesSeed implements ISeeder {
       },
       {
         name: 'Shelf 3',
-        description: 'Health Science, Engineering, statistics, Accounting, Managemnt',
+        description: 'Health Science, Engineering, statistics, Accounting, Management',
         locationId: mainCampus?.id ?? 1,
       },
       {
         name: 'Shelf 4',
         description: 'Business and Commerce',
-        locationId: scienceLibrary?.id ?? 3,
+        locationId: cityCampus?.id ?? 2,
       },
       {
         name: 'Shelf 5',
-        description: 'Students Projects',
-        locationId: medicalLibrary?.id ?? 4,
+        description: 'Student Projects',
+        locationId: mainCampus?.id ?? 1,
       },
     ];
 

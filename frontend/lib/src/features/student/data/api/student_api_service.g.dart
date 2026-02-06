@@ -42,7 +42,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = _result.data!.map(
         (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
+            MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -103,7 +103,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = BorrowHistoryResponse<Loan>.fromJson(
         _result.data!,
-        (json) => Loan.fromJson(json as Map<String, dynamic>),
+        (json) => Loan.fromJson(json),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -137,7 +137,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = BorrowHistoryResponse<BookModel>.fromJson(
         _result.data!,
-        (json) => BookModel.fromJson(json as Map<String, dynamic>),
+        (json) => BookModel.fromJson(json),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -171,7 +171,7 @@ class _StudentApiService implements StudentApiService {
     try {
       _value = BorrowHistoryResponse<BookNote>.fromJson(
         _result.data!,
-        (json) => BookNote.fromJson(json as Map<String, dynamic>),
+        (json) => BookNote.fromJson(json),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

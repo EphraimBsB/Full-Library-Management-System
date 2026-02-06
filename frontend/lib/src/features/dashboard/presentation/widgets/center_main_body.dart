@@ -88,20 +88,20 @@ class _CenterMainBodyWidgetState extends ConsumerState<CenterMainBodyWidget> {
           Row(
             children: [
               _buildStatCard(
-                'Total Books',
-                dashboardStats.totalBooks.toString(),
+                'Total Copies',
+                dashboardStats.totalCopies.toString(),
                 Icons.menu_book,
                 const Color(0xFFF0F9FF),
                 const Color(0xFF026AA2),
               ),
-              const SizedBox(width: 16),
-              _buildStatCard(
-                'Total Users',
-                dashboardStats.totalUsers.toString(),
-                Icons.people,
-                const Color(0xFFF0FDF4),
-                const Color(0xFF15803D),
-              ),
+              // const SizedBox(width: 16),
+              // _buildStatCard(
+              //   'Available Copies',
+              //   dashboardStats.availableCopies.toString(),
+              //   Icons.check_circle,
+              //   const Color(0xFFF0FDF4),
+              //   const Color(0xFF15803D),
+              // ),
               const SizedBox(width: 16),
               _buildStatCard(
                 'Issued Books',
@@ -112,9 +112,9 @@ class _CenterMainBodyWidgetState extends ConsumerState<CenterMainBodyWidget> {
               ),
               const SizedBox(width: 16),
               _buildStatCard(
-                'Overdues',
-                dashboardStats.overdueLoans.toString(),
-                Icons.inventory_2,
+                'Total Users',
+                dashboardStats.totalUsers.toString(),
+                Icons.people,
                 const Color(0xFFF5F3FF),
                 const Color(0xFF5B21B6),
               ),

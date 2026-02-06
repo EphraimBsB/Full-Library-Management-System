@@ -39,7 +39,7 @@ export class BooksService {
     private dataSource: DataSource,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-  ) {}
+  ) { }
 
   private async resetCache(): Promise<void> {
     const store: any = (this.cacheManager as any).store;
@@ -222,9 +222,19 @@ export class BooksService {
       qb.andWhere('book.availableCopies >= :minAvailable', { minAvailable });
     }
 
+    // 📚 Filter by categories
+    if (filters.categories && filters.categories.length > 0) {
+      qb.andWhere('categories.id IN (:...categories)', { categories: filters.categories });
+    }
+
+    // 📖 Filter by subjects
+    if (filters.subjects && filters.subjects.length > 0) {
+      qb.andWhere('subjects.name IN (:...subjects)', { subjects: filters.subjects });
+    }
+
     // 🎯 Apply other filters dynamically (e.g. typeId, sourceId)
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && key !== 'sortBy' && key !== 'sortOrder') {
+      if (value !== undefined && key !== 'sortBy' && key !== 'sortOrder' && key !== 'categories' && key !== 'subjects') {
         qb.andWhere(`book.${key} = :${key}`, { [key]: value });
       }
     });

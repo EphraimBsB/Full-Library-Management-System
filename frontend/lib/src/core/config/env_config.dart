@@ -5,5 +5,6 @@ class EnvConfig {
     await dotenv.load(fileName: ".env");
   }
 
-  static String get baseUrl => dotenv.env['BASE_URL'] ?? 'http://localhost:3000/api/v1';
+  static String get baseUrl =>
+      dotenv.env['BASE_URL'] ?? 'http://localhost:3000/api/v1';
 }
