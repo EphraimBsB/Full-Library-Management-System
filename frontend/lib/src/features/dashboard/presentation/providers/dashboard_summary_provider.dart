@@ -69,7 +69,8 @@ final dashboardSummaryStatsProvider = Provider<DashboardStats>((ref) {
   return summaryAsync.when(
     data: (summary) => summary.stats,
     loading: () => DashboardStats(
-      totalBooks: 0,
+      totalCopies: 0,
+      availableCopies: 0,
       totalUsers: 0,
       activeLoans: 0,
       overdueLoans: 0,

@@ -42,7 +42,8 @@ Map<String, dynamic> _$DashboardSummaryToJson(DashboardSummary instance) =>
 
 DashboardStats _$DashboardStatsFromJson(Map<String, dynamic> json) =>
     DashboardStats(
-      totalBooks: (json['books'] as num).toInt(),
+      totalCopies: (json['totalCopies'] as num).toInt(),
+      availableCopies: (json['availableCopies'] as num).toInt(),
       totalUsers: (json['users'] as num).toInt(),
       activeLoans: (json['loans'] as num).toInt(),
       overdueLoans: (json['overdue'] as num).toInt(),
@@ -50,7 +51,8 @@ DashboardStats _$DashboardStatsFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$DashboardStatsToJson(DashboardStats instance) =>
     <String, dynamic>{
-      'books': instance.totalBooks,
+      'totalCopies': instance.totalCopies,
+      'availableCopies': instance.availableCopies,
       'users': instance.totalUsers,
       'loans': instance.activeLoans,
       'overdue': instance.overdueLoans,

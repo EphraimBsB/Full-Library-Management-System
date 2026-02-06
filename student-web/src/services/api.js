@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL, DEFAULT_HEADERS } from '../constants/api';
+import { API_BASE_URL, DEFAULT_HEADERS, API_ENDPOINTS } from '../constants/api';
 
 // Create axios instance
 const api = axios.create({
@@ -204,7 +204,41 @@ export class ApiService {
 
   // Books
   static async getBooks(params = {}) {
-    const response = await api.get('/books', { params });
+    // Handle array parameters properly
+    const searchParams = new URLSearchParams();
+    
+    Object.keys(params).forEach(key => {
+      if (Array.isArray(params[key])) {
+        // Add each array item as separate parameter with proper encoding
+        params[key].forEach(value => {
+          searchParams.append(key, encodeURIComponent(value));
+        });
+      } else if (params[key] !== undefined) {
+        searchParams.append(key, params[key]);
+      }
+    });
+    
+    const response = await api.get(`/books?${searchParams.toString()}`);
+    return response.data;
+  }
+
+  // Subjects
+  static async getSubjects(params = {}) {
+    // Handle array parameters properly
+    const searchParams = new URLSearchParams();
+    
+    Object.keys(params).forEach(key => {
+      if (Array.isArray(params[key])) {
+        // Add each array item as separate parameter with proper encoding
+        params[key].forEach(value => {
+          searchParams.append(key, encodeURIComponent(value));
+        });
+      } else if (params[key] !== undefined) {
+        searchParams.append(key, params[key]);
+      }
+    });
+    
+    const response = await api.get(`${API_ENDPOINTS.SUBJECTS}?${searchParams.toString()}`);
     return response.data;
   }
 

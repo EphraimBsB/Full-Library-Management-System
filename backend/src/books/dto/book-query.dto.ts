@@ -7,7 +7,7 @@ import {
   IsArray,
   IsIn,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 const SORT_FIELDS = [
   'title',
@@ -78,6 +78,22 @@ export class BookQueryDto {
   @IsString({ each: true })
   @Type(() => String)
   categories?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Type(() => String)
+  @Transform(({ value }) => {
+    // Handle both string and array inputs
+    if (typeof value === 'string') {
+      return [value];
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return [];
+  })
+  subjects?: string[];
 
   @IsOptional()
   @IsString()

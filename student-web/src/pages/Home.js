@@ -25,6 +25,27 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const [showAllSubjects, setShowAllSubjects] = useState(false);
+  const [visibleSubjectCount, setVisibleSubjectCount] = useState(8);
+
+  // Responsive subject count
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 600) {
+        setVisibleSubjectCount(4); // Mobile: show 4 subjects
+      } else if (width < 960) {
+        setVisibleSubjectCount(6); // Tablet: show 6 subjects
+      } else {
+        setVisibleSubjectCount(8); // Desktop: show 8 subjects
+      }
+    };
+
+    handleResize(); // Set initial count
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Debounce search term
   useEffect(() => {
@@ -34,6 +55,24 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Fetch subjects
+  const {
+    data: subjectsData,
+    isLoading: subjectsLoading,
+  } = useQuery(
+    'subjects',
+    () => ApiService.getSubjects({ limit: 100 }), // Get all subjects
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      select: (data) => {
+        // Handle both array and paginated response formats
+        return {
+          data: Array.isArray(data) ? data : data?.data || [],
+        };
+      },
+    }
+  );
+
   // Fetch books with React Query
   const {
     data: booksData,
@@ -41,18 +80,24 @@ const Home = () => {
     error,
     refetch,
   } = useQuery(
-    ['books', page, debouncedSearch],
-    () => ApiService.getBooks({
-      page,
-      limit: 12,
-      search: debouncedSearch || undefined,
-    }),
+    ['books', page, debouncedSearch, selectedSubjects],
+    () => {
+      const params = {
+        page,
+        limit: 12,
+        search: debouncedSearch || undefined,
+        subjects: selectedSubjects.length > 0 ? 
+          selectedSubjects.map(subjectId => {
+            // Find subject name from subjects data
+            const subject = subjectsData?.data?.find(s => s.id === subjectId);
+            return subject?.name;
+          }).filter(Boolean) : undefined,
+      };
+      return ApiService.getBooks(params);
+    },
     {
       keepPreviousData: true,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      onSuccess: (data) => {
-        console.log('API Response structure is correct!');
-      },
     }
   );
 
@@ -74,6 +119,24 @@ const Home = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
+  };
+
+  const handleSubjectToggle = (subjectId) => {
+    setSelectedSubjects(prev => {
+      // Ensure subjectId is a number for comparison
+      const id = Number(subjectId);
+      if (prev.includes(id)) {
+        return prev.filter(id => id !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+    setPage(1); // Reset to first page on filter change
+  };
+
+  const handleClearSubjects = () => {
+    setSelectedSubjects([]);
+    setPage(1); // Reset to first page on filter clear
   };
 
   const handleBorrowRequest = (book) => {
@@ -171,7 +234,7 @@ const Home = () => {
         )}
 
         {/* Search Bar */}
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 2 }}>
           <TextField
             fullWidth
             placeholder="Search by title, author, or ISBN"
@@ -216,16 +279,75 @@ const Home = () => {
         {!isLoading && !error && (
           <>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#000000', fontSize: 14 }}>
-                All Books
-                {booksData?.data && booksData?.pagination && (
-                  <Chip
-                    label={`${booksData.pagination.total} books`}
-                    size="small"
-                    sx={{ ml: 2 }}
-                  />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
+                {/* Subject Filter Chips */}
+                {!subjectsLoading && subjectsData?.data && (
+                  <>
+                    <Typography variant="body2" sx={{ fontSize: 11, color: '#666', mr: 1 }}>
+                      Filter by subject:
+                    </Typography>
+                    {subjectsData.data
+                      .slice(0, showAllSubjects ? subjectsData.data.length : visibleSubjectCount)
+                      .map((subject) => (
+                      <Chip
+                        key={subject.id}
+                        label={subject.name}
+                        size="small"
+                        clickable
+                        onClick={() => handleSubjectToggle(subject.id)}
+                        color={selectedSubjects.includes(subject.id) ? 'primary' : 'default'}
+                        variant={selectedSubjects.includes(subject.id) ? 'filled' : 'outlined'}
+                        sx={{ 
+                          fontSize: 10,
+                          height: 22,
+                          '& .MuiChip-label': {
+                            px: 1,
+                          },
+                        }}
+                      />
+                    ))}
+                    {selectedSubjects.length > 0 && (
+                      <Chip
+                        label="Clear all"
+                        size="small"
+                        clickable
+                        onClick={handleClearSubjects}
+                        color="secondary"
+                        variant="outlined"
+                        sx={{ 
+                          fontSize: 10,
+                          height: 22,
+                          '& .MuiChip-label': {
+                            px: 1,
+                          },
+                        }}
+                      />
+                    )}
+                    {subjectsData.data.length > visibleSubjectCount && (
+                      <Chip
+                        label={showAllSubjects ? "View less" : "View more"}
+                        size="small"
+                        clickable
+                        onClick={() => setShowAllSubjects(!showAllSubjects)}
+                        color="default"
+                        variant="text"
+                        sx={{ 
+                          fontSize: 10,
+                          height: 22,
+                          '& .MuiChip-label': {
+                            px: 1,
+                            color: '#1976d2',
+                            fontWeight: 'medium',
+                          },
+                          '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                          },
+                        }}
+                      />
+                    )}
+                  </>
                 )}
-              </Typography>
+              </Box>
             </Box>
 
             {booksData?.data?.length > 0 ? (
@@ -251,7 +373,7 @@ const Home = () => {
               </Grid>
             ) : (
               <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="h6" color="text.secondary">
+                <Typography variant="h6" sx={{ color: '#bbbbbb' }}>
                   No books found matching your criteria
                 </Typography>
               </Box>
@@ -273,6 +395,44 @@ const Home = () => {
           </>
         )}
       </Container>
+      
+      {/* Footer Watermark */}
+      <Box
+        component="footer"
+        sx={{
+          py: 2,
+          textAlign: 'center',
+          backgroundColor: '#f5f5f5',
+          borderTop: '1px solid #e0e0e0',
+          mt: 'auto',
+        }}
+      >
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            fontSize: 10, 
+            color: '#999999',
+            fontFamily: 'monospace',
+            letterSpacing: 0.5,
+            fontStyle: 'italic',
+            mb: 1
+          }}
+        >
+          © 2026- ISBAT University. All Rights Reserved.
+        </Typography>
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            fontSize: 10, 
+            color: '#999999',
+            fontFamily: 'monospace',
+            letterSpacing: 0.5,
+            fontStyle: 'italic'
+          }}
+        >
+          developed by Abstract, Ephraim BASUBI LUNYUNGU
+        </Typography>
+      </Box>
     </Box>
   );
 };

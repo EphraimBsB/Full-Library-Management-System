@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:management_side/src/features/books/presentation/screens/book_list_screen.dart';
 import 'package:management_side/src/features/books/presentation/screens/paginated_book_list_screen.dart';
 import 'package:management_side/src/features/dashboard/presentation/providers/dashboard_summary_provider.dart';
 import 'package:management_side/src/features/dashboard/presentation/widgets/center_main_body.dart';

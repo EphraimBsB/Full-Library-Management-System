@@ -7,7 +7,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
-import Signup from './pages/Signup';
+// import Signup from './pages/Signup'; // Commented out - signup hidden
 import EbookReaderPage from './pages/EbookReaderPage';
 
 // Create a theme
@@ -111,7 +111,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              {/* <Route path="/signup" element={<Signup />} /> */}
               <Route
                 path="/profile"
                 element={

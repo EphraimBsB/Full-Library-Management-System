@@ -15,6 +15,7 @@ import {
   Grid,
   Snackbar,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import {
   Star,
@@ -252,18 +253,23 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
           {/* Ebook Badge */}
           {book.ebookUrl && (
             <Chip
-              icon={<MenuBook sx={{ fontSize: 12 }} />}
+              icon={<MenuBook sx={{ fontSize: 10 }} />}
               label="EBOOK"
               size="small"
+              iconcolor="inherit"
               sx={{
                 position: 'absolute',
                 top: 8,
                 left: 8,
-                fontSize: 9,
+                fontSize: 8,
                 fontWeight: 'bold',
-                backgroundColor: 'rgba(191, 0, 25, 0.1)',
-                border: '1px solid rgba(191, 0, 25, 0.3)',
-                color: '#BF0019',
+                backgroundColor: '#1976d2',
+                color: 'white',
+                zIndex: 2,
+                '& .MuiChip-icon': {
+                  color: 'white',
+                  fontSize: 14,
+                },
               }}
             />
           )}
@@ -320,23 +326,42 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
             />
           </Box>
 
-          {/* Description - Expanded for better visibility */}
+          {/* Description Preview with Hover Tooltip */}
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                display: '-webkit-box',
-                WebkitLineClamp: 8,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                fontSize: 10,
-                lineHeight: 1.3,
-                flex: 1,
-              }}
+            <Tooltip
+              title={
+                <Box sx={{ maxWidth: 300, p: 1 }}>
+                  <Typography variant="body2" sx={{ fontSize: 12, lineHeight: 1.4 }}>
+                    {book.description || 'No description available'}
+                  </Typography>
+                </Box>
+              }
+              arrow
+              placement="top"
+              enterDelay={500}
+              leaveDelay={100}
             >
-              {book.description?.substring(0, 150) || 'No description available'}...
-            </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  fontSize: 10,
+                  lineHeight: 1.3,
+                  flex: 1,
+                  cursor: 'help',
+                  '&:hover': {
+                    color: '#1976d2',
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {book.description?.substring(0, 120) || 'No description available'}...
+              </Typography>
+            </Tooltip>
           </Box>
 
           {/* Action Buttons at Very Bottom */}

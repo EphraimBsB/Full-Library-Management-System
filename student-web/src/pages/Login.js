@@ -116,14 +116,14 @@ const Login = () => {
             <Box sx={{ textAlign: 'center', mt: 3 }}>
               <Typography variant="body2">
                 Don't have an account?{' '}
-                <Link
+                Don't have an account? {/* <Link
                   component="button"
                   type="button"
                   onClick={() => navigate('/signup')}
                   sx={{ fontWeight: 'bold' }}
                 >
                   Sign Up
-                </Link>
+                </Link> */}
               </Typography>
             </Box>
 

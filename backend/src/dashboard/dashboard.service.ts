@@ -75,8 +75,22 @@ export class DashboardService {
   }
 
   private async getStats(): Promise<DashboardStatsDto> {
-    const [books, users] = await Promise.all([
-      this.bookRepository.count({ where: { deletedAt: IsNull() } }),
+    // Count total and available book copies using the book entity columns
+    const [totalCopies, availableCopies, users] = await Promise.all([
+      this.bookRepository
+        .createQueryBuilder('book')
+        .select('SUM(book.totalCopies)', 'total')
+        .where('book.deletedAt IS NULL')
+        .getRawOne()
+        .then(result => parseInt(result?.total || '0')),
+
+      this.bookRepository
+        .createQueryBuilder('book')
+        .select('SUM(book.availableCopies)', 'total')
+        .where('book.deletedAt IS NULL')
+        .getRawOne()
+        .then(result => parseInt(result?.total || '0')),
+
       this.userRepository.count(),
     ]);
 
@@ -100,7 +114,8 @@ export class DashboardService {
     ]);
 
     return {
-      books,
+      totalCopies,
+      availableCopies,
       users,
       loans: activeLoans,
       overdue: overdueLoans,

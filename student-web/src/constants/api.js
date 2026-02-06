@@ -11,6 +11,9 @@ export const API_ENDPOINTS = {
   BOOK_DETAILS: (id) => `/books/${id}/details`,
   BOOK_COPIES: (id) => `/books/${id}/copies`,
   
+  // Subjects
+  SUBJECTS: '/subjects',
+  
   // Student specific
   STUDENT_DETAILS: '/student-details',
   PROFILE_SUMMARY: (userId) => `/users/${userId}/profile-summary`,

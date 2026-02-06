@@ -40,8 +40,11 @@ class DashboardSummary {
 
 @JsonSerializable()
 class DashboardStats {
-  @JsonKey(name: 'books')
-  final int totalBooks;
+  @JsonKey(name: 'totalCopies')
+  final int totalCopies;
+
+  @JsonKey(name: 'availableCopies')
+  final int availableCopies;
 
   @JsonKey(name: 'users')
   final int totalUsers;
@@ -53,7 +56,8 @@ class DashboardStats {
   final int overdueLoans;
 
   DashboardStats({
-    required this.totalBooks,
+    required this.totalCopies,
+    required this.availableCopies,
     required this.totalUsers,
     required this.activeLoans,
     required this.overdueLoans,
