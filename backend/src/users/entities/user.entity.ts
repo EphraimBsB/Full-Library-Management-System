@@ -47,6 +47,9 @@ export class User {
   @Column({ nullable: true })
   degree?: string;
 
+  @Column({ nullable: true })
+  semester?: string;
+
   @Column({ name: 'date_of_birth', type: 'date', nullable: true })
   dateOfBirth?: Date;
 

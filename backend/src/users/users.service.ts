@@ -419,13 +419,14 @@ export class UsersService {
       throw new NotFoundException('Student membership type not found');
     }
 
-    // Create user from student details
     const user = this.userRepository.create({
       firstName,
       lastName,
       email: `${studentDetails.name}@student.isbatuniversity.ac.ug`, // Generate email from roll number
       rollNumber: password,
       phoneNumber: '', // Will be filled later if needed
+      degree: studentDetails.programme, // Map programme to degree
+      semester: studentDetails.semester, // Map semester directly
       passwordHash: await bcrypt.hash(password, this.saltRounds),
       role: studentRole,
       isActive: true,

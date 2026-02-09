@@ -108,6 +108,7 @@ export class AuthService {
         lastName: user.lastName,
         rollNumber: user.rollNumber,
         degree: user.degree,
+        semester: user.semester,
         role: user.role,
         isActive: user.isActive,
       },

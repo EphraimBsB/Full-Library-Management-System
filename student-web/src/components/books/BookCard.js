@@ -30,6 +30,7 @@ import { ApiService } from '../../services/api';
 import { getImageUrl } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import BorrowRequestDialog from './BorrowRequestDialog';
+import LoginDialog from '../auth/LoginDialog';
 
 const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activeSession }) => {
   const { isAuthenticated } = useAuth();
@@ -40,6 +41,8 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
   const [restrictionSnackbar, setRestrictionSnackbar] = useState({ open: false, message: '' });
   const [borrowRequestDialogOpen, setBorrowRequestDialogOpen] = useState(false);
   const [successSnackbar, setSuccessSnackbar] = useState({ open: false, message: '' });
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // Track what action to retry after login
 
   const availableCopies = book.copies?.filter(copy => copy.status === 'AVAILABLE') || [];
   const isAvailable = availableCopies.length > 0;
@@ -50,7 +53,8 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
 
   const handleReadClick = () => {
     if (!isAuthenticated) {
-      // Redirect to login or show login dialog
+      setPendingAction('read');
+      setLoginDialogOpen(true);
       return;
     }
     
@@ -105,7 +109,8 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
 
   const handleBorrowClick = () => {
     if (!isAuthenticated) {
-      // Redirect to login or show login dialog
+      setPendingAction('borrow');
+      setLoginDialogOpen(true);
       return;
     }
     
@@ -606,6 +611,25 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
           {successSnackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Login Dialog */}
+      <LoginDialog 
+        open={loginDialogOpen} 
+        onClose={() => {
+          setLoginDialogOpen(false);
+          setPendingAction(null);
+        }}
+        onLoginSuccess={() => {
+          setLoginDialogOpen(false);
+          // Retry the original action based on pendingAction
+          if (pendingAction === 'read') {
+            setReadDialogOpen(true);
+          } else if (pendingAction === 'borrow') {
+            setBorrowRequestDialogOpen(true);
+          }
+          setPendingAction(null);
+        }}
+      />
     </>
   );
 };

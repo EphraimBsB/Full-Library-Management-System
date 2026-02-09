@@ -138,8 +138,11 @@ const Header = () => {
                     >
                       {user.firstName} {user.lastName}
                     </Typography>
-                    <Typography variant="body2" sx={{ fontSize: 10, color: '#666' }}>
-                      {user.degree} {user.role?.name && `• ${user.role.name}`}
+                    <Typography variant="body2" sx={{ fontSize: 8.5, color: '#666' }}>
+                      {user.degree}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: 8.5, color: '#666' }}>
+                      {user.semester && `${user.semester}`}
                     </Typography>
                   </Box>
                 </Box>
