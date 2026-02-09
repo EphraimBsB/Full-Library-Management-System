@@ -185,7 +185,7 @@ const Profile = () => {
                   {user.firstName} {user.lastName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {user.degree} {user.role?.name && `• ${user.role.name}`}
+                  {user.degree} {user.semester && `• ${user.semester}`} {user.role?.name && `• ${user.role.name}`}
                 </Typography>
               </Box>
             </Grid>
@@ -224,6 +224,16 @@ const Profile = () => {
                       </Typography>
                       <Typography variant="body1">
                         {profileSummary?.rollNumber || 'N/A'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Semester
+                      </Typography>
+                      <Typography variant="body1">
+                        {user.semester || 'N/A'}
                       </Typography>
                     </Box>
                   </Grid>
