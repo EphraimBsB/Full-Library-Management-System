@@ -124,6 +124,8 @@ class BookModel {
       if (ddc != null) 'ddc': ddc,
       if (price != null) 'price': price,
       if (ebookUrl != null) 'ebookUrl': ebookUrl,
+      if (ebookUrl == null)
+        'ebookUrl': null, // Explicitly include null to remove ebook URL
       if (location != null) 'location': location,
       if (shelf != null) 'shelf': shelf,
       if (copies != null)
