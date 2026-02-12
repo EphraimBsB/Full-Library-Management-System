@@ -19,6 +19,12 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Snackbar,
 } from '@mui/material';
 import {
   Person,
@@ -31,6 +37,7 @@ import {
   Notifications,
   Logout,
   ArrowBack,
+  Refresh,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
@@ -57,6 +64,10 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [tabValue, setTabValue] = useState(0);
+  const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState(null);
+  const [renewalReason, setRenewalReason] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // Fetch profile summary
   const {
@@ -71,7 +82,7 @@ const Profile = () => {
     }
   );
 
-  // Fetch reading history (in-house usage)
+  // Fetch reading history (in-house usage) 
   const {
     data: readingHistory,
     isLoading: readingHistoryLoading,
@@ -135,6 +146,37 @@ const Profile = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleRenewalRequest = async () => {
+    try {
+      await ApiService.createRenewalRequest(selectedLoan.id, renewalReason);
+      setRenewalDialogOpen(false);
+      setRenewalReason('');
+      setSelectedLoan(null);
+      setSnackbar({
+        open: true,
+        message: 'Renewal request submitted successfully! Awaiting librarian approval.',
+        severity: 'success'
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || 'Failed to submit renewal request',
+        severity: 'error'
+      });
+    }
+  };
+
+  const openRenewalDialog = (loan) => {
+    setSelectedLoan(loan);
+    setRenewalDialogOpen(true);
+  };
+
+  const closeRenewalDialog = () => {
+    setRenewalDialogOpen(false);
+    setSelectedLoan(null);
+    setRenewalReason('');
   };
 
   const getUserInitials = () => {
@@ -471,6 +513,7 @@ const Profile = () => {
                                 borderRadius: 1,
                                 overflow: 'hidden',
                                 position: 'relative',
+                                marginBottom: 1,
                               }}
                             >
                               <img
@@ -525,6 +568,37 @@ const Profile = () => {
                                   </Typography>
                                 )}
                               </Box>
+                              {/* Add renewal button for active loans */}
+                              {(!item.returnedAt && (item.status === 'active' || item.status === 'ACTIVE' || item.status?.toUpperCase() === 'ACTIVE')) && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<Refresh />}
+                                    onClick={() => openRenewalDialog(item)}
+                                    sx={{ 
+                                      fontSize: 10, 
+                                      py: 0.5, 
+                                      px: 1,
+                                      borderColor: '#1976d2',
+                                      color: '#1976d2',
+                                      '&:hover': {
+                                        borderColor: '#1565c0',
+                                        backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                                      }
+                                    }}
+                                  >
+                                    Request Renewal
+                                  </Button>
+                                </Box>
+                              )}
+                              
+                              {/* Debug info - remove this later */}
+                              {
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: 8 }}>
+                                  status="{item.status}" | returnedAt={item.returnedAt ? 'yes' : 'no'}
+                                </Typography>
+                              }
                             </Box>
                           </CardContent>
                         </Card>
@@ -654,6 +728,54 @@ const Profile = () => {
           </TabPanel>
         </Paper>
       </Container>
+
+      {/* Renewal Request Dialog */}
+      <Dialog open={renewalDialogOpen} onClose={closeRenewalDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Request Loan Renewal</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Book: {selectedLoan?.bookCopy?.book?.title || selectedLoan?.book?.title || 'Unknown Book'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Current Due Date: {selectedLoan?.dueDate ? new Date(selectedLoan.dueDate).toLocaleDateString() : 'N/A'}
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for Renewal (Optional)"
+            type="text"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={renewalReason}
+            onChange={(e) => setRenewalReason(e.target.value)}
+            placeholder="Please provide a reason for your renewal request..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeRenewalDialog}>Cancel</Button>
+          <Button onClick={handleRenewalRequest} variant="contained" color="primary">
+            Submit Request
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

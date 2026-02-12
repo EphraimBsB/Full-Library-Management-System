@@ -36,6 +36,12 @@ abstract class LoanRepository {
   /// Renew a loan
   Future<Either<Failure, Loan>> renewLoan(String id);
 
+  /// Create a renewal request for a loan
+  Future<Either<Failure, Map<String, dynamic>>> createRenewalRequest(
+    String loanId, {
+    String? reason,
+  });
+
   /// Get overdue loans
   Future<Either<Failure, List<Loan>>> getOverdueLoans({int? page, int? limit});
 

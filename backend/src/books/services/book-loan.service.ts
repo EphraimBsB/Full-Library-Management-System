@@ -405,19 +405,23 @@ export class BookLoanService {
    * Renews a book loan if allowed
    */
   async renewLoan(loanId: string, userId: string): Promise<BookLoan> {
+    this.logger.log(`Attempting to renew loan ${loanId} for user ${userId}`);
+    
     const activeMembership =
       await this.membershipService.findActiveMembership(userId);
     if (!activeMembership) {
+      this.logger.error(`No active membership found for user ${userId}`);
       throw new BadRequestException(
         'Active membership is required to renew books',
       );
     }
 
+    this.logger.log(`Found active membership: ${activeMembership.id}, type: ${activeMembership.type?.name || 'Unknown'}`);
+
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const loan = await transactionalEntityManager.findOne(BookLoan, {
         where: { id: loanId },
         relations: ['user', 'bookCopy', 'bookCopy.book'],
-        lock: { mode: 'pessimistic_write' },
       });
 
       if (!loan) throw new NotFoundException('Loan not found');
@@ -441,14 +445,27 @@ export class BookLoanService {
         );
       }
 
-      const membershipType =
-        activeMembership.type ??
-        (await this.membershipTypeRepository.findOne({
+      let membershipType;
+      if (activeMembership.type && typeof activeMembership.type === 'object') {
+        membershipType = activeMembership.type;
+        this.logger.log(`Using membership type from active membership: ${membershipType.name}`);
+      } else {
+        this.logger.log(`Looking up membership type with ID: ${activeMembership.type}`);
+        membershipType = await this.membershipTypeRepository.findOne({
           where: { id: activeMembership.type },
-        }));
+        });
+      }
 
-      const maxRenewals = membershipType?.renewalLimit ?? 0;
+      if (!membershipType) {
+        this.logger.error(`Membership type not found for membership ${activeMembership.id}`);
+        throw new BadRequestException('Membership type not found');
+      }
+
+      const maxRenewals = membershipType?.renewalLimit ?? this.loanConfig.maxRenewals;
+      this.logger.log(`Renewal limits - Current: ${loan.renewalCount}, Max: ${maxRenewals}`);
+      
       if (loan.renewalCount >= maxRenewals) {
+        this.logger.error(`Renewal limit exceeded: ${loan.renewalCount} >= ${maxRenewals}`);
         throw new RenewalLimitExceededException(maxRenewals);
       }
 

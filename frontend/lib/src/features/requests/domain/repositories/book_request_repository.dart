@@ -14,13 +14,30 @@ abstract class BookRequestRepository {
   /// Returns [List<BookRequest>] if successful, or [Failure] if an error occurs
   Future<Either<Failure, List<BookRequest>>> getPendingBookRequests();
 
+  /// Fetches all renewal requests
+  /// [status] Optional status filter
+  /// Returns [List<BookRequest>] if successful, or [Failure] if an error occurs
+  Future<Either<Failure, List<BookRequest>>> getRenewalRequests({
+    String? status,
+  });
+
   /// Approves a book request
   /// [requestId] The ID of the request to approve
   /// [preferredCopyId] The ID of the preferred book copy
+  /// [notes] Optional notes for approval
   /// Returns a map containing the loan details if successful, or [Failure] if an error occurs
   Future<Either<Failure, Map<String, dynamic>>> approveBookRequest({
     required String requestId,
     String? preferredCopyId,
+    String? notes,
+  });
+
+  /// Approves a renewal request
+  /// [requestId] The ID of renewal request to approve
+  /// [notes] Optional notes for approval
+  /// Returns a map containing updated loan details if successful, or [Failure] if an error occurs
+  Future<Either<Failure, Map<String, dynamic>>> approveRenewalRequest({
+    required String requestId,
     String? notes,
   });
 
@@ -29,6 +46,15 @@ abstract class BookRequestRepository {
   /// [notes] Optional notes for rejection
   /// Returns void if successful, or [Failure] if an error occurs
   Future<Either<Failure, void>> rejectBookRequest({
+    required String requestId,
+    required String notes,
+  });
+
+  /// Rejects a renewal request
+  /// [requestId] The ID of renewal request to reject
+  /// [notes] Optional notes for rejection
+  /// Returns void if successful, or [Failure] if an error occurs
+  Future<Either<Failure, void>> rejectRenewalRequest({
     required String requestId,
     required String notes,
   });

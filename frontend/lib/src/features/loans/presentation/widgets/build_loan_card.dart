@@ -205,49 +205,6 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-
-                      // Borrower info
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: Colors.grey[200],
-                            child: const Icon(
-                              Icons.person_outline,
-                              size: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '$firstName $lastName'.trim().isNotEmpty
-                                      ? '$firstName $lastName'.trim()
-                                      : 'Unknown User',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  'Roll: $rollNumber',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey[600],
-                                    fontFamily: 'RobotoMono',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -341,6 +298,59 @@ Widget buildLoanCard(BuildContext context, Loan loan) {
                 ),
               ),
             ],
+
+            const SizedBox(height: 12),
+
+            // Borrower info
+            Text(
+              'Borrower',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: Colors.grey[200],
+                  child: const Icon(
+                    Icons.person_outline,
+                    size: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$firstName $lastName'.trim().isNotEmpty
+                            ? '$firstName $lastName'.trim()
+                            : 'Unknown User',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Roll: $rollNumber',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                          fontFamily: 'RobotoMono',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

@@ -21,6 +21,8 @@ class BookRequest {
   final Map<String, dynamic>? user;
   final Map<String, dynamic>? book;
   final String? loanId;
+  final Map<String, dynamic>? loan;
+  final String? requestType;
 
   BookRequest({
     this.id,
@@ -40,6 +42,8 @@ class BookRequest {
     this.user,
     this.book,
     this.loanId,
+    this.loan,
+    this.requestType,
   });
 
   factory BookRequest.fromJson(Map<String, dynamic> json) =>

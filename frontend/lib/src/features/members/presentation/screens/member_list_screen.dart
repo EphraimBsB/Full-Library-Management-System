@@ -4,10 +4,11 @@ import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/members/domain/models/membership_model.dart';
 import 'package:management_side/src/features/members/presentation/providers/member_provider.dart';
 import 'package:management_side/src/features/members/presentation/widgets/member_details_dialog.dart';
+import 'package:management_side/src/features/members/presentation/widgets/membership_request_form_screen.dart';
+import 'package:management_side/src/core/services/cache_service.dart';
 import 'package:intl/intl.dart';
 import 'package:management_side/src/features/membership/presentation/providers/membership_request_provider.dart';
 import 'package:management_side/src/features/membership/presentation/screens/membership_request_detail_screen.dart';
-import 'package:management_side/src/features/membership/presentation/screens/membership_request_form_screen.dart';
 import 'package:management_side/src/features/membership/presentation/widgets/membership_request_card.dart';
 
 class MemberListScreen extends ConsumerStatefulWidget {
@@ -471,7 +472,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
             ),
             child: InkWell(
               onTap: () {
-                showMembershipRequestFormDialog(context);
+                showMemberCreationDialog(context);
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -499,104 +500,106 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                await ref.refresh(memberNotifierProvider.notifier).refresh();
+                // Comprehensive member cache invalidation and refresh data
+                await CacheService().invalidateMemberCaches();
+                ref.invalidate(memberRepositoryProvider);
                 await ref
-                    .refresh(membershipRequestNotifierProvider.notifier)
-                    .refresh();
+                    .read(memberNotifierProvider.notifier)
+                    .loadMemberships();
               },
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Pending Requests Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Text(
-                        'Pending Membership Requests',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.symmetric(
+                    //     horizontal: 16,
+                    //     vertical: 8,
+                    //   ),
+                    //   child: Text(
+                    //     'Pending Membership Requests',
+                    //     style: Theme.of(context).textTheme.titleMedium
+                    //         ?.copyWith(
+                    //           fontSize: 16,
+                    //           fontWeight: FontWeight.bold,
+                    //           color: Colors.black87,
+                    //         ),
+                    //   ),
+                    // ),
 
-                    // Pending Requests Grid
-                    membershipRequestsAsync.when(
-                      data: (requests) {
-                        final pendingRequests = requests
-                            .where((request) => request.status == 'pending')
-                            .toList();
-                        if (pendingRequests.isEmpty) {
-                          return _buildEmptyState(
-                            icon: Icons.person_add_disabled,
-                            message: 'No pending membership requests',
-                            subMessage:
-                                'All caught up! No pending requests at the moment.',
-                          );
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  childAspectRatio: 1.8,
-                                  mainAxisSpacing: 10,
-                                  crossAxisSpacing: 10,
-                                ),
-                            itemCount: pendingRequests.length,
-                            itemBuilder: (context, index) {
-                              final request = pendingRequests[index];
-                              return MembershipRequestCard(
-                                request: request,
-                                onTap: () => showMembershipRequestDialog(
-                                  context,
-                                  requestId: request.id,
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                      loading: () => const SizedBox(
-                        height: 100,
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                      error: (error, stack) => _buildErrorState(
-                        'Failed to load requests',
-                        onRetry: () => ref
-                            .refresh(membershipRequestNotifierProvider.notifier)
-                            .refresh(),
-                      ),
-                    ),
-                    const SizedBox(height: 24.0),
+                    // // Pending Requests Grid
+                    // membershipRequestsAsync.when(
+                    //   data: (requests) {
+                    //     final pendingRequests = requests
+                    //         .where((request) => request.status == 'pending')
+                    //         .toList();
+                    //     if (pendingRequests.isEmpty) {
+                    //       return _buildEmptyState(
+                    //         icon: Icons.person_add_disabled,
+                    //         message: 'No pending membership requests',
+                    //         subMessage:
+                    //             'All caught up! No pending requests at the moment.',
+                    //       );
+                    //     }
+                    //     return Padding(
+                    //       padding: const EdgeInsets.symmetric(
+                    //         horizontal: 16,
+                    //         vertical: 8,
+                    //       ),
+                    //       child: GridView.builder(
+                    //         shrinkWrap: true,
+                    //         physics: const NeverScrollableScrollPhysics(),
+                    //         gridDelegate:
+                    //             const SliverGridDelegateWithFixedCrossAxisCount(
+                    //               crossAxisCount: 3,
+                    //               childAspectRatio: 1.8,
+                    //               mainAxisSpacing: 10,
+                    //               crossAxisSpacing: 10,
+                    //             ),
+                    //         itemCount: pendingRequests.length,
+                    //         itemBuilder: (context, index) {
+                    //           final request = pendingRequests[index];
+                    //           return MembershipRequestCard(
+                    //             request: request,
+                    //             onTap: () => showMembershipRequestDialog(
+                    //               context,
+                    //               requestId: request.id,
+                    //             ),
+                    //           );
+                    //         },
+                    //       ),
+                    //     );
+                    //   },
+                    //   loading: () => const SizedBox(
+                    //     height: 100,
+                    //     child: Center(child: CircularProgressIndicator()),
+                    //   ),
+                    //   error: (error, stack) => _buildErrorState(
+                    //     'Failed to load requests',
+                    //     onRetry: () => ref
+                    //         .refresh(membershipRequestNotifierProvider.notifier)
+                    //         .refresh(),
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 24.0),
 
                     // All Members Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Text(
-                        'All Library Members',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.symmetric(
+                    //     horizontal: 16,
+                    //     vertical: 8,
+                    //   ),
+                    //   child: Text(
+                    //     'All Library Members',
+                    //     style: Theme.of(context).textTheme.titleMedium
+                    //         ?.copyWith(
+                    //           fontSize: 16,
+                    //           fontWeight: FontWeight.bold,
+                    //           color: Colors.black87,
+                    //         ),
+                    //   ),
+                    // ),
 
                     // Members Grid
                     membersAsync.when(

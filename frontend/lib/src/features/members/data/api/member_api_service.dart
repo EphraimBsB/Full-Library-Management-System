@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:management_side/src/core/network/api_constants.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:management_side/src/features/members/domain/models/membership_model.dart';
+import 'package:management_side/src/features/auth/domain/models/user_model.dart';
 import 'package:management_side/src/core/data/pagination.dart';
 
 part 'member_api_service.g.dart';
@@ -32,6 +33,11 @@ abstract class MemberApiService {
   Future<Membership> createMembership(
     @Body() Map<String, dynamic> membershipData,
   );
+
+  /// Create a new member directly
+  @POST('/users/member')
+  @DioResponseType(ResponseType.json)
+  Future<User> createMember(@Body() Map<String, dynamic> memberData);
 
   /// Update a membership
   @PATCH('/memberships/{id}')

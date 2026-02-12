@@ -11,6 +11,7 @@ import { Repository, Not, IsNull, MoreThan, LessThanOrEqual } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationOptions } from '../common/interfaces/pagination-options.interface';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
@@ -223,6 +224,97 @@ export class UsersService {
     });
 
     return this.userRepository.save(user);
+  }
+
+  private async generateRollNumber(): Promise<string> {
+    const prefix = 'LM';
+    const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of current year
+    const randomDigits = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit random number
+    return `${prefix}${year}${randomDigits}`;
+  }
+
+  async createMember(createMemberDto: CreateMemberDto): Promise<User> {
+    // Check if email already exists
+    const existingUser = await this.userRepository.findOne({
+      where: { email: createMemberDto.email, deletedAt: IsNull() },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('A user with this email already exists');
+    }
+
+    // Generate roll number if not provided
+    let rollNumber = createMemberDto.rollNumber;
+    if (!rollNumber) {
+      rollNumber = await this.generateRollNumber();
+      
+      // Ensure generated roll number doesn't already exist
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (attempts < maxAttempts) {
+        const existingRollNumber = await this.userRepository.findOne({
+          where: { rollNumber, deletedAt: IsNull() },
+        });
+
+        if (!existingRollNumber) {
+          break; // Found unique roll number
+        }
+
+        rollNumber = await this.generateRollNumber(); // Generate new one and try again
+        attempts++;
+      }
+
+      if (attempts >= maxAttempts) {
+        throw new BadRequestException('Unable to generate unique roll number after multiple attempts');
+      }
+    } else {
+      // Check if provided roll number already exists
+      const existingRollNumber = await this.userRepository.findOne({
+        where: { rollNumber, deletedAt: IsNull() },
+      });
+
+      if (existingRollNumber) {
+        throw new ConflictException(
+          'A user with this roll number already exists',
+        );
+      }
+    }
+
+    // Hash password or generate default
+    const password = createMemberDto.password || 'Password@123';
+    const hashedPassword = await this.hashPassword(password);
+
+    const user = this.userRepository.create({
+      firstName: createMemberDto.firstName,
+      lastName: createMemberDto.lastName,
+      email: createMemberDto.email,
+      phoneNumber: createMemberDto.phoneNumber,
+      rollNumber: createMemberDto.rollNumber,
+      degree: createMemberDto.degree,
+      passwordHash: hashedPassword,
+      isActive: true,
+      roleId: createMemberDto.roleId || 3, // Default to STUDENT role if not specified
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    // Automatically create membership for the member
+    try {
+      await this.membershipService.createMembership(
+        savedUser,
+        createMemberDto.membershipTypeId.toString(),
+        new Date(),
+      );
+    } catch (error) {
+      console.error(
+        'Failed to create automatic membership for member:',
+        error,
+      );
+      // Don't throw error here - user creation should succeed even if membership creation fails
+    }
+
+    return savedUser;
   }
 
   async findAll({

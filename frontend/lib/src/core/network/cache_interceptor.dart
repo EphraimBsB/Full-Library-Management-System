@@ -251,6 +251,9 @@ class CacheInterceptor extends Interceptor {
       prefix = 'api_cache_loans_';
     else if (path.contains('/memberships'))
       prefix = 'api_cache_memberships_';
+    else if (path.contains('/users/member'))
+      prefix =
+          'api_cache_users_'; // Add user member creation cache invalidation
     // System Configuration modules
     else if (path.contains('/categories'))
       prefix = 'api_cache_categories_';
@@ -275,9 +278,7 @@ class CacheInterceptor extends Interceptor {
 
     if (prefix != null) {
       _cacheService.clear(prefix: prefix);
-      _logger.i(
-        'Automatically invalidated cache for prefix: $prefix due to mutation at: $path',
-      );
+      _logger.d('Invalidated cache with prefix: $prefix');
     }
   }
 

@@ -53,8 +53,7 @@ class _PublisherApiService implements PublisherApiService {
     try {
       _value = _result.data!
           .map(
-            (dynamic i) =>
-                Map<String, dynamic>.from(i as Map<String, dynamic>),
+            (dynamic i) => Map<String, dynamic>.from(i as Map<String, dynamic>),
           )
           .toList();
     } on Object catch (e, s) {

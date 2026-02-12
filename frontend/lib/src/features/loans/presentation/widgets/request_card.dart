@@ -10,108 +10,134 @@ class RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final availableCopies = request.book!['copies']!
-        .where((copy) => copy['status'] == 'AVAILABLE')
-        .length;
+    final book = request.book;
+    final availableCopies =
+        book?['copies']
+            ?.where((copy) => copy['status'] == 'AVAILABLE')
+            .length ??
+        0;
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          showDialog(
-            context: context,
-            builder: (context) => RequestDetailsDialog(request: request),
-          );
-        },
-        child: Container(
-          // width: 280,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => RequestDetailsDialog(request: request),
+              );
+            },
+            child: Container(
+              // width: 280,
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 70,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: request.book!['coverImageUrl'] != null
-                        ? CachedNetworkImage(
-                            imageUrl: request.book!['coverImageUrl']!,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            placeholder: (context, url) => const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
-                            errorWidget: (context, url, error) =>
-                                const Icon(Icons.book),
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.menu_book_rounded,
-                              size: 40,
-                              color: Colors.grey,
+                          ],
+                        ),
+                        child: book?['coverImageUrl'] != null
+                            ? CachedNetworkImage(
+                                imageUrl: book!['coverImageUrl']!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    const Icon(Icons.book),
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              book?['title'] ?? 'Unknown Book',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              'Author',
+                              book?['author'] ?? 'Unknown',
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow('DDC', book?['ddc'] ?? 'Unknown'),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              'Available Copies',
+                              availableCopies.toString(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          request.book!['title'] ?? 'Unknown Book',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          'Author',
-                          request.book!['author'] ?? 'Unknown',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow('DDC', request.book!['ddc'] ?? 'Unknown'),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(
-                          'Available Copies',
-                          availableCopies.toString(),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 16),
+                  _buildInfoRow(
+                    'Requester',
+                    '${request.user!['firstName']} ${request.user!['lastName']}',
                   ),
+                  const SizedBox(height: 8),
+                  _buildInfoRow('Requested', _formatDate(request.createdAt!)),
+                  // Show renewal-specific info
+                  if (request.status != null &&
+                      request.status!.toLowerCase().contains('renewal')) ...[
+                    const SizedBox(height: 8),
+                    if (request.loanId != null)
+                      _buildInfoRow('Loan ID', request.loanId!.substring(0, 8)),
+                    if (request.reason != null &&
+                        request.reason!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _buildInfoRow('Reason', request.reason!),
+                    ],
+                  ],
+                  const SizedBox(height: 8),
                 ],
               ),
-              const SizedBox(height: 16),
-              _buildInfoRow(
-                'Requester',
-                '${request.user!['firstName']} ${request.user!['lastName']}',
-              ),
-              const SizedBox(height: 8),
-              _buildInfoRow('Requested', _formatDate(request.createdAt!)),
-              const SizedBox(height: 8),
-              _buildStatusChip(request.status!),
-            ],
+            ),
           ),
-        ),
+          // Status chip at top right
+          Positioned(
+            top: 8,
+            right: 8,
+            child: _buildStatusChip(request.status!),
+          ),
+        ],
       ),
     );
   }
@@ -134,19 +160,35 @@ class RequestCard extends StatelessWidget {
   Widget _buildStatusChip(String status) {
     Color backgroundColor;
     Color textColor;
+    String displayText = status.toUpperCase();
 
     switch (status.toLowerCase()) {
       case 'pending':
         backgroundColor = Colors.orange.shade100;
         textColor = Colors.orange.shade800;
         break;
+      case 'renewal_pending':
+        backgroundColor = Colors.blue.shade100;
+        textColor = Colors.blue.shade800;
+        displayText = 'RENEWAL';
+        break;
       case 'approved':
         backgroundColor = Colors.green.shade100;
         textColor = Colors.green.shade800;
         break;
+      case 'renewal_approved':
+        backgroundColor = Colors.green.shade100;
+        textColor = Colors.green.shade800;
+        displayText = 'RENEWED';
+        break;
       case 'rejected':
         backgroundColor = Colors.red.shade100;
         textColor = Colors.red.shade800;
+        break;
+      case 'renewal_rejected':
+        backgroundColor = Colors.red.shade100;
+        textColor = Colors.red.shade800;
+        displayText = 'RENEWAL REJECTED';
         break;
       default:
         backgroundColor = Colors.grey.shade200;
@@ -160,7 +202,7 @@ class RequestCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        status.toUpperCase(),
+        displayText,
         style: TextStyle(
           color: textColor,
           fontSize: 11,

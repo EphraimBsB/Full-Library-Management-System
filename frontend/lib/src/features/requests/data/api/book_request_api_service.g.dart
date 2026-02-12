@@ -89,6 +89,41 @@ class _BookRequestApiService implements BookRequestApiService {
   }
 
   @override
+  Future<List<BookRequest>> getRenewalRequests(String? status) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'status': status};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<List<BookRequest>>(
+      Options(
+            method: 'GET',
+            headers: _headers,
+            extra: _extra,
+            responseType: ResponseType.json,
+          )
+          .compose(
+            _dio.options,
+            '/book-requests/renewal/all',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<BookRequest> _value;
+    try {
+      _value = _result.data!
+          .map((dynamic i) => BookRequest.fromJson(i as Map<String, dynamic>))
+          .toList();
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<Map<String, dynamic>> approveBookRequest(
     String requestId,
     Map<String, dynamic> requestBody,
@@ -117,8 +152,7 @@ class _BookRequestApiService implements BookRequestApiService {
     late Map<String, dynamic> _value;
     try {
       _value = _result.data!.map(
-        (k, dynamic v) =>
-            MapEntry(k, (v as Map<String, dynamic>)),
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -147,6 +181,72 @@ class _BookRequestApiService implements BookRequestApiService {
           .compose(
             _dio.options,
             '/book-requests/${requestId}/reject',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    await _dio.fetch<void>(_options);
+  }
+
+  @override
+  Future<Map<String, dynamic>> approveRenewalRequest(
+    String requestId,
+    Map<String, dynamic> requestBody,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(requestBody);
+    final _options = _setStreamType<Map<String, dynamic>>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            responseType: ResponseType.json,
+          )
+          .compose(
+            _dio.options,
+            '/book-requests/renewal/${requestId}/approve',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late Map<String, dynamic> _value;
+    try {
+      _value = _result.data!.map(
+        (k, dynamic v) => MapEntry(k, v as Map<String, dynamic>),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<void> rejectRenewalRequest(
+    String requestId,
+    Map<String, dynamic> requestBody,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(requestBody);
+    final _options = _setStreamType<void>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            responseType: ResponseType.json,
+          )
+          .compose(
+            _dio.options,
+            '/book-requests/renewal/${requestId}/reject',
             queryParameters: queryParameters,
             data: _data,
           )

@@ -232,7 +232,8 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
   }
 
   Future<void> _handleApprove() async {
-    if (_selectedCopyId == null) {
+    // Only require copy selection for regular book requests, not renewals
+    if (widget.request.requestType != 'RENEWAL' && _selectedCopyId == null) {
       if (mounted) {
         showDialog(
           context: context,
@@ -273,13 +274,20 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
       setState(() => _isApproving = true);
 
       final repository = ref.read(bookRequestRepositoryProvider);
-      final result = await repository.approveBookRequest(
-        requestId: widget.request.id!,
-        preferredCopyId: _selectedCopyId,
-        notes: _notesController.text.trim().isNotEmpty
-            ? _notesController.text
-            : null,
-      );
+      final result = widget.request.requestType == 'RENEWAL'
+          ? await repository.approveRenewalRequest(
+              requestId: widget.request.id!,
+              notes: _notesController.text.trim().isNotEmpty
+                  ? _notesController.text
+                  : null,
+            )
+          : await repository.approveBookRequest(
+              requestId: widget.request.id!,
+              preferredCopyId: _selectedCopyId,
+              notes: _notesController.text.trim().isNotEmpty
+                  ? _notesController.text
+                  : null,
+            );
 
       if (!mounted) return;
 
@@ -362,12 +370,19 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
       setState(() => _isRejecting = true);
 
       final repository = ref.read(bookRequestRepositoryProvider);
-      final result = await repository.rejectBookRequest(
-        requestId: widget.request.id!,
-        notes: _notesController.text.trim().isNotEmpty
-            ? _notesController.text
-            : 'No reason provided',
-      );
+      final result = widget.request.requestType == 'RENEWAL'
+          ? await repository.rejectRenewalRequest(
+              requestId: widget.request.id!,
+              notes: _notesController.text.trim().isNotEmpty
+                  ? _notesController.text
+                  : 'No reason provided',
+            )
+          : await repository.rejectBookRequest(
+              requestId: widget.request.id!,
+              notes: _notesController.text.trim().isNotEmpty
+                  ? _notesController.text
+                  : 'No reason provided',
+            );
 
       if (!mounted) return;
 
@@ -525,8 +540,10 @@ class _RequestDetailsDialogState extends ConsumerState<RequestDetailsDialog> {
                                     book['publisher'] ?? 'N/A',
                                   ),
                                   const SizedBox(height: 8),
+                                  // Only show copy selection for regular book requests, not renewals
                                   if (widget.isAdmin &&
-                                      widget.request.status == 'PENDING')
+                                      widget.request.status == 'PENDING' &&
+                                      widget.request.requestType != 'RENEWAL')
                                     _buildAvailableCopiesSection(
                                       book['copies'],
                                     ),

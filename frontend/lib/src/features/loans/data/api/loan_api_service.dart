@@ -53,10 +53,17 @@ abstract class LoanApiService {
   @DioResponseType(ResponseType.json)
   Future<Loan> returnBook(@Path('loanId') String loanId);
 
-  /// Renew a loan
+  /// Renew a loan (direct renewal - deprecated for students)
   @POST('/loans/renew/{loanId}')
   @DioResponseType(ResponseType.json)
   Future<Loan> renewLoan(@Path('loanId') String loanId);
+
+  /// Create a renewal request for a loan
+  @POST('/book-requests/renewal')
+  @DioResponseType(ResponseType.json)
+  Future<Map<String, dynamic>> createRenewalRequest(
+    @Body() Map<String, dynamic> data,
+  );
 
   /// Get overdue loans
   @GET('/loans/overdue')

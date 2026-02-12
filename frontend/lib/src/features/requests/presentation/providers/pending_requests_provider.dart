@@ -33,12 +33,36 @@ class PendingRequestsNotifier extends StateNotifier<RequestsState> {
 
   Future<void> loadRequests() async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _repository.getPendingBookRequests();
 
-    state = result.fold(
-      (failure) => state.copyWith(isLoading: false, error: failure.message),
-      (requests) =>
-          state.copyWith(requests: requests.take(3).toList(), isLoading: false),
+    // Fetch both regular book requests and renewal requests
+    final regularRequestsResult = await _repository.getPendingBookRequests();
+    final renewalRequestsResult = await _repository.getRenewalRequests(
+      status: 'RENEWAL_PENDING',
+    );
+
+    // Combine results
+    final List<BookRequest> allRequests = [];
+
+    regularRequestsResult.fold(
+      (failure) => null,
+      (requests) => allRequests.addAll(requests),
+    );
+
+    renewalRequestsResult.fold(
+      (failure) => null,
+      (requests) => allRequests.addAll(requests),
+    );
+
+    // Sort by creation date (newest first) and limit to 6 total
+    allRequests.sort((a, b) {
+      final aDate = a.createdAt ?? DateTime.now();
+      final bDate = b.createdAt ?? DateTime.now();
+      return bDate.compareTo(aDate);
+    });
+
+    state = state.copyWith(
+      requests: allRequests.take(6).toList(),
+      isLoading: false,
     );
   }
 

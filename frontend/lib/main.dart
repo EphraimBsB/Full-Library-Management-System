@@ -15,9 +15,6 @@ import 'src/core/routes/app_routes.dart';
 import 'src/core/services/navigation_service.dart';
 import 'src/features/dashboard/presentation/screens/dashboard_screen.dart';
 
-// Web App
-import 'src/features/student/app.dart' as student_app;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -73,9 +70,9 @@ class _MyAppState extends ConsumerState<MyApp> {
       );
     }
 
-    if (kIsWeb) {
-      return student_app.StudentApp(initialAuthState: _isAuthenticated);
-    }
+    // if (kIsWeb) {
+    //   return student_app.StudentApp(initialAuthState: _isAuthenticated);
+    // }
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
