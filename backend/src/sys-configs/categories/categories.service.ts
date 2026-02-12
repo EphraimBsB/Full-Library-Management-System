@@ -36,13 +36,27 @@ export class CategoriesService {
   }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    // Check if category with the same name already exists
+    // Check if category with the same name already exists (not soft deleted)
     const existingCategory = await this.categoryRepository.findOne({
-      where: { name: createCategoryDto.name },
+      where: { name: createCategoryDto.name, deletedAt: IsNull() },
     });
 
     if (existingCategory) {
       throw new ConflictException('A category with this name already exists');
+    }
+
+    // Check if there's a soft-deleted category with same name to restore
+    const softDeletedCategory = await this.categoryRepository.findOne({
+      where: { name: createCategoryDto.name, deletedAt: Not(IsNull()) },
+    });
+
+    if (softDeletedCategory) {
+      // Restore the soft-deleted category
+      softDeletedCategory.deletedAt = undefined;
+      softDeletedCategory.description = createCategoryDto.description || softDeletedCategory.description;
+      const restored = await this.categoryRepository.save(softDeletedCategory);
+      await this.resetCache();
+      return restored;
     }
 
     const category = this.categoryRepository.create(createCategoryDto);

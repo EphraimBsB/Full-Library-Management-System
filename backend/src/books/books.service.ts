@@ -72,7 +72,7 @@ export class BooksService {
 
     try {
       // Check for duplicate ISBN if provided
-      if (createBookDto.isbn) {
+      if (createBookDto.isbn && createBookDto.isbn !== 'N/A') {
         const existingBook = await this.bookRepository.findOne({
           where: { isbn: createBookDto.isbn, deletedAt: IsNull() },
         });
@@ -321,6 +321,17 @@ export class BooksService {
       // Update other fields
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { categories, subjects, copies, totalCopies, ...bookData } = updateBookDto;
+      
+      // Handle ebookUrl explicitly - convert empty string to null for database
+      if ('ebookUrl' in updateBookDto) {
+        // If ebookUrl is explicitly provided (even as empty string), handle it
+        if (updateBookDto.ebookUrl === '' || updateBookDto.ebookUrl === null) {
+          (bookData as any).ebookUrl = null; // Set to null for database
+        } else {
+          bookData.ebookUrl = updateBookDto.ebookUrl; // Keep the URL
+        }
+      }
+      
       Object.assign(book, bookData);
 
       // Update copies if provided
