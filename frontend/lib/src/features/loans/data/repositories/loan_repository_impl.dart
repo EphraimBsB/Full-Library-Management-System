@@ -86,6 +86,18 @@ class LoanRepositoryImpl implements LoanRepository {
   }
 
   @override
+  Future<Either<Failure, Map<String, dynamic>>> createRenewalRequest(
+    String loanId, {
+    String? reason,
+  }) async {
+    final requestData = {
+      'loanId': loanId,
+      if (reason != null) 'reason': reason,
+    };
+    return _handleApiCall(() => _apiService.createRenewalRequest(requestData));
+  }
+
+  @override
   Future<Either<Failure, List<Loan>>> getOverdueLoans({
     int? page,
     int? limit,

@@ -38,7 +38,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ name: 'roll_number', unique: true })
+  @Column({ name: 'roll_number', unique: true, nullable: true })
   rollNumber: string;
 
   @Column({ name: 'phone_number', nullable: true })

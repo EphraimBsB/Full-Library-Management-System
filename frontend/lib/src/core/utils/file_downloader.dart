@@ -7,13 +7,21 @@ import 'package:path_provider/path_provider.dart';
 class FileDownloader {
   static final FileDownloader instance = FileDownloader();
 
-  Future<void> downloadFile(String url, String fileName) async {
+  Future<void> downloadFile(
+    String url,
+    String fileName, {
+    String? authToken,
+  }) async {
     try {
       final dio = Dio();
-      final response = await dio.get(
-        url,
-        options: Options(responseType: ResponseType.bytes),
-      );
+      final options = Options(responseType: ResponseType.bytes);
+
+      // Add authorization header if token is provided
+      if (authToken != null) {
+        options.headers = {'Authorization': 'Bearer $authToken'};
+      }
+
+      final response = await dio.get(url, options: options);
 
       if (kIsWeb) {
         final blob = html.Blob([response.data]);

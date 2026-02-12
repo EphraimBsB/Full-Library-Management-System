@@ -149,6 +149,17 @@ class LoanNotifier extends StateNotifier<LoanState> {
     });
   }
 
+  Future<Map<String, dynamic>> createRenewalRequest(
+    String loanId, {
+    String? reason,
+  }) async {
+    final result = await _repository.createRenewalRequest(
+      loanId,
+      reason: reason,
+    );
+    return result.fold((failure) => throw failure, (response) => response);
+  }
+
   Future<void> deleteLoan(String loanId) async {
     final result = await _repository.deleteLoan(loanId);
     result.fold((failure) => throw failure, (_) {

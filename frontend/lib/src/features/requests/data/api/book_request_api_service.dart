@@ -27,6 +27,11 @@ abstract class BookRequestApiService {
   @DioResponseType(ResponseType.json)
   Future<List<BookRequest>> getPendingBookRequests();
 
+  // Get all renewal requests
+  @GET('/book-requests/renewal/all')
+  @DioResponseType(ResponseType.json)
+  Future<List<BookRequest>> getRenewalRequests(@Query('status') String? status);
+
   // Approve a book request
   @POST('/book-requests/{requestId}/approve')
   @DioResponseType(ResponseType.json)
@@ -39,6 +44,22 @@ abstract class BookRequestApiService {
   @POST('/book-requests/{requestId}/reject')
   @DioResponseType(ResponseType.json)
   Future<void> rejectBookRequest(
+    @Path('requestId') String requestId,
+    @Body() Map<String, dynamic> requestBody,
+  );
+
+  /// Approve a renewal request
+  @POST('/book-requests/renewal/{requestId}/approve')
+  @DioResponseType(ResponseType.json)
+  Future<Map<String, dynamic>> approveRenewalRequest(
+    @Path('requestId') String requestId,
+    @Body() Map<String, dynamic> requestBody,
+  );
+
+  /// Reject a renewal request
+  @POST('/book-requests/renewal/{requestId}/reject')
+  @DioResponseType(ResponseType.json)
+  Future<void> rejectRenewalRequest(
     @Path('requestId') String requestId,
     @Body() Map<String, dynamic> requestBody,
   );

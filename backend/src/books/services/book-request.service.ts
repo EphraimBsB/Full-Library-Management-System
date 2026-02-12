@@ -8,10 +8,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, Not } from 'typeorm';
 import {
   BookRequest,
   BookRequestStatus,
+  BookRequestType,
 } from '../entities/book-request.entity';
 import { User } from '../../users/entities/user.entity';
 import { Book } from '../entities/book.entity';
@@ -45,6 +46,8 @@ export class BookRequestService {
     private readonly dataSource: DataSource,
     private readonly membershipService: MembershipService,
     private readonly emailUtilsService: EmailUtilsService,
+    @InjectRepository(BookLoan)
+    private readonly bookLoanRepository: Repository<BookLoan>,
   ) {}
 
   async createRequest(
@@ -360,6 +363,276 @@ export class BookRequestService {
 
     if (filters?.status) {
       query.andWhere('request.status = :status', { status: filters.status });
+    }
+
+    return (await query.getMany()).reverse();
+  }
+
+  /**
+   * Creates a renewal request for an existing loan
+   */
+  async createRenewalRequest(
+    loanId: string,
+    userId: string,
+    reason?: string,
+  ): Promise<BookRequest> {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      // 1️⃣ Check if the loan exists and belongs to the user
+      const loan = await transactionalEntityManager.findOne(BookLoan, {
+        where: { id: loanId },
+        relations: ['user', 'bookCopy', 'bookCopy.book'],
+      });
+
+      if (!loan) {
+        throw new NotFoundException('Loan not found');
+      }
+
+      if (loan.user.id !== userId) {
+        throw new ConflictException('You can only request renewal for your own loans');
+      }
+
+      if (loan.status !== LoanStatus.ACTIVE) {
+        throw new ConflictException('Only active loans can be renewed');
+      }
+
+      // 2️⃣ Check if there's already a pending renewal request for this loan
+      const existingRenewalRequest = await transactionalEntityManager.findOne(
+        BookRequest,
+        {
+          where: {
+            loanId: loanId,
+            requestType: BookRequestType.RENEWAL,
+            status: In([BookRequestStatus.RENEWAL_PENDING]),
+          },
+        },
+      );
+
+      if (existingRenewalRequest) {
+        throw new ConflictException('A renewal request for this loan is already pending');
+      }
+
+      // 3️⃣ Check membership validity
+      const membership =
+        await this.membershipService.findActiveMembership(userId);
+      if (!membership) {
+        throw new BadRequestException(
+          'Active membership is required to request renewals',
+        );
+      }
+
+      // 4️⃣ Check renewal limits
+      const maxRenewals = membership.type?.renewalLimit ?? 2;
+      if (loan.renewalCount >= maxRenewals) {
+        throw new ConflictException(
+          `Maximum renewal limit (${maxRenewals}) reached for this loan`,
+        );
+      }
+
+      // 5️⃣ Check for pending book requests (other users wanting this book)
+      const hasPendingRequests =
+        (await this.bookRequestRepository.count({
+          where: {
+            book: { id: loan.bookCopy.book.id },
+            status: BookRequestStatus.PENDING,
+            user: { id: Not(userId) },
+            requestType: BookRequestType.BORROW,
+          },
+        })) > 0;
+
+      if (hasPendingRequests) {
+        throw new ConflictException(
+          'This book has been requested by another user and cannot be renewed',
+        );
+      }
+
+      // 6️⃣ Create the renewal request
+      const renewalRequest = transactionalEntityManager.create(BookRequest, {
+        user: { id: userId },
+        book: { id: loan.bookCopy.book.id },
+        loanId: loanId,
+        requestType: BookRequestType.RENEWAL,
+        status: BookRequestStatus.RENEWAL_PENDING,
+        reason: reason || 'Request for loan renewal',
+      });
+
+      const savedRequest = await transactionalEntityManager.save(
+        BookRequest,
+        renewalRequest,
+      );
+
+      this.logger.log(
+        `Renewal request created: ${savedRequest.id} for loan: ${loanId} by user: ${userId}`,
+      );
+
+      return savedRequest;
+    });
+  }
+
+  /**
+   * Approves a renewal request and processes the renewal
+   */
+  async approveRenewalRequest(
+    requestId: string,
+    approvedById: string,
+    reason?: string,
+  ): Promise<BookLoan> {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      const request = await transactionalEntityManager.findOne(BookRequest, {
+        where: { id: requestId },
+        relations: ['user', 'book', 'loan'],
+      });
+
+      if (!request) {
+        throw new NotFoundException('Renewal request not found');
+      }
+
+      if (request.status !== BookRequestStatus.RENEWAL_PENDING) {
+        throw new ConflictException('Request is not in a pending state');
+      }
+
+      if (request.requestType !== BookRequestType.RENEWAL) {
+        throw new ConflictException('This is not a renewal request');
+      }
+
+      // Get active membership for the user
+      const activeMembership = await this.membershipService.findActiveMembership(request.user.id);
+      if (!activeMembership) {
+        throw new BadRequestException(
+          'Active membership is required to renew books',
+        );
+      }
+
+      // Update request status
+      request.status = BookRequestStatus.RENEWAL_APPROVED;
+      request.approvedAt = new Date();
+      request.approvedBy = { id: approvedById } as User;
+      request.approvedById = approvedById;
+      if (reason) {
+        request.reason = reason;
+      }
+
+      await transactionalEntityManager.save(BookRequest, request);
+
+      // Process the actual renewal
+      // Use the transactionalEntityManager to avoid nested transactions
+      const loan = await transactionalEntityManager.findOne(BookLoan, {
+        where: { id: request.loanId! },
+        relations: ['user', 'bookCopy', 'bookCopy.book'],
+      });
+
+      if (!loan) throw new NotFoundException('Loan not found');
+      if (loan.user.id !== request.user.id)
+        throw new ConflictException('You can only renew your own loans');
+      if (loan.status !== LoanStatus.ACTIVE)
+        throw new ConflictException('Only active loans can be renewed');
+
+      const hasPendingRequests =
+        (await transactionalEntityManager.count(BookRequest, {
+          where: {
+            book: { id: loan.bookCopy.book.id },
+            status: BookRequestStatus.PENDING,
+            user: { id: Not(request.user.id) },
+          },
+        })) > 0;
+
+      if (hasPendingRequests) {
+        throw new ConflictException(
+          'This book has been requested by another user and cannot be renewed',
+        );
+      }
+
+      let membershipType;
+      if (activeMembership.type && typeof activeMembership.type === 'object') {
+        membershipType = activeMembership.type;
+      } else {
+        // For simplicity, use default renewal limits
+        membershipType = { renewalLimit: 3, maxDurationDays: 14 };
+      }
+
+      const maxRenewals = membershipType?.renewalLimit ?? 3;
+      if (loan.renewalCount >= maxRenewals) {
+        throw new ConflictException(`Maximum renewal limit (${maxRenewals}) reached`);
+      }
+
+      const baseDate = loan.dueDate > new Date() ? loan.dueDate : new Date();
+      const newDueDate = new Date(baseDate);
+      const renewalPeriod = membershipType?.maxDurationDays ?? 14;
+      newDueDate.setDate(newDueDate.getDate() + renewalPeriod);
+
+      loan.dueDate = newDueDate;
+      loan.renewalCount += 1;
+      loan.lastRenewedAt = new Date();
+      loan.updatedAt = new Date();
+
+      const updatedLoan = await transactionalEntityManager.save(BookLoan, loan);
+
+      this.logger.log(
+        `Renewal request approved: ${requestId}, loan renewed: ${updatedLoan.id}`,
+      );
+
+      return updatedLoan;
+    });
+  }
+
+  /**
+   * Rejects a renewal request
+   */
+  async rejectRenewalRequest(
+    requestId: string,
+    rejectedById: string,
+    reason?: string,
+  ): Promise<BookRequest> {
+    const request = await this.bookRequestRepository.findOne({
+      where: { id: requestId },
+      relations: ['user', 'loan'],
+    });
+
+    if (!request) {
+      throw new NotFoundException('Renewal request not found');
+    }
+
+    if (request.status !== BookRequestStatus.RENEWAL_PENDING) {
+      throw new ConflictException('Request is not in a pending state');
+    }
+
+    if (request.requestType !== BookRequestType.RENEWAL) {
+      throw new ConflictException('This is not a renewal request');
+    }
+
+    // Update request status
+    request.status = BookRequestStatus.RENEWAL_REJECTED;
+    request.rejectedAt = new Date();
+    request.rejectionReason = reason || 'Renewal request rejected';
+    request.rejectedBy = { id: rejectedById } as User;
+    request.rejectedById = rejectedById;
+
+    const savedRequest = await this.bookRequestRepository.save(request);
+
+    this.logger.log(
+      `Renewal request rejected: ${requestId}, reason: ${reason}`,
+    );
+
+    return savedRequest;
+  }
+
+  /**
+   * Get all renewal requests with optional status filter
+   */
+  async findRenewalRequests(status?: BookRequestStatus): Promise<BookRequest[]> {
+    const query = this.bookRequestRepository
+      .createQueryBuilder('request')
+      .leftJoinAndSelect('request.user', 'user')
+      .leftJoinAndSelect('request.book', 'book')
+      .leftJoinAndSelect('request.loan', 'loan')
+      .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
+      .leftJoinAndSelect('request.approvedBy', 'approvedBy')
+      .leftJoinAndSelect('request.rejectedBy', 'rejectedBy')
+      .where('request.requestType = :requestType', {
+        requestType: BookRequestType.RENEWAL,
+      });
+
+    if (status) {
+      query.andWhere('request.status = :status', { status });
     }
 
     return (await query.getMany()).reverse();

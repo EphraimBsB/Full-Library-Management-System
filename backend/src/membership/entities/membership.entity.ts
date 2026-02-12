@@ -96,6 +96,6 @@ export class Membership {
   }
 
   canRenew(currentRenewals: number): boolean {
-    return currentRenewals < this.type.maxDurationDays;
+    return currentRenewals < this.type.renewalLimit;
   }
 }

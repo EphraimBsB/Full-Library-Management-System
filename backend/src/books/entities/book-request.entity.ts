@@ -21,6 +21,14 @@ export enum BookRequestStatus {
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
   FULFILLED = 'FULFILLED',
+  RENEWAL_PENDING = 'RENEWAL_PENDING',
+  RENEWAL_APPROVED = 'RENEWAL_APPROVED',
+  RENEWAL_REJECTED = 'RENEWAL_REJECTED',
+}
+
+export enum BookRequestType {
+  BORROW = 'BORROW',
+  RENEWAL = 'RENEWAL',
 }
 
 @Entity('book_requests')
@@ -44,8 +52,18 @@ export class BookRequest {
   })
   status: BookRequestStatus;
 
+  @Column({
+    type: 'enum',
+    enum: BookRequestType,
+    default: BookRequestType.BORROW,
+  })
+  requestType: BookRequestType;
+
   @Column({ type: 'text', nullable: true })
   reason: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  loanId: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   approvedAt: Date | null;
@@ -108,7 +126,4 @@ export class BookRequest {
     nullable: true,
   })
   loan: BookLoan | null;
-
-  @Column({ type: 'uuid', nullable: true })
-  loanId: string | null;
 }

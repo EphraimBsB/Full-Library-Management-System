@@ -268,6 +268,15 @@ export class ApiService {
     return response.data;
   }
 
+  // Renewal Requests
+  static async createRenewalRequest(loanId, reason) {
+    const response = await api.post('/book-requests/renewal', {
+      loanId,
+      reason: reason || 'Request for loan renewal'
+    });
+    return response.data;
+  }
+
   // Student specific
   static async getStudentDetails(rollNumber) {
     const response = await api.get('/student-details', {

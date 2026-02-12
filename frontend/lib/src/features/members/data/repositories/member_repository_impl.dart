@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as dev;
 
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
@@ -8,6 +9,7 @@ import 'package:management_side/src/core/data/pagination.dart';
 import 'package:management_side/src/core/network/network_info.dart';
 import 'package:management_side/src/features/members/data/api/member_api_service.dart';
 import 'package:management_side/src/features/members/domain/models/membership_model.dart';
+import 'package:management_side/src/features/auth/domain/models/user_model.dart';
 import 'package:management_side/src/features/members/domain/repositories/member_repository.dart';
 
 class MemberRepositoryImpl implements MemberRepository {
@@ -71,9 +73,30 @@ class MemberRepositoryImpl implements MemberRepository {
       } on ServerException catch (e) {
         return Left(ServerFailure(e.message));
       } on DioException catch (e) {
-        return Left(ServerFailure(e.message ?? 'Failed to create member'));
+        return Left(ServerFailure(e.message ?? 'Failed to create membership'));
       } catch (e) {
         return Left(ServerFailure('An unexpected error occurred'));
+      }
+    } else {
+      return const Left(NetworkFailure('No internet connection'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> createMember(
+    Map<String, dynamic> memberData,
+  ) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final user = await apiService.createMember(memberData);
+        return Right(user);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } on DioException catch (e) {
+        return Left(ServerFailure(e.message ?? 'Failed to create member'));
+      } catch (e) {
+        dev.log(e.toString());
+        return Left(ServerFailure('An unexpected error occurred: $e'));
       }
     } else {
       return const Left(NetworkFailure('No internet connection'));

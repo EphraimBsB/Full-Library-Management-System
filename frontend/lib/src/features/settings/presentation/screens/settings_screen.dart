@@ -4,6 +4,7 @@ import 'package:management_side/src/features/settings/modules/book_sources/prese
 import 'package:management_side/src/features/settings/modules/book_types/presentation/screens/book_type_expanded.dart';
 import 'package:management_side/src/features/settings/modules/categories/presentation/screens/categories_expanded.dart';
 import 'package:management_side/src/features/settings/modules/data_import/presentation/screens/data_import_screen.dart';
+import 'package:management_side/src/features/settings/modules/data_export/presentation/screens/data_export_screen.dart';
 import 'package:management_side/src/features/settings/modules/degrees/presentation/screens/degree_expanded.dart';
 import 'package:management_side/src/features/settings/modules/locations/presentation/screens/location_expanded.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/presentation/screens/membership_types_expanded.dart';
@@ -154,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.download,
               title: 'Export Data',
               onTap: () {
-                // TODO: Implement data export
+                showDataExportDialog(context);
               },
             ),
 

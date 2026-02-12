@@ -46,7 +46,6 @@ class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
   bool _isReturning = false;
-  bool _isRenewing = false;
 
   @override
   void initState() {
@@ -97,42 +96,6 @@ class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
     } finally {
       if (mounted) {
         setState(() => _isReturning = false);
-      }
-    }
-  }
-
-  Future<void> _handleRenew() async {
-    setState(() => _isRenewing = true);
-
-    try {
-      await ref.read(loanNotifierProvider.notifier).renewLoan(widget.loan.id);
-
-      if (mounted) {
-        // userLoansProvider is still a FutureProvider, so we invalidate it
-        ref.invalidate(userLoansProvider);
-
-        if (widget.onUpdate != null) {
-          // Simplified update for callback
-          await widget.onUpdate!(widget.loan);
-        }
-
-        if (mounted) {
-          Navigator.of(context).pop('RENEWED');
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        debugPrint('Error renewing book: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('An unexpected error occurred: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isRenewing = false);
       }
     }
   }
@@ -480,28 +443,28 @@ class _LoanDetailsDialogState extends ConsumerState<LoanDetailsDialog> {
                       ),
                     ],
 
-                    // Renew button (show only for borrowed, non-overdue loans)
-                    if (!isReturned && !isOverdue && widget.isAdmin) ...[
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: _isRenewing ? null : _handleRenew,
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                        child: _isRenewing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.blue,
-                                ),
-                              )
-                            : const Text('RENEW LOAN'),
-                      ),
-                    ],
+                    // Renew button (show only for borrowed, non-overdue loans) - HIDDEN
+                    // if (!isReturned && !isOverdue && widget.isAdmin) ...[
+                    //   const SizedBox(width: 8),
+                    //   OutlinedButton(
+                    //     onPressed: _isRenewing ? null : _handleRenew,
+                    //     style: OutlinedButton.styleFrom(
+                    //       side: BorderSide(
+                    //         color: Theme.of(context).primaryColor,
+                    //       ),
+                    //     ),
+                    //     child: _isRenewing
+                    //         ? const SizedBox(
+                    //             width: 20,
+                    //             height: 20,
+                    //             child: CircularProgressIndicator(
+                    //               strokeWidth: 2,
+                    //               color: Colors.blue,
+                    //             ),
+                    //           )
+                    //         : const Text('RENEW LOAN'),
+                    //   ),
+                    // ],
                   ],
                 ),
               ),

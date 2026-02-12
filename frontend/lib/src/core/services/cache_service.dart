@@ -575,6 +575,60 @@ class CacheService {
       _logger.e('Error during cache cleanup: $e');
     }
   }
+
+  // NEW: Comprehensive member cache invalidation
+  Future<void> invalidateMemberCaches({
+    String? memberId,
+    String? userId,
+    bool forceRefresh = true,
+  }) async {
+    try {
+      _logger.i('Invalidating member-related caches...');
+
+      // Use efficient prefix-based clearing
+      final prefixes = [
+        'memberships_',
+        'membership_',
+        'users_',
+        'user_',
+        'api_cache_memberships_',
+        'api_cache_users_',
+      ];
+
+      // Add specific member details key if needed
+      if (memberId != null) {
+        await remove(membershipDetailsKey(memberId));
+      }
+
+      // Add specific user details key if needed
+      if (userId != null) {
+        await remove('user_details_$userId');
+      }
+
+      // Clear member list caches with common variations
+      await remove(membershipsListKey());
+      await remove(membershipsListKey(page: 2));
+      await remove(membershipsListKey(page: 3));
+      await remove(membershipsListKey(status: 'active'));
+      await remove(membershipsListKey(status: 'inactive'));
+      await remove(membershipsListKey(status: 'expired'));
+
+      // Clear membership types cache (related to members)
+      await remove(membershipTypesKey());
+
+      // Parallelize all prefix-based clearing
+      await Future.wait(prefixes.map((p) => clear(prefix: p)));
+
+      // Extra safety for memory cache (synchronous)
+      _memoryCache.removeWhere(
+        (key, value) => prefixes.any((p) => key.startsWith(p)),
+      );
+
+      _logger.i('Member cache invalidation completed efficiently');
+    } catch (e) {
+      _logger.e('Error invalidating member caches: $e');
+    }
+  }
 }
 
 class CacheEntry {

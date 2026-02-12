@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { Book } from '../books/entities/book.entity';
 import { BookLoan } from '../books/entities/book-loan.entity';
 import { User } from '../users/entities/user.entity';
+import { BookRequest } from 'src/books/entities/book-request.entity';
 
 @Injectable()
 export class ReportsService {
@@ -15,6 +16,8 @@ export class ReportsService {
     private readonly loanRepository: Repository<BookLoan>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(BookRequest)
+    private readonly requestRepository: Repository<BookRequest>,
   ) {}
 
   async exportBooksToExcel(): Promise<Buffer> {
@@ -86,6 +89,32 @@ export class ReportsService {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  }
+
+  async exportRequestsToExcel(): Promise<Buffer> {
+    const requests = await this.requestRepository.find({
+      relations: ['user', 'book', 'book.type', 'book.categories'],
+    });
+
+    const data = requests.map(request => ({
+      'Request ID': request.id,
+      'User Name': `${request.user?.firstName || ''} ${request.user?.lastName || ''}`.trim(),
+      'Roll Number': request.user?.rollNumber || 'N/A',
+      'Book Title': request.book?.title || 'Unknown',
+      'Author': request.book?.author || 'N/A',
+      'ISBN': request.book?.isbn || 'N/A',
+      'Request Type': request.requestType || 'N/A',
+      'Status': request.status || 'N/A',
+      'Requested At': request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A',
+      'Approved At': request.approvedAt ? new Date(request.approvedAt).toLocaleDateString() : 'N/A',
+      'Reason': request.reason || 'N/A',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Book Requests');
 
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }

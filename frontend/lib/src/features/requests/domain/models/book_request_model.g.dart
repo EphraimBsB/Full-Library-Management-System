@@ -34,6 +34,8 @@ BookRequest _$BookRequestFromJson(Map<String, dynamic> json) => BookRequest(
   user: json['user'] as Map<String, dynamic>?,
   book: json['book'] as Map<String, dynamic>?,
   loanId: json['loanId'] as String?,
+  loan: json['loan'] as Map<String, dynamic>?,
+  requestType: json['requestType'] as String?,
 );
 
 Map<String, dynamic> _$BookRequestToJson(BookRequest instance) =>
@@ -55,4 +57,6 @@ Map<String, dynamic> _$BookRequestToJson(BookRequest instance) =>
       'user': instance.user,
       'book': instance.book,
       'loanId': instance.loanId,
+      'loan': instance.loan,
+      'requestType': instance.requestType,
     };

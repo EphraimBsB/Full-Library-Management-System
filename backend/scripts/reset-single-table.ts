@@ -14,6 +14,10 @@ async function resetSingleTable(tableName: string) {
     
     console.log(`Resetting table: ${tableName}`);
     
+    // Get row count before truncating
+    const countResult = await dataSource.query(`SELECT COUNT(*) as count FROM ${tableName}`);
+    const rowCount = countResult[0]?.count || 0;
+    
     // Disable foreign key checks temporarily
     await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
     
@@ -24,6 +28,7 @@ async function resetSingleTable(tableName: string) {
     await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
     
     console.log(`✅ Table '${tableName}' has been reset successfully`);
+    console.log(`📊 Deleted ${rowCount} rows`);
     
     await dataSource.destroy();
   } catch (error) {

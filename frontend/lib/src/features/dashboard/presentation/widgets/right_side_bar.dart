@@ -230,6 +230,14 @@ class RightSideBarWidget extends ConsumerWidget {
                                             color: AppTheme.textSecondaryColor,
                                           ),
                                         ),
+                                        Text(
+                                          'Roll No: ${inhouseUsage.user.rollNumber}',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.textSecondaryColor,
+                                          ),
+                                        ),
                                         const SizedBox(height: 2),
                                         // Due date
                                         Text(
@@ -505,7 +513,7 @@ class RightSideBarWidget extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          user.degree!.substring(0, 3),
+                          user.degree?.substring(0, 3) ?? 'N/A',
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,

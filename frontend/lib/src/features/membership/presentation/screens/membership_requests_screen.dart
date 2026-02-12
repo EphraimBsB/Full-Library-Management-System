@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:management_side/src/core/theme/app_theme.dart';
 import 'package:management_side/src/features/membership/presentation/screens/membership_request_detail_screen.dart';
-import 'package:management_side/src/features/membership/presentation/screens/membership_request_form_screen.dart';
+import 'package:management_side/src/features/members/presentation/widgets/membership_request_form_screen.dart';
 import 'package:management_side/src/features/membership/presentation/widgets/membership_request_card.dart';
 import 'package:management_side/src/features/membership/presentation/providers/membership_request_provider.dart';
 

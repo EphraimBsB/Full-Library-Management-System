@@ -1,13 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dartz/dartz.dart';
 import 'package:management_side/src/core/utils/file_uploader.dart';
 import 'package:management_side/src/features/membership/domain/models/membership_request_model.dart';
 import 'package:management_side/src/features/membership/presentation/providers/membership_request_provider.dart';
+import 'package:management_side/src/features/members/presentation/providers/member_provider.dart';
 import 'package:management_side/src/features/settings/modules/degrees/domain/models/degree_model.dart';
 import 'package:management_side/src/features/settings/modules/degrees/presentation/providers/degree_providers.dart';
 import 'package:management_side/src/features/settings/modules/membership-types/presentation/providers/membership_types_providers.dart';
 import 'package:management_side/src/features/settings/modules/user-roles/presentation/providers/user_roles_providers.dart';
+import 'package:management_side/src/core/services/cache_service.dart';
 
 void showMembershipRequestFormDialog(
   BuildContext context, {
@@ -20,6 +23,19 @@ void showMembershipRequestFormDialog(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 800, maxHeight: 700),
         child: MembershipRequestFormDialog(initialData: initialData),
+      ),
+    ),
+  );
+}
+
+void showMemberCreationDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 700),
+        child: MembershipRequestFormDialog(),
       ),
     ),
   );
@@ -121,14 +137,6 @@ class _MembershipRequestFormDialogState
       setState(() => _errorMessage = 'Please select a membership type');
       return;
     }
-    if (_selectedUserRoleId == null) {
-      setState(() => _errorMessage = 'Please select a user role');
-      return;
-    }
-    if (_selectedDegree == null) {
-      setState(() => _errorMessage = 'Please select a degree');
-      return;
-    }
 
     setState(() {
       _isSubmitting = true;
@@ -136,43 +144,52 @@ class _MembershipRequestFormDialogState
     });
 
     try {
-      final repository = ref.read(membershipRequestRepositoryProvider);
-      final data = {
+      final repository = ref.read(memberRepositoryProvider);
+
+      // Create member data directly
+      final memberData = {
         'firstName': _firstNameController.text.trim(),
         'lastName': _lastNameController.text.trim(),
         'email': _emailController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
         'rollNumber': _rollNumberController.text.trim(),
-        'degree': _selectedDegree?.code ?? '',
+        'degree': _degreeController.text.trim(),
         'membershipTypeId': int.parse(_selectedMembershipTypeId!),
-        'avatarUrl': _profileImageUrl,
-        'notes': _notesController.text.trim().isNotEmpty
-            ? _notesController.text.trim()
-            : null,
-        'roleId': int.parse(_selectedUserRoleId!),
+        'roleId': _selectedUserRoleId != null
+            ? int.parse(_selectedUserRoleId!)
+            : 3, // Default to STUDENT role
       };
 
-      final result = await repository.createMembershipRequest(data);
+      final result = await repository.createMember(memberData);
 
       if (!mounted) return;
 
-      result.fold(
-        (failure) {
-          setState(() => _errorMessage = failure.message);
-        },
-        (_) {
-          ref.invalidate(membershipRequestNotifierProvider);
-          Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Membership request submitted successfully!'),
-              backgroundColor: Colors.green,
-            ),
+      if (result is Right) {
+        // Invalidate all relevant providers and refresh
+        if (context.mounted) {
+          // Comprehensive member cache invalidation
+          await CacheService().invalidateMemberCaches(
+            userId: result.fold((l) => null, (r) => r.id),
           );
-        },
-      );
+
+          // Invalidate member repository cache
+          ref.invalidate(memberRepositoryProvider);
+
+          // Refresh member list
+          ref.read(memberNotifierProvider.notifier).loadMemberships();
+        }
+        Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Member created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        setState(() => _errorMessage = (result as Left).value.message);
+      }
     } catch (e) {
-      setState(() => _errorMessage = 'Failed to submit request: $e');
+      setState(() => _errorMessage = 'Failed to create member: $e');
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -300,9 +317,11 @@ class _MembershipRequestFormDialogState
               const SizedBox(height: 16),
               TextFormField(
                 controller: _rollNumberController,
-                decoration: const InputDecoration(labelText: 'Roll Number *'),
-                validator: (value) =>
-                    value?.trim().isEmpty ?? true ? 'Required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Roll Number(optional)',
+                ),
+                // validator: (value) =>
+                //     value?.trim().isEmpty ?? true ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               degreesAsync.when(
@@ -469,7 +488,7 @@ class _MembershipRequestFormDialogState
                           color: Colors.white,
                         ),
                       )
-                    : Text(isEditing ? 'Update Request' : 'Submit Request'),
+                    : Text('Create Member'),
               ),
               if (isEditing) ...[
                 const SizedBox(height: 16),
