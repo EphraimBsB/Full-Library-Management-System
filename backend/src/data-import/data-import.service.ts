@@ -176,6 +176,7 @@ export class DataImportService {
   async importBooksFromExcel(
     buffer: Buffer,
     userId: string,
+    progressCallback?: (progress: any) => void,
   ): Promise<ImportSummaryDto> {
     const startTime = Date.now();
     const results: ImportResultDto[] = [];
@@ -201,6 +202,17 @@ export class DataImportService {
       const headersByIndex = this.normalizeHeaders(headerRow);
       const totalRows = rawRows.length - (headerIndex + 1);
 
+      // Send initial progress update
+      if (progressCallback) {
+        progressCallback({
+          type: 'parsing',
+          message: 'Parsing Excel file...',
+          progress: 5,
+          totalRows,
+          currentRow: 0,
+        });
+      }
+
       for (let i = 0; i < totalRows; i += this.BATCH_SIZE) {
         const batchResults = await this.processBatch(
           rawRows,
@@ -209,8 +221,26 @@ export class DataImportService {
           headersByIndex,
           headerRow,
           warnings,
+          progressCallback,
+          totalRows,
+          headerIndex + 1 + i,
         );
         results.push(...batchResults);
+
+        // Send batch progress update
+        if (progressCallback) {
+          const currentProgress = Math.round(((i + this.BATCH_SIZE) / totalRows) * 95); // 95% max during processing
+          progressCallback({
+            type: 'processing',
+            message: `Processing batch ${Math.floor(i / this.BATCH_SIZE) + 1} of ${Math.ceil(totalRows / this.BATCH_SIZE)}...`,
+            progress: currentProgress,
+            totalRows,
+            currentRow: Math.min(i + this.BATCH_SIZE, totalRows),
+            processedRows: results.length,
+            importedRows: results.filter(r => r.success).length,
+            failedRows: results.filter(r => !r.success).length,
+          });
+        }
       }
     } catch (error) {
       this.logger.error(`Import failed: ${error.message}`, error.stack);
@@ -251,6 +281,9 @@ export class DataImportService {
     headersByIndex: string[],
     headerRow: any[],
     warnings: string[],
+    progressCallback?: (progress: any) => void,
+    totalRows?: number,
+    currentRow?: number,
   ): Promise<ImportResultDto[]> {
     const batchResults: ImportResultDto[] = [];
 
@@ -263,6 +296,20 @@ export class DataImportService {
 
       const rowArr = rawRows[rowIndex] || [];
       const rowNumber = rowIndex + 1;
+
+      // Send row progress update
+      if (progressCallback && totalRows && currentRow !== undefined) {
+        const actualCurrentRow = currentRow + i;
+        const progress = Math.round((actualCurrentRow / totalRows) * 95); // 95% max during processing
+        progressCallback({
+          type: 'processing-row',
+          message: `Processing row ${rowNumber}...`,
+          progress,
+          totalRows,
+          currentRow: actualCurrentRow,
+          rowNumber,
+        });
+      }
 
       if (
         rowArr.every(

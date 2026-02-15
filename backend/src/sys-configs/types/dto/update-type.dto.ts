@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateTypeDto } from './create-type.dto';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsBoolean } from 'class-validator';
 import { BookFormat } from '../entities/type.entity';
 
 export class UpdateTypeDto extends PartialType(CreateTypeDto) {
@@ -17,4 +17,8 @@ export class UpdateTypeDto extends PartialType(CreateTypeDto) {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

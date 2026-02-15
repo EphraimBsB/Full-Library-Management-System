@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class CreatePublisherDto {
   @IsString()
@@ -19,4 +19,8 @@ export class CreatePublisherDto {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

@@ -97,6 +97,18 @@ export class BookQueryDto {
 
   @IsOptional()
   @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
   type?: string;
 
   @IsOptional()
@@ -112,6 +124,7 @@ export class BookQueryDto {
   sortBy?: SortField = 'title';
 
   @IsOptional()
+  @Transform(({ value }) => value?.toUpperCase())
   @IsIn(['ASC', 'DESC'], {
     message: "sortOrder must be either 'ASC' or 'DESC'",
   })

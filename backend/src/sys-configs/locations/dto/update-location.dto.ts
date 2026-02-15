@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateLocationDto } from './create-location.dto';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class UpdateLocationDto extends PartialType(CreateLocationDto) {
   @IsString()
@@ -14,4 +14,8 @@ export class UpdateLocationDto extends PartialType(CreateLocationDto) {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

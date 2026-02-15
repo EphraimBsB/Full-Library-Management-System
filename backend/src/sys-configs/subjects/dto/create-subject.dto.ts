@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class CreateSubjectDto {
   @IsString()
@@ -7,4 +7,8 @@ export class CreateSubjectDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

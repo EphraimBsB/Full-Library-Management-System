@@ -261,7 +261,7 @@ export class BookRequestService {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const request = await transactionalEntityManager.findOne(BookRequest, {
         where: { id: requestId },
-        relations: ['queueEntry'],
+        relations: ['queueEntry', 'user', 'book'], // Add user and book relations
       });
 
       if (!request) {
@@ -284,13 +284,17 @@ export class BookRequestService {
         await transactionalEntityManager.remove(QueueEntry, request.queueEntry);
       }
 
-      // Send email notification
-      await this.emailUtilsService.sendRequestRejectedEmail(
-        request.user,
-        request.book,
-        reason,
-        rejectedById,
-      );
+      // Send email notification (only if user exists)
+      if (request.user && request.user.email) {
+        await this.emailUtilsService.sendRequestRejectedEmail(
+          request.user,
+          request.book,
+          reason,
+          rejectedById,
+        );
+      } else {
+        this.logger.warn(`Cannot send rejection email: user or user.email is undefined for request ${requestId}`);
+      }
 
       return transactionalEntityManager.save(BookRequest, request);
     });

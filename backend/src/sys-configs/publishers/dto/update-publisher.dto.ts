@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreatePublisherDto } from './create-publisher.dto';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class UpdatePublisherDto extends PartialType(CreatePublisherDto) {
   @IsString()
@@ -22,4 +22,8 @@ export class UpdatePublisherDto extends PartialType(CreatePublisherDto) {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

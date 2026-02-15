@@ -16,6 +16,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationOptions } from '../common/interfaces/pagination-options.interface';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { UserProfileSummaryDto } from './dto/user-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { BookLoanService } from '../books/services/book-loan.service';
 import { BookFavoriteService } from '../books/services/book-favorite.service';
 import { BookNoteService } from '../books/services/book-note.service';
@@ -353,6 +355,7 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User> {
+    
     const user = await this.userRepository.findOne({
       where: {
         id,
@@ -546,5 +549,60 @@ export class UsersService {
     }
 
     return savedUser;
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+    const user = await this.findOne(userId);
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      changePasswordDto.currentPassword,
+      user.passwordHash
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Check if new passwords match
+    if (changePasswordDto.newPassword !== changePasswordDto.confirmPassword) {
+      throw new BadRequestException('New passwords do not match');
+    }
+
+    // Check if new password is same as current password
+    const isSamePassword = await bcrypt.compare(
+      changePasswordDto.newPassword,
+      user.passwordHash
+    );
+
+    if (isSamePassword) {
+      throw new BadRequestException('New password must be different from current password');
+    }
+
+    // Hash and update new password
+    const hashedPassword = await this.hashPassword(changePasswordDto.newPassword);
+    user.passwordHash = hashedPassword;
+    
+    await this.userRepository.save(user);
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+    const user = await this.findOne(userId);
+
+    // Check if email is being updated and conflicts with existing users
+    if (updateProfileDto.email && updateProfileDto.email !== user.email) {
+      const existingUser = await this.userRepository.findOne({
+        where: { email: updateProfileDto.email, id: Not(userId), deletedAt: IsNull() },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('A user with this email already exists');
+      }
+    }
+
+    // Update only provided fields
+    Object.assign(user, updateProfileDto);
+    
+    return this.userRepository.save(user);
   }
 }

@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateShelfDto } from './create-shelf.dto';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, IsBoolean } from 'class-validator';
 
 export class UpdateShelfDto extends PartialType(CreateShelfDto) {
   @IsString()
@@ -15,6 +15,9 @@ export class UpdateShelfDto extends PartialType(CreateShelfDto) {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @IsOptional()
   locationId?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

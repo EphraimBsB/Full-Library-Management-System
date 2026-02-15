@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, IsBoolean } from 'class-validator';
 
 export class CreateShelfDto {
   @IsString()
@@ -13,4 +13,8 @@ export class CreateShelfDto {
   @IsInt()
   @Min(1)
   locationId: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
