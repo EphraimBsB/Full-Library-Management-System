@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class CreateLocationDto {
   @IsString()
@@ -11,4 +11,8 @@ export class CreateLocationDto {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

@@ -192,6 +192,9 @@ export class BooksService {
       minAvailable,
       sortBy = 'title',
       sortOrder = 'ASC',
+      category: singularCategory,
+      subject: singularSubject,
+      status,
       ...filters
     } = query;
 
@@ -208,7 +211,7 @@ export class BooksService {
       .where('book.deletedAt IS NULL');
 
     // 🔍 Apply case-insensitive search (MySQL)
-    if (search) {
+    if (search && search.trim() !== '') {
       qb.andWhere(
         `(LOWER(book.title) LIKE LOWER(:search)
         OR LOWER(book.author) LIKE LOWER(:search)
@@ -222,25 +225,34 @@ export class BooksService {
       qb.andWhere('book.availableCopies >= :minAvailable', { minAvailable });
     }
 
-    // 📚 Filter by categories
-    if (filters.categories && filters.categories.length > 0) {
-      qb.andWhere('categories.id IN (:...categories)', { categories: filters.categories });
+    // 📚 Filter by categories (handle both plural array and singular string)
+    const categoriesFilter = filters.categories || (singularCategory ? [singularCategory] : []);
+    if (categoriesFilter.length > 0 && categoriesFilter[0] !== '') {
+      qb.andWhere('categories.name IN (:...categories) OR categories.id IN (:...categories)', { categories: categoriesFilter });
     }
 
-    // 📖 Filter by subjects
-    if (filters.subjects && filters.subjects.length > 0) {
-      qb.andWhere('subjects.name IN (:...subjects)', { subjects: filters.subjects });
+    // 📖 Filter by subjects (handle both plural array and singular string)
+    const subjectsFilter = filters.subjects || (singularSubject ? [singularSubject] : []);
+    if (subjectsFilter.length > 0 && subjectsFilter[0] !== '') {
+      qb.andWhere('subjects.name IN (:...subjects)', { subjects: subjectsFilter });
+    }
+
+    // 🚦 Filter by status
+    if (status === 'available') {
+      qb.andWhere('book.availableCopies > 0');
+    } else if (status === 'unavailable') {
+      qb.andWhere('book.availableCopies = 0');
     }
 
     // 🎯 Apply other filters dynamically (e.g. typeId, sourceId)
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && key !== 'sortBy' && key !== 'sortOrder' && key !== 'categories' && key !== 'subjects') {
+      if (value !== undefined && value !== '' && key !== 'sortBy' && key !== 'sortOrder' && key !== 'categories' && key !== 'subjects') {
         qb.andWhere(`book.${key} = :${key}`, { [key]: value });
       }
     });
 
     // 🧭 Sorting
-    qb.orderBy(`book.${sortBy}`, sortOrder.toUpperCase() as 'ASC' | 'DESC');
+    qb.orderBy(`book.${sortBy}`, sortOrder as 'ASC' | 'DESC');
 
     // 📄 Pagination
     const [data, total] = await qb.skip(skip).take(limit).getManyAndCount();

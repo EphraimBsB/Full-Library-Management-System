@@ -78,7 +78,7 @@ export class CategoriesService {
       return cachedData;
     }
 
-    // const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
     const queryBuilder = this.categoryRepository.createQueryBuilder('category');
 
     if (search) {
@@ -89,6 +89,8 @@ export class CategoriesService {
 
     const [data, total] = await queryBuilder
       .orderBy('category.name', 'ASC')
+      .skip(skip)
+      .take(limit)
       .getManyAndCount();
 
     // Cache the result for 60 seconds

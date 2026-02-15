@@ -25,11 +25,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { PaginationOptions } from 'src/common/interfaces/pagination-options.interface';
 import { UserProfileSummaryDto } from './dto/user-profile.dto';
-import { BookLoan } from '../books/entities/book-loan.entity';
-import { BookFavorite } from '../books/entities/book-favorite.entity';
-import { BookNote } from '../books/entities/book-note.entity';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -133,14 +131,16 @@ export class UsersController {
     return this.usersService.getUserNotes(userId, { page, limit });
   }
 
-  @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
-  @ApiOperation({ summary: 'Update a user' })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 409, description: 'Email/roll number already in use' })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  async updateProfile(
+    @Body() updateProfileDto: UpdateProfileDto,
+    @Request() req,
+  ) {
+    return this.usersService.updateProfile(req.user.id, updateProfileDto);
   }
 
   @Delete(':id')
@@ -172,5 +172,25 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   activate(@Param('id') id: string) {
     return this.usersService.activateUser(id);
+  }
+
+  @Post('change-password')
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid current password or new passwords do not match' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Request() req,
+  ) {
+    await this.usersService.changePassword(req.user.id, changePasswordDto);
+    return { message: 'Password changed successfully' };
+  }
+
+  @Get('profile/me')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully', type: UserProfileSummaryDto })
+  async getMyProfile(@Request() req) {
+    return this.usersService.getUserProfileSummary(req.user.id);
   }
 }
