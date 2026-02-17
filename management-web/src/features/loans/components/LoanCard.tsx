@@ -118,7 +118,7 @@ const isOverdue = loan.status === LoanStatus.OVERDUE;
             }}
           >
             <img
-              src={imageError ? '/default_book.jpg' : (loan.bookCopy?.book?.coverImageUrl || '/default_book.jpg')}
+              src={imageError ? '/admin/default_book.jpg' : (loan.bookCopy?.book?.coverImageUrl || '/admin/default_book.jpg')}
               alt={loan.bookCopy?.book?.title || 'Book cover'}
               style={{
                 width: '100%',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -56,18 +56,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
-        <Router>
           <Routes>
             <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <LoginForm />
-                </PublicRoute>
-              }
+              path="/"
+              element={<Navigate to="/dashboard" replace />}
             />
             <Route
-              path="/"
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardLayout showTopbar={true} showRightSidebar={true}>
@@ -75,6 +70,14 @@ function App() {
                     <BookGrid />
                   </DashboardLayout>
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <LoginForm />
+                </PublicRoute>
               }
             />
             <Route
@@ -118,7 +121,6 @@ function App() {
               }
             />
           </Routes>
-        </Router>
       </ThemeProvider>
     </QueryClientProvider>
   );
