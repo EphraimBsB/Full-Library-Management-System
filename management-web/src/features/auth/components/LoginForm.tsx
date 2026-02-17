@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import {
   Box,
   Card,
@@ -6,23 +9,21 @@ import {
   TextField,
   Button,
   Typography,
-  Alert,
   InputAdornment,
   IconButton,
+  Alert,
 } from '@mui/material';
 import {
-  Visibility,
-  VisibilityOff,
   Email,
   Lock,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { useAuthStore } from '../../../core/hooks/useAuth';
-import type { LoginCredentials } from '../../../shared/types';
-import { apiClient } from '../../../core/network/api_client';
 import { theme } from '../../../core/theme';
+import { useAuthStore } from '../../../core/hooks/useAuth';
+import { apiClient } from '../../../core/network/api_client';
+import * as yup from 'yup';
+import type { LoginCredentials } from '../../../shared/types';
 
 const loginSchema = yup.object().shape({
   email: yup
@@ -36,6 +37,7 @@ const loginSchema = yup.object().shape({
 });
 
 export const LoginForm: React.FC = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { setAuth, setLoading, isLoading } = useAuthStore();
@@ -61,7 +63,7 @@ export const LoginForm: React.FC = () => {
       
       // Give Zustand time to persist the data
       setTimeout(() => {
-        window.location.href = '/';
+        navigate('/dashboard');
       }, 500);
     } catch (err: any) {
       console.log('Login error:', err);
