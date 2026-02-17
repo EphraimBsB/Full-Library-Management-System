@@ -1,30 +1,35 @@
 import React, { useState } from 'react';
 import {
-  Box,
-  Container,
-  Typography,
   Card,
   CardContent,
-  Grid,
-  Tab,
-  Tabs,
+  Typography,
   Avatar,
+  Box,
+  Grid,
+  Tabs,
+  Tab,
+  Button,
+  IconButton,
+  Chip,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
   Divider,
-  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Paper,
   CircularProgress,
   Alert,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
   Snackbar,
+  Container,
 } from '@mui/material';
 import {
   Person,
@@ -38,6 +43,8 @@ import {
   Logout,
   ArrowBack,
   Refresh,
+  RequestPage,
+  FilterList,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
@@ -61,13 +68,15 @@ const TabPanel = ({ children, value, index, ...other }) => {
 };
 
 const Profile = () => {
+  const [tabValue, setTabValue] = useState(0);
+  const [selectedLoan, setSelectedLoan] = useState(null);
+  const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
+  const [renewalReason, setRenewalReason] = useState('');
+  const [requestStatusFilter, setRequestStatusFilter] = useState('all');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [tabValue, setTabValue] = useState(0);
-  const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
-  const [selectedLoan, setSelectedLoan] = useState(null);
-  const [renewalReason, setRenewalReason] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // Fetch profile summary
   const {
@@ -127,6 +136,18 @@ const Profile = () => {
     }
   );
 
+  // Fetch book requests
+  const {
+    data: bookRequests,
+    isLoading: bookRequestsLoading,
+  } = useQuery(
+    ['bookRequests', user?.id],
+    () => ApiService.getMyBookRequests(),
+    {
+      enabled: !!user?.id,
+    }
+  );
+
   // Fetch notes
   const {
     data: notes,
@@ -138,6 +159,15 @@ const Profile = () => {
       enabled: !!user?.id,
     }
   );
+
+  // Check if loan has pending renewal request
+  const hasPendingRenewal = (loanId) => {
+    if (!bookRequests || !Array.isArray(bookRequests)) return false;
+    return bookRequests.some(request => 
+      request.loanId === loanId && 
+      (request.status === 'RENEWAL_PENDING' || request.status === 'RENEWAL_APPROVED')
+    );
+  };
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -363,6 +393,7 @@ const Profile = () => {
             <Tab icon={<Person />} label="Profile" />
             <Tab icon={<History />} label="Reading History" />
             <Tab icon={<Book />} label="Borrowing" />
+            <Tab icon={<RequestPage />} label="Requests" />
             <Tab icon={<Favorite />} label="Favorites" />
             <Tab icon={<Note />} label="Notes" />
           </Tabs>
@@ -569,7 +600,7 @@ const Profile = () => {
                                 )}
                               </Box>
                               {/* Add renewal button for active loans */}
-                              {(!item.returnedAt && (item.status === 'active' || item.status === 'ACTIVE' || item.status?.toUpperCase() === 'ACTIVE')) && (
+                              {(!item.returnedAt && (item.status === 'active' || item.status === 'ACTIVE' || item.status?.toUpperCase() === 'ACTIVE') && !hasPendingRenewal(item.id)) && (
                                 <Box sx={{ mt: 1 }}>
                                   <Button
                                     variant="outlined"
@@ -590,6 +621,18 @@ const Profile = () => {
                                   >
                                     Request Renewal
                                   </Button>
+                                </Box>
+                              )}
+
+                              {/* Show renewal status if there's a pending renewal */}
+                              {hasPendingRenewal(item.id) && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Chip
+                                    label="Renewal Requested"
+                                    size="small"
+                                    color="warning"
+                                    sx={{ fontSize: 9, height: 20 }}
+                                  />
                                 </Box>
                               )}
                               
@@ -619,8 +662,154 @@ const Profile = () => {
             )}
           </TabPanel>
 
-          {/* Favorites Tab */}
+          {/* Requests Tab */}
           <TabPanel value={tabValue} index={3}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontSize: 14, fontWeight: 'bold', color: '#000000' }}>My Book Requests</Typography>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel id="request-status-filter-label">Status</InputLabel>
+                <Select
+                  labelId="request-status-filter-label"
+                  value={requestStatusFilter}
+                  label="Status"
+                  onChange={(e) => setRequestStatusFilter(e.target.value)}
+                  startAdornment={<FilterList sx={{ mr: 1, fontSize: 16 }} />}
+                >
+                  <MenuItem value="all">All Requests</MenuItem>
+                  <MenuItem value="PENDING">Pending</MenuItem>
+                  <MenuItem value="APPROVED">Approved</MenuItem>
+                  <MenuItem value="REJECTED">Rejected</MenuItem>
+                  <MenuItem value="FULFILLED">Fulfilled</MenuItem>
+                  <MenuItem value="RENEWAL_PENDING">Renewal Pending</MenuItem>
+                  <MenuItem value="RENEWAL_APPROVED">Renewal Approved</MenuItem>
+                  <MenuItem value="RENEWAL_REJECTED">Renewal Rejected</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            {bookRequestsLoading ? (
+              <Typography>Loading book requests...</Typography>
+            ) : bookRequests && bookRequests.length > 0 ? (
+              <Grid container spacing={2}>
+                {bookRequests
+                  .filter(request => requestStatusFilter === 'all' || request.status === requestStatusFilter)
+                  .map((request) => (
+                  <Grid item xs={12} sm={6} md={4} key={request.id}>
+                    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', gap: 2, pb: 2 }}>
+                        <Box
+                          sx={{
+                            width: 80,
+                            height: 120,
+                            flexShrink: 0,
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            position: 'relative',
+                          }}
+                        >
+                          <img
+                            src={getImageUrl(request.book?.coverImageUrl)}
+                            alt={request.book?.title || 'Book cover'}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                            onError={(e) => {
+                              e.target.src = '/assets/default_book.jpg';
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                            }}
+                          >
+                            <Chip
+                              label={request.status?.toUpperCase() || 'UNKNOWN'}
+                              size="small"
+                              color={
+                                request.status === 'APPROVED' ? 'success' :
+                                request.status === 'REJECTED' ? 'error' :
+                                request.status === 'PENDING' ? 'warning' :
+                                request.status === 'FULFILLED' ? 'info' :
+                                request.status === 'RENEWAL_PENDING' ? 'warning' :
+                                request.status === 'RENEWAL_APPROVED' ? 'success' :
+                                request.status === 'RENEWAL_REJECTED' ? 'error' :
+                                'default'
+                              }
+                              sx={{ fontSize: 9, height: 20 }}
+                            />
+                          </Box>
+                        </Box>
+                        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <Box>
+                            <Typography variant="h6" sx={{ fontSize: 14, fontWeight: 600, mb: 1, lineHeight: 1.2 }}>
+                              {request.book?.title || 'Unknown Book'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11, mb: 1 }}>
+                              {request.book?.author || 'Unknown Author'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, mb: 1 }}>
+                              {request.requestType === 'RENEWAL' ? 'Renewal Request' : 'Borrow Request'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11 }}>
+                              <strong>Requested:</strong> {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A'}
+                            </Typography>
+                            {request.approvedAt && (
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11 }}>
+                                <strong>Approved:</strong> {new Date(request.approvedAt).toLocaleDateString()}
+                              </Typography>
+                            )}
+                            {request.rejectedAt && (
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11 }}>
+                                <strong>Rejected:</strong> {new Date(request.rejectedAt).toLocaleDateString()}
+                              </Typography>
+                            )}
+                            {request.reason && (
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11 }}>
+                                <strong>Reason:</strong> {request.reason}
+                              </Typography>
+                            )}
+                            {request.rejectionReason && (
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11 }}>
+                                <strong>Rejection Reason:</strong> {request.rejectionReason}
+                              </Typography>
+                            )}
+                            {request.notes && (
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: 11 }}>
+                                <strong>Notes:</strong> {request.notes}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography color="text.secondary" sx={{ mb: 1 }}>
+                  {requestStatusFilter === 'all' 
+                    ? 'No book requests found' 
+                    : `No ${requestStatusFilter.toLowerCase().replace('_', ' ')} requests found`
+                  }
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {requestStatusFilter === 'all' 
+                    ? 'Your book requests will appear here'
+                    : 'Try changing the status filter to see more requests'
+                  }
+                </Typography>
+              </Box>
+            )}
+          </TabPanel>
+
+          {/* Favorites Tab */}
+          <TabPanel value={tabValue} index={4}>
             <Typography variant="h6" sx={{ mb: 3, fontSize: 14, fontWeight: 'bold', color: '#000000' }}>Favorite Books</Typography>
             {favoritesLoading ? (
               <Typography>Loading favorites...</Typography>
@@ -688,7 +877,7 @@ const Profile = () => {
           </TabPanel>
 
           {/* Notes Tab */}
-          <TabPanel value={tabValue} index={4}>
+          <TabPanel value={tabValue} index={5}>
             <Typography variant="h6" sx={{ mb: 3, fontSize: 14, fontWeight: 'bold', color: '#000000' }}>My Notes</Typography>
             {notesLoading ? (
               <Typography>Loading notes...</Typography>

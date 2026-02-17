@@ -28,6 +28,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { UserProfileSummaryDto } from './dto/user-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -83,6 +84,28 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  async updateProfile(
+    @Body() updateProfileDto: UpdateProfileDto,
+    @Request() req,
+  ) {
+    return this.usersService.updateProfile(req.user.id, updateProfileDto);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+  @ApiOperation({ summary: 'Update a user by ID' })
+  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 409, description: 'Email or roll number already exists' })
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
   @Get(':id/profile-summary')
   @ApiOperation({ summary: 'Get user profile summary' })
   @ApiResponse({
@@ -131,18 +154,6 @@ export class UsersController {
     return this.usersService.getUserNotes(userId, { page, limit });
   }
 
-  @Patch('profile')
-  @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 409, description: 'Email already in use' })
-  async updateProfile(
-    @Body() updateProfileDto: UpdateProfileDto,
-    @Request() req,
-  ) {
-    return this.usersService.updateProfile(req.user.id, updateProfileDto);
-  }
-
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Delete a user (soft delete)' })
@@ -185,6 +196,15 @@ export class UsersController {
   ) {
     await this.usersService.changePassword(req.user.id, changePasswordDto);
     return { message: 'Password changed successfully' };
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    await this.usersService.forgotPassword(forgotPasswordDto.email);
+    return { message: 'Password reset email sent' };
   }
 
   @Get('profile/me')

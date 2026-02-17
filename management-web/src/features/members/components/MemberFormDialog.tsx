@@ -21,7 +21,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { UserService, type User } from '../services/user.service';
 import { theme } from '../../../core/theme';
 
-const schema = yup.object({
+const schema: yup.ObjectSchema<MemberFormData> = yup.object({
   firstName: yup.string().required('First name is required'),
   lastName: yup.string().required('Last name is required'),
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -35,12 +35,24 @@ const schema = yup.object({
     then: (s) => s.required('Password is required').min(6, 'At least 6 characters'),
     otherwise: (s) => s.optional(),
   }),
-}).required();
+});
 
 interface MemberFormDialogProps {
   open: boolean;
   onClose: (success?: boolean) => void;
   member?: User;
+}
+
+export interface MemberFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+  rollNumber?: string;
+  degree?: string;
+  course?: string;
+  membershipTypeId: number;
+  password?: string;
 }
 
 export const MemberFormDialog: React.FC<MemberFormDialogProps> = ({ open, onClose, member }) => {
@@ -58,7 +70,7 @@ export const MemberFormDialog: React.FC<MemberFormDialogProps> = ({ open, onClos
     handleSubmit, 
     reset, 
     formState: { errors } 
-  } = useForm({
+  } = useForm<MemberFormData>({
     resolver: yupResolver(schema),
     context: { isEdit },
     defaultValues: {
@@ -103,11 +115,13 @@ export const MemberFormDialog: React.FC<MemberFormDialogProps> = ({ open, onClos
   }, [member, reset, open]);
 
   const mutation = useMutation({
-    mutationFn: (data: Partial<User> & { password?: string; membershipTypeId: number }) => {
+    mutationFn: (data: MemberFormData) => {
       if (isEdit) {
         // Exclude password if it's empty during edit
         if (!data.password) delete data.password;
-        return UserService.updateUser(member!.id, data);
+        // Remove membershipTypeId as it's not part of User entity
+        const { membershipTypeId, ...userData } = data;
+        return UserService.updateUser(member!.id, userData);
       }
       return UserService.createMember(data);
     },

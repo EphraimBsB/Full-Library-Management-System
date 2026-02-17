@@ -35,7 +35,7 @@ export class BookRequestController {
   constructor(private readonly bookRequestService: BookRequestService) {}
 
   @Post()
-  // @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT,)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
   @ApiOperation({ summary: 'Create a new book request' })
   @ApiBearerAuth()
   @ApiResponse({
@@ -110,20 +110,18 @@ export class BookRequestController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
   @ApiOperation({ summary: 'Cancel a book request' })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Request cancelled successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Request not found' })
   @ApiResponse({
     status: 409,
     description: 'Only pending requests can be cancelled',
   })
   async remove(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user.id;
-    return this.bookRequestService.cancelRequest(id, userId);
+    return this.bookRequestService.cancelRequest(id, req.user.id);
   }
 
   @Get()
@@ -146,7 +144,7 @@ export class BookRequestController {
   }
 
   @Get('my-requests')
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
   @ApiOperation({ summary: 'Get my book requests' })
   @ApiBearerAuth()
   @ApiResponse({
@@ -171,7 +169,7 @@ export class BookRequestController {
   }
 
   @Get(':id')
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
   @ApiOperation({ summary: 'Get a specific book request' })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Returns the book request' })
