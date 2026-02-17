@@ -118,10 +118,10 @@ export const InHouseReadings: React.FC = () => {
                   }}
                 >
                   <img 
-                    src={item.copy.book.coverImageUrl || '/default_book.jpg'} 
+                    src={item.copy.book.coverImageUrl || '/admin/default_book.jpg'} 
                     alt={item.copy.book.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => { (e.target as HTMLImageElement).src = '/default_book.jpg'; }}
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/admin/default_book.jpg'; }}
                   />
                 </Box>
 

@@ -163,7 +163,7 @@ const handleCancelRenewalApprove = () => {
               }}
             >
               <img
-                src={imageError ? '/default_book.jpg' : (request.book?.coverImageUrl || '/default_book.jpg')}
+                src={imageError ? '/admin/default_book.jpg' : (request.book?.coverImageUrl || '/admin/default_book.jpg')}
                 alt={request.book?.title || 'Book cover'}
                 style={{
                   width: '100%',

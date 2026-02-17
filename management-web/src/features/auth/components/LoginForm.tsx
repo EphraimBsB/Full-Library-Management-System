@@ -98,7 +98,7 @@ export const LoginForm: React.FC = () => {
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <img
-              src="/logo.png"
+              src="/admin/logo.png"
               alt="Logo"
               style={{ height: 60, marginBottom: 24 }}
             />

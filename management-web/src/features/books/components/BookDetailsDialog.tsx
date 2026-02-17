@@ -205,11 +205,11 @@ export const BookDetailsDialog: React.FC<BookDetailsDialogProps> = ({ open, onCl
                 boxShadow: '0px 4px 6px -2px rgba(16, 24, 40, 0.03), 0px 12px 16px -4px rgba(16, 24, 40, 0.08)'
               }}>
                 <img 
-                  src={book.coverImageUrl || '/default_book.jpg'} 
+                  src={book.coverImageUrl || '/admin/default_book.jpg'} 
                   alt={book.title} 
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/default_book.jpg';
+                    (e.target as HTMLImageElement).src = '/admin/default_book.jpg';
                   }}
                 />
               </Box>

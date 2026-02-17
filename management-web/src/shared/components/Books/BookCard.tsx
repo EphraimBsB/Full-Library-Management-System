@@ -70,7 +70,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
           </Box>
         )}
         <img
-          src={imgError ? '/default_book.jpg' : (book.coverImageUrl || '/default_book.jpg')}
+          src={imgError ? '/admin/default_book.jpg' : (book.coverImageUrl || '/admin/default_book.jpg')}
           alt={book.title}
           onLoad={() => setImgLoading(false)}
           onError={() => {

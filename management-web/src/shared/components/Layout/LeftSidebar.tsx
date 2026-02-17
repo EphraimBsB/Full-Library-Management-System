@@ -16,6 +16,7 @@ import {
   Settings,
   Logout,
 } from '@mui/icons-material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { theme } from '../../../core/theme';
 import { useAuthStore } from '../../../core/hooks';
 
@@ -49,26 +50,28 @@ const navigationItems = [
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Get current route to determine selected index
   const getCurrentIndex = () => {
-    const currentPath = window.location.pathname;
-    const routes = ['/', '/books', '/loans', '/members'];
-    return routes.indexOf(currentPath);
+    const currentPath = location.pathname;
+    const routes = ['/dashboard', '/books', '/loans', '/members'];
+    return routes.findIndex(route => currentPath.includes(route));
   };
 
   const selectedIndex = getCurrentIndex();
 
   const handleNavigation = (index: number) => {
-    const routes = ['/', '/books', '/loans', '/members'];
+    const routes = ['/dashboard', '/books', '/loans', '/members'];
     if (routes[index]) {
-      window.location.href = routes[index];
+      navigate(routes[index]);
     }
   };
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   return (
@@ -86,7 +89,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
       {/* Logo and App Name */}
       <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img
-          src="/logo.png"
+          src="/admin/logo.png"
           alt="Logo"
           style={{ width: 120 }}
         />
@@ -98,7 +101,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
             mb: 1,
             backgroundColor: theme.colors.background,
           }}
-          src={user?.avatarUrl || "/default_avatar.png"}
+          src={user?.avatarUrl || "/admin/default_avatar.png"}
         >
           {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
         </Avatar>
@@ -175,7 +178,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
       <Box sx={{ mt: 'auto' }}>
         {/* Settings */}
         <ListItemButton
-          onClick={() => window.location.href = '/settings'}
+          onClick={() => navigate('/settings')}
           sx={{
             px: 3,
             py: 1,
