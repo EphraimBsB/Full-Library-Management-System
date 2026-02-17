@@ -516,7 +516,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                         />
                       )}
                     />
-                    {watch('coverImageUrl') && watch('coverImageUrl').startsWith('http') && !uploadingImage && (
+                    {watch('coverImageUrl') && watch('coverImageUrl')?.startsWith('http') && !uploadingImage && (
                       <Typography variant="caption" sx={{ color: 'success.main', display: 'flex', alignItems: 'center', mt: 0.5 }}>
                         <CloudDone sx={{ fontSize: 14, mr: 0.5 }} /> Image URL set
                       </Typography>
@@ -560,7 +560,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                         />
                       )}
                     />
-                    {watch('ebookUrl') && watch('ebookUrl').startsWith('http') && !uploadingEbook && (
+                    {watch('ebookUrl') && watch('ebookUrl')?.startsWith('http') && !uploadingEbook && (
                       <Typography variant="caption" sx={{ color: 'success.main', display: 'flex', alignItems: 'center', mt: 0.5 }}>
                         <CloudDone sx={{ fontSize: 14, mr: 0.5 }} /> E-book URL set
                       </Typography>

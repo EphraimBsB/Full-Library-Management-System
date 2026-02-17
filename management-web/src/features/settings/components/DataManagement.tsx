@@ -34,7 +34,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  CloudUpload as UploadIcon,
   Download as DownloadIcon,
   Close as CloseIcon,
   CheckCircle as SuccessIcon,

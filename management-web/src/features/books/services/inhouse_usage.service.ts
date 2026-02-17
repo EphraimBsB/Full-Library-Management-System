@@ -1,11 +1,13 @@
 import { apiClient } from '../../../core/network/api_client';
 import type { Book } from './book.service';
 
-export enum InhouseUsageStatus {
-  active = 'active',
-  completed = 'completed',
-  force_ended = 'force_ended',
-}
+export const InhouseUsageStatus = {
+  active: 'active',
+  completed: 'completed',
+  force_ended: 'force_ended',
+} as const;
+
+export type InhouseUsageStatus = typeof InhouseUsageStatus[keyof typeof InhouseUsageStatus];
 
 export interface User {
   id: string;
