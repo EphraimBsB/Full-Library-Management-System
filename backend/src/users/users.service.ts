@@ -605,4 +605,19 @@ export class UsersService {
     
     return this.userRepository.save(user);
   }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { email, deletedAt: IsNull() },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User with this email not found');
+    }
+
+    // TODO: Implement email sending logic
+    // Generate reset token, send email with reset link
+    console.log(`Password reset requested for email: ${email}`);
+    // For now, just log - in production, integrate with email service
+  }
 }

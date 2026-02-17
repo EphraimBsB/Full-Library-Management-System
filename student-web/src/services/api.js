@@ -321,6 +321,12 @@ export class ApiService {
     return response.data;
   }
 
+  // Book Requests
+  static async getMyBookRequests() {
+    const response = await api.get('/book-requests/my-requests');
+    return response.data;
+  }
+
   // Requests
   static async createBookRequest(requestData) {
     const response = await api.post('/book-requests', requestData);
