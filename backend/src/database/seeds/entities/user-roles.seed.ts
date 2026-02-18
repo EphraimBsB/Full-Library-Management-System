@@ -25,14 +25,9 @@ export class UserRolesSeed implements ISeeder {
         permissions: ['books:manage', 'loans:manage', 'reports:view'],
       },
       {
-        name: 'Student',
+        name: 'Member',
         description: 'Regular library member',
         permissions: ['books:borrow', 'profile:manage'],
-      },
-      {
-        name: 'Faculty',
-        description: 'Teaching staff with extended borrowing privileges',
-        permissions: ['books:borrow', 'profile:manage', 'books:request'],
       },
     ];
 

@@ -16,6 +16,7 @@ import type { Cache } from 'cache-manager';
 
 export enum MembershipStatus {
   ACTIVE = 'active',
+  INACTIVE = 'inactive',
   EXPIRED = 'expired',
   SUSPENDED = 'suspended',
   CANCELLED = 'cancelled',
@@ -43,6 +44,7 @@ export class MembershipService {
     user: User,
     membershipTypeId: string,
     startDate: Date = new Date(),
+    initialStatus?: MembershipStatus, // ✅ Optional: override default ACTIVE status
   ): Promise<Membership> {
     const membershipType = await this.membershipTypeRepository.findOne({
       where: { id: Number(membershipTypeId) },
@@ -60,7 +62,7 @@ export class MembershipService {
       type: membershipType,
       startDate,
       expiryDate,
-      status: MembershipStatus.ACTIVE,
+      status: initialStatus ?? MembershipStatus.ACTIVE, // ✅ Use provided status or default to ACTIVE
       membershipNumber: await this.generateMembershipNumber(
         membershipType.name,
       ),
@@ -184,5 +186,54 @@ export class MembershipService {
       hasPreviousPage: page > 1,
       hasNextPage: page < totalPages,
     };
+  }
+
+  async updateMembershipStatus(id: string, status: string): Promise<Membership> {
+    const membership = await this.membershipRepository.findOne({
+      where: { id },
+      relations: ['user', 'type'],
+    });
+
+    if (!membership) {
+      throw new NotFoundException(`Membership with ID ${id} not found`);
+    }
+
+    // Validate status
+    const validStatuses = ['active', 'inactive', 'expired', 'suspended', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      throw new BadRequestException(`Invalid status: ${status}. Valid statuses are: ${validStatuses.join(', ')}`);
+    }
+
+    membership.status = status as any;
+    return this.membershipRepository.save(membership);
+  }
+
+  async updateMembershipType(id: string, membershipTypeId: number): Promise<Membership> {
+    const membership = await this.membershipRepository.findOne({
+      where: { id },
+      relations: ['user', 'type'],
+    });
+
+    if (!membership) {
+      throw new NotFoundException(`Membership with ID ${id} not found`);
+    }
+
+    const membershipType = await this.membershipTypeRepository.findOne({
+      where: { id: membershipTypeId },
+    });
+
+    if (!membershipType) {
+      throw new NotFoundException(`Membership type with ID ${membershipTypeId} not found`);
+    }
+
+    membership.type = membershipType;
+
+    // Recalculate expiry date based on new membership type
+    const startDate = membership.startDate;
+    const expiryDate = new Date(startDate);
+    expiryDate.setDate(expiryDate.getDate() + membershipType.maxDurationDays);
+    membership.expiryDate = expiryDate;
+
+    return this.membershipRepository.save(membership);
   }
 }

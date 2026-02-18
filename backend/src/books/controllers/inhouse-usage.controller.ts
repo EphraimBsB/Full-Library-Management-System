@@ -36,7 +36,7 @@ export class InhouseUsageController {
   constructor(private readonly inhouseUsageService: InhouseUsageService) {}
 
   @Post('inhouse-usage/start')
-  @Roles(UserRole.STUDENT, UserRole.FACULTY, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Start tracking in-house book usage' })
   @ApiResponse({
     status: 201,
@@ -59,7 +59,7 @@ export class InhouseUsageController {
   }
 
   @Post('inhouse-usage/:id/end')
-  @Roles(UserRole.STUDENT, UserRole.FACULTY, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.ADMIN)
   @ApiOperation({ summary: 'End an active in-house book usage session' })
   @ApiResponse({
     status: 200,
@@ -155,7 +155,7 @@ export class InhouseUsageController {
   }
 
   @Get('inhouse-usage/history')
-  @Roles(UserRole.STUDENT, UserRole.FACULTY, UserRole.ADMIN, UserRole.LIBRARIAN)
+  @Roles(UserRole.MEMBER, UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Get in-house usage history' })
   @ApiResponse({
     status: 200,

@@ -17,6 +17,7 @@ import { MembershipRequest } from './membership-request.entity';
 
 export enum MembershipStatus {
   ACTIVE = 'active',
+  INACTIVE = 'inactive',
   EXPIRED = 'expired',
   SUSPENDED = 'suspended',
   CANCELLED = 'cancelled',

@@ -9,24 +9,39 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Link,
   Grid,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { ApiService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  School,
+  Person,
+  Check,
+  Error as ErrorIcon,
+} from '@mui/icons-material';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [verifyingRollNumber, setVerifyingRollNumber] = useState(false);
+  const [rollNumberVerified, setRollNumberVerified] = useState(false);
   const [formData, setFormData] = useState({
+    rollNumber: '',
     firstName: '',
     lastName: '',
     email: '',
+    phoneNumber: '',
+    course: '',
+    degree: '',
+    semester: '',
     password: '',
     confirmPassword: '',
-    rollNumber: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+
+  // API base URL for third-party integration
+  const API_BASE_URL = 'https://ilimsapi.isbatuniversity.ac.ug:9093/api';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,11 +54,68 @@ const Signup = () => {
     if (error) {
       setError('');
     }
+
+    // Reset verification if roll number changes
+    if (name === 'rollNumber') {
+      setRollNumberVerified(false);
+    }
+  };
+
+  const handleRollNumberCheck = async () => {
+    if (!formData.rollNumber.trim()) {
+      setError('Please enter your roll number');
+      return;
+    }
+
+    setVerifyingRollNumber(true);
+    setError('');
+
+    try {
+      // Check if student is registered via our backend proxy
+      const response = await fetch('http://localhost:3000/api/v1/auth/verify-student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ rollNumber: formData.rollNumber }),
+      });
+      const data = await response.json();
+
+      if (data.result === false) {
+        setError('You are not a registered student');
+      } else {
+        // Split the full name into first and last name
+        const nameParts = (data.name || '').trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Auto-fill form with student data
+        setFormData(prev => ({
+          ...prev,
+          firstName: firstName,
+          lastName: lastName,
+          degree: data.programme || '',
+          course: data.programme || '',
+          semester: data.semester || '',
+        }));
+        setRollNumberVerified(true);
+        setError('');
+      }
+    } catch (error) {
+      setError('Failed to verify roll number. Please try again.');
+    } finally {
+      setVerifyingRollNumber(false);
+    }
   };
 
   const validateForm = () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setError('All fields are required');
+    if (!rollNumberVerified) {
+      setError('Please verify your roll number first');
+      return false;
+    }
+    
+    if (!formData.firstName || !formData.email || !formData.password) {
+      setError('First name, email, and password are required');
       return false;
     }
     
@@ -68,22 +140,45 @@ const Signup = () => {
     }
     
     setLoading(true);
+    setError('');
     
     try {
-      const { confirmPassword, ...signupData } = formData;
-      await ApiService.createMembershipRequest({
-        ...signupData,
-        type: 'STUDENT',
-      });
-      
-      // Show success message and redirect
-      navigate('/login', {
-        state: {
-          message: 'Membership request submitted successfully. Please wait for approval.',
+      // Create user account in backend
+      const response = await fetch('http://localhost:3000/api/v1/auth/register-student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          rollNumber: formData.rollNumber,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          degree: formData.degree,
+          course: formData.course,
+          semester: formData.semester,
+          joinDate: new Date().toISOString(),
+        }),
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Auto-login after successful registration
+        await login({
+          rollNumber: formData.rollNumber,
+          password: formData.password,
+        });
+        
+        navigate('/');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Registration failed');
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to submit membership request');
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -101,14 +196,14 @@ const Signup = () => {
       }}
     >
       <Container maxWidth="sm">
-        <Card sx={{ maxWidth: 500, mx: 'auto' }}>
+        <Card sx={{ maxWidth: 600, mx: 'auto' }}>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
               <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
-                Join ISBAT LMS
+                Student Registration
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Create your student account to access the library
+                Register with your university roll number
               </Typography>
             </Box>
 
@@ -120,110 +215,165 @@ const Signup = () => {
 
             <form onSubmit={handleSubmit}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="First Name"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Last Name"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                  />
-                </Grid>
+                {/* Roll Number Field */}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Student ID / Roll Number"
+                    label="Roll Number *"
                     name="rollNumber"
                     value={formData.rollNumber}
                     onChange={handleChange}
+                    disabled={loading || verifyingRollNumber}
                     required
+                    sx={{ mb: 2 }}
+                    helperText="Enter your university roll number to verify your identity"
                   />
+                  {!rollNumberVerified && (
+                    <Button
+                      variant="outlined"
+                      onClick={handleRollNumberCheck}
+                      disabled={verifyingRollNumber || !formData.rollNumber.trim()}
+                      fullWidth
+                      sx={{ mt: 1 }}
+                    >
+                      {verifyingRollNumber ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        'Verify Roll Number'
+                      )}
+                    </Button>
+                  )}
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Confirm Password"
-                    name="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                  />
-                </Grid>
-              </Grid>
 
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                sx={{
-                  py: 1.5,
-                  mt: 3,
-                  backgroundColor: '#1976d2',
-                  '&:hover': { backgroundColor: '#1565c0' },
-                }}
-              >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit Request'}
-              </Button>
+                {/* Auto-filled Fields (shown after verification) */}
+                {rollNumberVerified && (
+                  <>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="First Name *"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                        sx={{ backgroundColor: '#f5f5f5' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Last Name"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        disabled={loading}
+                        sx={{ backgroundColor: '#f5f5f5' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Email *"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                        sx={{ backgroundColor: '#f5f5f5' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Phone Number"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleChange}
+                        disabled={loading}
+                        sx={{ backgroundColor: '#f5f5f5' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Degree/Course"
+                        name="degree"
+                        value={formData.degree}
+                        onChange={handleChange}
+                        disabled={loading}
+                        sx={{ backgroundColor: '#f5f5f5' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Semester"
+                        name="semester"
+                        value={formData.semester}
+                        onChange={handleChange}
+                        disabled={loading}
+                        sx={{ backgroundColor: '#f5f5f5' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Password *"
+                        name="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Confirm Password *"
+                        name="confirmPassword"
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                      />
+                    </Grid>
+                  </>
+                )}
+
+                {/* Password Fields (shown after verification) */}
+                {rollNumberVerified && (
+                  <Grid item xs={12}>
+                    <Button
+                      type="submit"
+                      fullWidth
+                      variant="contained"
+                      disabled={loading}
+                      sx={{
+                        py: 1.5,
+                        mt: 2,
+                        backgroundColor: '#1976d2',
+                        '&:hover': { backgroundColor: '#1565c0' },
+                      }}
+                    >
+                      {loading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
+                    </Button>
+                  </Grid>
+                )}
+              </Grid>
             </form>
 
             <Box sx={{ textAlign: 'center', mt: 3 }}>
-              <Typography variant="body2">
-                Already have an account?{' '}
-                <Link
-                  component="button"
-                  type="button"
-                  onClick={() => navigate('/login')}
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  Sign In
-                </Link>
-              </Typography>
-            </Box>
-
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Link
-                component="button"
-                type="button"
+              <Button
+                variant="text"
                 onClick={() => navigate('/')}
-                sx={{ fontSize: '0.875rem' }}
+                sx={{ color: 'white' }}
               >
                 Back to Home
-              </Link>
+              </Button>
             </Box>
           </CardContent>
         </Card>

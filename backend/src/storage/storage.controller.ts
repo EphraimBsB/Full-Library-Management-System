@@ -98,7 +98,6 @@ export class StorageController {
         );
       } catch (variantError) {
         if (targetVariant === ImageVariant.THUMBNAIL) {
-          console.log('Thumbnail not found, falling back to original');
           streamData = await this.storageService.getFileStream(
             id,
             ImageVariant.ORIGINAL,

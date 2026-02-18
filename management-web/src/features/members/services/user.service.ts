@@ -28,11 +28,11 @@ export interface MembershipType {
 }
 
 export interface Membership {
-  id: number;
-  status: 'active' | 'inactive' | 'expired';
+  id: string; // Changed from number to string to match backend UUID
+  status: 'active' | 'inactive' | 'expired' | 'suspended' | 'cancelled';
   startDate: string;
   expiryDate: string;
-  membershipType: MembershipType;
+  type: MembershipType;
 }
 
 export interface UserProfileSummary {
@@ -84,6 +84,10 @@ export const UserService = {
 
   updateUser: async (id: string, data: any): Promise<User> => {
     return apiClient.patch<User>(`/users/${id}`, data);
+  },
+
+  updateProfile: async (id: string, data: any): Promise<User> => {
+    return apiClient.patch<User>(`/users/${id}/profile`, data);
   },
 
   deleteUser: async (id: string): Promise<void> => {

@@ -31,6 +31,10 @@ export class CreateMemberDto {
 
   @IsString()
   @IsOptional()
+  semester?: string;
+
+  @IsString()
+  @IsOptional()
   password?: string;
 
   @IsNumber()
@@ -40,4 +44,8 @@ export class CreateMemberDto {
   @IsNumber()
   @IsOptional()
   roleId?: number;
+
+  @IsString()
+  @IsOptional()
+  membershipStatus?: string; // 'Active' | 'Inactive' — derived from checkMembership()
 }

@@ -30,6 +30,11 @@ export const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
     return new Date(member.joinDate) > thirtyDaysAgo;
   }, [member.joinDate]);
 
+  // Get membership status from memberships array
+  const currentMembership = member.memberships?.[0]; // Get first (most recent) membership
+  const membershipStatus = currentMembership?.status || 'inactive';
+  const membershipTypeName = currentMembership?.type?.name.toUpperCase() || 'No Membership';
+
   return (
     <Card
       elevation={0}
@@ -66,15 +71,43 @@ export const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
               {member.firstName} {member.lastName}
             </Typography>
             <Chip
-              label={member.isActive ? 'ACTIVE' : 'INACTIVE'}
+              label={membershipStatus?.toUpperCase() || 'NO MEMBERSHIP'}
               size="small"
               sx={{
-                height: '18px',
-                fontSize: '8px',
+                height: '20px',
+                fontSize: '9px',
+                fontWeight: 700,
+                backgroundColor: membershipStatus === 'active' ? '#059669' : 
+                                 membershipStatus === 'inactive' ? '#9CA3AF' : 
+                                 membershipStatus === 'expired' ? '#D97706' :
+                                 membershipStatus === 'suspended' ? '#7C3AED' :
+                                 membershipStatus === 'cancelled' ? '#EF4444' :
+                                 '#6B7280',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                ml: 1,
+                letterSpacing: '0.5px',
+                boxShadow: membershipStatus === 'active' ? '0 2px 4px rgba(5, 150, 105, 0.3)' : 
+                          membershipStatus === 'inactive' ? '0 2px 4px rgba(156, 163, 175, 0.3)' : 
+                          membershipStatus === 'expired' ? '0 2px 4px rgba(217, 119, 6, 0.3)' :
+                          membershipStatus === 'suspended' ? '0 2px 4px rgba(124, 58, 237, 0.3)' :
+                          membershipStatus === 'cancelled' ? '0 2px 4px rgba(239, 68, 68, 0.3)' :
+                          '0 2px 4px rgba(107, 114, 128, 0.2)',
+              }}
+            />
+            <Chip
+              label={membershipTypeName || 'NO TYPE'}
+              size="small"
+              sx={{
+                height: '20px',
+                fontSize: '9px',
                 fontWeight: 600,
-                backgroundColor: member.isActive ? '#ECFDF3' : '#F2F4F7',
-                color: member.isActive ? '#027A48' : '#344054',
-                borderRadius: '10px',
+                backgroundColor: '#F3F4F6',
+                color: '#374151',
+                border: '1px solid #E5E7EB',
+                borderRadius: '12px',
+                ml: 1,
+                letterSpacing: '0.3px',
               }}
             />
           </Box>

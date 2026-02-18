@@ -42,13 +42,17 @@ interface MemberDetailsDialogProps {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'active':
-      return { bg: '#ECFDF3', color: '#027A48' };
-    case 'suspended':
-      return { bg: '#FEF3F2', color: '#B42318' };
+      return { bg: '#059669', color: '#FFFFFF' };
+    case 'inactive':
+      return { bg: '#9CA3AF', color: '#FFFFFF' };
     case 'expired':
-      return { bg: '#FFFAEB', color: '#B54708' };
+      return { bg: '#D97706', color: '#FFFFFF' };
+    case 'suspended':
+      return { bg: '#7C3AED', color: '#FFFFFF' };
+    case 'cancelled':
+      return { bg: '#EF4444', color: '#FFFFFF' };
     default:
-      return { bg: '#F2F4F7', color: '#344054' };
+      return { bg: '#6B7280', color: '#FFFFFF' };
   }
 };
 
@@ -132,14 +136,22 @@ export const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({ open, 
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
                   <Chip
-                    label={profileSummary.membershipStatus.toUpperCase()}
+                    label={profileSummary.membershipStatus?.toUpperCase() || 'NO MEMBERSHIP'}
                     size="small"
                     sx={{
                       height: '20px',
-                      fontWeight: 600,
-                      fontSize: '10px',
+                      fontSize: '9px',
+                      fontWeight: 700,
                       backgroundColor: getStatusColor(profileSummary.membershipStatus).bg,
                       color: getStatusColor(profileSummary.membershipStatus).color,
+                      borderRadius: '12px',
+                      letterSpacing: '0.5px',
+                      boxShadow: profileSummary.membershipStatus === 'active' ? '0 2px 4px rgba(5, 150, 105, 0.3)' : 
+                                 profileSummary.membershipStatus === 'inactive' ? '0 2px 4px rgba(156, 163, 175, 0.3)' : 
+                                 profileSummary.membershipStatus === 'expired' ? '0 2px 4px rgba(217, 119, 6, 0.3)' :
+                                 profileSummary.membershipStatus === 'suspended' ? '0 2px 4px rgba(124, 58, 237, 0.3)' :
+                                 profileSummary.membershipStatus === 'cancelled' ? '0 2px 4px rgba(239, 68, 68, 0.3)' :
+                                 '0 2px 4px rgba(107, 114, 128, 0.2)',
                     }}
                   />
                   <Typography variant="body2" sx={{ color: '#667085', fontWeight: 500, fontSize: '0.85rem' }}>
@@ -179,11 +191,11 @@ export const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({ open, 
                     roleId: 1, // Default role
                     activeLoansCount: profileSummary.stats.borrow.active,
                     memberships: [{
-                      id: 1,
+                      id: '1', // Changed to string to match Membership interface
                       status: profileSummary.membershipStatus as any,
                       startDate: profileSummary.joinedAt,
                       expiryDate: profileSummary.expiryDate || '',
-                      membershipType: {
+                      type: {
                         id: 1,
                         name: profileSummary.membershipType,
                         maxBooks: 5,

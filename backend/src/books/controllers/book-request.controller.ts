@@ -35,7 +35,7 @@ export class BookRequestController {
   constructor(private readonly bookRequestService: BookRequestService) {}
 
   @Post()
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new book request' })
   @ApiBearerAuth()
   @ApiResponse({
@@ -110,7 +110,7 @@ export class BookRequestController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Cancel a book request' })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Request cancelled successfully' })
@@ -144,7 +144,7 @@ export class BookRequestController {
   }
 
   @Get('my-requests')
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get my book requests' })
   @ApiBearerAuth()
   @ApiResponse({
@@ -169,7 +169,7 @@ export class BookRequestController {
   }
 
   @Get(':id')
-  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN, UserRole.STUDENT, UserRole.FACULTY)
+  @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get a specific book request' })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Returns the book request' })
@@ -182,7 +182,7 @@ export class BookRequestController {
 
   // Renewal Request Endpoints
   @Post('renewal')
-  @Roles(UserRole.MEMBER, UserRole.STUDENT, UserRole.FACULTY, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a renewal request for an existing loan' })
   @ApiBearerAuth()
   @ApiResponse({ status: 201, description: 'Renewal request created successfully' })

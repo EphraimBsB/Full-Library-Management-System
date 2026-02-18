@@ -15,6 +15,9 @@ export class MembershipType {
   @Column({ name: 'max_duration_days', type: 'int', default: 14 })
   maxDurationDays: number;
 
+  @Column({ name: 'loan_period_days', type: 'int', default: 14 })
+  loanPeriodDays: number;
+
   @Column({ name: 'renewal_limit', type: 'int', default: 1 })
   renewalLimit: number;
 
@@ -23,9 +26,12 @@ export class MembershipType {
     type: 'decimal',
     precision: 10,
     scale: 2,
-    default: 100,
+    default: 1.00,
   })
   fineRate: number;
+
+  @Column({ name: 'grace_period_days', type: 'int', default: 0 })
+  gracePeriodDays: number;
 
   @Column({ type: 'text', nullable: true })
   description: string;

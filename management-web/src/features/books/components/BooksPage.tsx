@@ -87,9 +87,16 @@ export const BooksPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box sx={{ 
+      width: '100%', 
+      maxWidth: '100%', 
+      minHeight: '100%',
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    }}>
+      <Box sx={{ width: '100%', maxWidth: '100%' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 700, color: '#101828' }}>
             Book Management
@@ -125,9 +132,13 @@ export const BooksPage: React.FC = () => {
         backgroundColor: 'white', 
         borderRadius: '12px',
         border: '1px solid #EAECF0',
-        boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)'
+        boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
       }}>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             placeholder="Search by title, author, or ISBN..."
             value={params.search}
@@ -141,7 +152,8 @@ export const BooksPage: React.FC = () => {
             }}
             sx={{
               flexGrow: 1,
-              maxWidth: 400,
+              minWidth: 250,
+              maxWidth: { xs: '100%', sm: 400 },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '8px',
                 height: '40px',
@@ -149,7 +161,7 @@ export const BooksPage: React.FC = () => {
             }}
           />
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: 120, flexShrink: 0 }}>
             <InputLabel>Subject</InputLabel>
             <Select
               value={params.subject}
@@ -164,7 +176,7 @@ export const BooksPage: React.FC = () => {
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: 120, flexShrink: 0 }}>
             <InputLabel>Status</InputLabel>
             <Select
               value={params.status}
@@ -178,9 +190,7 @@ export const BooksPage: React.FC = () => {
             </Select>
           </FormControl>
 
-          <Box sx={{ flexGrow: 1 }} />
-
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: 130, flexShrink: 0 }}>
             <InputLabel>Sort By</InputLabel>
             <Select
               value={params.sortBy}
@@ -197,7 +207,12 @@ export const BooksPage: React.FC = () => {
         </Box>
 
         {/* Category Pills */}
-        <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 1, 
+          flexWrap: 'wrap',
+          maxWidth: '100%'
+        }}>
           <Box
             onClick={() => handleFilterChange('category', '')}
             sx={{
@@ -268,16 +283,18 @@ export const BooksPage: React.FC = () => {
             sx={{ 
               display: 'grid', 
               gridTemplateColumns: {
-                xs: 'repeat(1, minmax(0, 1fr))',
-                sm: 'repeat(2, minmax(0, 1fr))',
-                md: 'repeat(4, minmax(0, 1fr))',
-                lg: 'repeat(5, minmax(0, 1fr))',
-                xl: 'repeat(6, minmax(0, 1fr))',
+                xs: 'repeat(3, 1fr)',
+                sm: 'repeat(4, 1fr)',
+                md: 'repeat(5, 1fr)',
+                lg: 'repeat(6, 1fr)',
+                xl: 'repeat(7, 1fr)',
               }, 
               columnGap: '16px', 
               rowGap: '24px',
               width: '100%',
-              alignItems: 'start'
+              maxWidth: '100%',
+              alignItems: 'start',
+              boxSizing: 'border-box'
             }}
           >
             {data?.data.map((book) => (
@@ -338,6 +355,7 @@ export const BooksPage: React.FC = () => {
         }}
         book={editingBook}
       />
+    </Box>
     </Box>
   );
 };

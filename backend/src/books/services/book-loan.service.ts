@@ -7,6 +7,7 @@ import {
   forwardRef,
   Logger,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
@@ -135,8 +136,7 @@ export class BookLoanService {
     }
 
     const maxLoans = activeMembership.type.maxBooks;
-    const loanPeriodDays =
-      activeMembership.type.maxDurationDays || this.loanPeriodDays;
+    const loanPeriodDays = activeMembership.type.loanPeriodDays || this.loanPeriodDays;
 
     // Use the passed manager directly (no nested transaction)
     const transactionalEntityManager = manager;
@@ -206,7 +206,7 @@ export class BookLoanService {
       );
     }
 
-    // 5️⃣ Compute loan dates
+    // 5️⃣ Compute loan dates using membership loan period
     const borrowedAt = new Date();
     const dueDate = new Date(borrowedAt);
     dueDate.setDate(borrowedAt.getDate() + loanPeriodDays);
@@ -471,7 +471,7 @@ export class BookLoanService {
 
       const baseDate = loan.dueDate > new Date() ? loan.dueDate : new Date();
       const newDueDate = new Date(baseDate);
-      const renewalPeriod = membershipType?.maxDurationDays ?? 14;
+      const renewalPeriod = membershipType?.loanPeriodDays ?? 14;
       newDueDate.setDate(newDueDate.getDate() + renewalPeriod);
 
       loan.dueDate = newDueDate;
@@ -507,6 +507,77 @@ export class BookLoanService {
       },
       relations: ['bookCopy', 'bookCopy.book'],
       order: { dueDate: 'ASC' },
+    });
+  }
+
+  /**
+   * Marks a loan as LOST and charges maximum fine
+   * @param loanId The ID of the loan to mark as lost
+   * @param markedById The user ID marking the loan as lost
+   * @param notes Optional notes about why the book was marked as lost
+   */
+  async markLoanAsLost(
+    loanId: string,
+    markedById: string,
+    notes?: string,
+  ): Promise<BookLoan> {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      // 1. Find the loan with a lock
+      const loan = await transactionalEntityManager.findOne(BookLoan, {
+        where: { id: loanId },
+        relations: ['bookCopy', 'user', 'bookCopy.book'],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!loan) {
+        throw new NotFoundException('Loan not found');
+      }
+
+      if (![LoanStatus.ACTIVE, LoanStatus.OVERDUE].includes(loan.status)) {
+        throw new ConflictException(
+          'Only active or overdue loans can be marked as lost',
+        );
+      }
+
+      // 2. Calculate fine (charge maximum - replacement cost or high fine)
+      // For lost books, charge a premium fine (e.g., 10x daily rate or a fixed amount)
+      const membership = await this.membershipService.findActiveMembership(
+        loan.user.id,
+      );
+      const dailyFine =
+        membership?.type?.fineRate || this.loanConfig.dailyFineAmount;
+      
+      // Set lost book fine to 10x the daily rate (or could be replaced with a config value)
+      const lostBookFine = dailyFine * 10;
+
+      // 3. Update loan status to LOST and store fine
+      loan.status = LoanStatus.LOST;
+      loan.fineAmount = lostBookFine;
+      loan.returnedAt = new Date();
+      loan.returnedBy = markedById;
+      loan.notes = notes || 'Book marked as lost';
+
+      const updatedLoan = await transactionalEntityManager.save(BookLoan, loan);
+
+      // 4. Update book copy status to mark it as lost (set to unavailable state)
+      const bookCopy = await transactionalEntityManager.findOne(BookCopy, {
+        where: { id: loan.bookCopy.id },
+      });
+
+      if (bookCopy) {
+        // Mark copy as lost
+        bookCopy.status = BookCopyStatus.LOST;
+        await transactionalEntityManager.save(BookCopy, bookCopy);
+      }
+
+      // 5. Clear cache
+      await this.resetCache();
+
+      this.logger.log(
+        `Loan ${loanId} marked as LOST by user ${markedById} with fine amount ${lostBookFine}`,
+      );
+
+      return updatedLoan;
     });
   }
 
@@ -673,7 +744,7 @@ export class BookLoanService {
         status: LoanStatus.ACTIVE,
         dueDate: LessThan(new Date()),
       },
-      relations: ['user', 'bookCopy', 'bookCopy.book'],
+      relations: ['user', 'bookCopy', 'bookCopy.book', 'user.memberships', 'user.memberships.type'],
     });
 
     let updated = 0;
@@ -681,8 +752,12 @@ export class BookLoanService {
 
     for (const loan of overdueLoans) {
       try {
-        // Update loan status to OVERDUE
+        // Calculate fine amount before marking overdue
+        const fineAmount = await this.calculateFine(loan.id);
+
+        // Update loan status to OVERDUE and store fine amount
         loan.status = LoanStatus.OVERDUE;
+        loan.fineAmount = fineAmount;
         await this.bookLoanRepository.save(loan);
         updated++;
 
@@ -696,7 +771,7 @@ export class BookLoanService {
 
         notified++;
         this.logger.log(
-          `Marked loan ${loan.id} as overdue and sent notice to user ${loan.user.id}`,
+          `Marked loan ${loan.id} as overdue (fine: ${fineAmount}) and sent notice to user ${loan.user.id}`,
         );
       } catch (error) {
         this.logger.error(`Error processing overdue loan ${loan.id}:`, error);
@@ -725,8 +800,8 @@ export class BookLoanService {
       bookLoan.user.id,
     );
 
-    // Check for grace period (premium members might have one)
-    const gracePeriodDays = membership?.type.name === 'premium' ? 2 : 0;
+    // Get grace period from membership type configuration
+    const gracePeriodDays = membership?.type?.gracePeriodDays ?? 0;
     const gracePeriodEnd = new Date(bookLoan.dueDate);
     gracePeriodEnd.setDate(gracePeriodEnd.getDate() + gracePeriodDays);
 
@@ -741,7 +816,7 @@ export class BookLoanService {
 
     // Apply membership-specific fine rate
     const dailyFine =
-      membership?.type.fineRate || this.loanConfig.dailyFineAmount;
+      membership?.type?.fineRate || this.loanConfig.dailyFineAmount;
 
     return Math.max(0, daysOverdue * dailyFine);
   }
@@ -845,9 +920,23 @@ export class BookLoanService {
       const membership = await this.membershipService.findActiveMembership(
         user.id,
       );
+      
+      // Get grace period from membership type configuration
+      const gracePeriodDays = membership?.type?.gracePeriodDays ?? 0;
+      const gracePeriodEnd = new Date(dueDate);
+      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + gracePeriodDays);
+
+      // Calculate fineAmount (may be 0 if within grace period)
       const dailyFine =
-        membership?.type.fineRate || this.loanConfig.dailyFineAmount;
-      const fineAmount = daysOverdue * dailyFine;
+        membership?.type?.fineRate || this.loanConfig.dailyFineAmount;
+      const daysOverdueExcludingGrace = Math.max(
+        0,
+        Math.ceil(
+          (new Date().getTime() - gracePeriodEnd.getTime()) /
+            (1000 * 60 * 60 * 24),
+        ),
+      );
+      const fineAmount = daysOverdueExcludingGrace * dailyFine;
 
       await this.emailUtilsService.sendEmail(
         user.email,

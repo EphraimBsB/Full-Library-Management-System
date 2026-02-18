@@ -101,14 +101,14 @@ const Home = () => {
     }
   );
 
-  // Fetch active reading session
-  const { data: activeSession, refetch: refetchActiveSession } = useQuery(
-    'activeSession',
+  // Fetch active reading sessions
+  const { data: activeSessions, refetch: refetchActiveSessions } = useQuery(
+    'activeSessions',
     ApiService.getActiveSession,
     {
       enabled: isAuthenticated,
       refetchInterval: 30000, // Refetch every 30 seconds
-      select: (data) => data.items && data.items.length > 0 ? data.items[0] : null,
+      select: (data) => data.items || [], // Ensure we return an array
     }
   );
 
@@ -151,10 +151,19 @@ const Home = () => {
     // Implementation would go here
   };
 
+  const handleEndIndividualSession = async (sessionId) => {
+    try {
+      await ApiService.endInhouseUsage(sessionId);
+      refetchActiveSessions();
+    } catch (error) {
+      console.error('Error ending individual session:', error);
+    }
+  };
+
   const handleEndSession = async () => {
     // This is now handled by the ActiveSessionBanner component
     // Just refetch the session data
-    refetchActiveSession();
+    refetchActiveSessions();
   };
 
   return (
@@ -163,10 +172,10 @@ const Home = () => {
       
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Active Session Banner */}
-        {isAuthenticated && activeSession && (
+        {isAuthenticated && activeSessions && activeSessions.length > 0 && (
           <ActiveSessionBanner
-            session={activeSession}
-            onSessionEnd={refetchActiveSession}
+            sessions={activeSessions}
+            onSessionEnd={refetchActiveSessions}
           />
         )}
 
@@ -190,47 +199,62 @@ const Home = () => {
           </Typography>
         </Box>
 
-        {/* Active Session Banner */}
-        {isAuthenticated && activeSession && activeSession.length > 0 && (
-          <Paper
-            sx={{
-              p: 3,
-              mb: 4,
-              backgroundColor: 'rgba(191, 0, 25, 0.1)',
-              border: '1px solid rgba(191, 0, 25, 0.2)',
-              borderRadius: 2,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <MenuBook sx={{ color: '#BF0019' }} />
-                <Box>
-                  <Typography variant="subtitle1" sx={{ color: '#BF0019', fontWeight: 'bold', fontSize: 14 }}>
-                    Currently Reading
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontSize: 13 }}>
-                    {activeSession[0].copy?.book?.title} (Acc.No #{activeSession[0].copy?.accessNumber})
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontSize: 11, fontWeight: 500, color: '#666666' }}>
-                    Since: {new Date(activeSession[0].startedAt).toLocaleString()}
-                  </Typography>
-                </Box>
-              </Box>
-              <Button
-                variant="contained"
-                onClick={handleEndSession}
-                sx={{ 
-                  backgroundColor: '#BF0019', 
-                  '&:hover': { backgroundColor: '#A00015' },
-                  fontSize: 12,
-                  px: 2,
-                  py: 0.5,
+        {/* Active Session Cards */}
+        {isAuthenticated && activeSessions && activeSessions.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" sx={{ color: '#BF0019', fontWeight: 'bold', fontSize: 16, mb: 2 }}>
+              Currently Reading ({activeSessions.length} sessions)
+            </Typography>
+            {activeSessions.map((session, index) => (
+              <Paper
+                key={session.id}
+                sx={{
+                  p: 2,
+                  mb: 2,
+                  backgroundColor: 'rgba(191, 0, 25, 0.05)',
+                  border: '1px solid rgba(191, 0, 25, 0.15)',
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                 }}
               >
-                Finish
-              </Button>
-            </Box>
-          </Paper>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <MenuBook sx={{ color: '#BF0019', fontSize: 20 }} />
+                  <Box>
+                    <Typography variant="body1" sx={{ fontSize: 14, fontWeight: 500 }}>
+                      {session.copy?.book?.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: 12, color: '#666666' }}>
+                      Acc.No #{session.copy?.accessNumber}
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: 11, color: '#666666' }}>
+                      Since: {new Date(session.startedAt).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleEndIndividualSession(session.id)}
+                  sx={{ 
+                    borderColor: '#BF0019', 
+                    color: '#BF0019',
+                    '&:hover': { 
+                      borderColor: '#A00015',
+                      backgroundColor: 'rgba(191, 0, 25, 0.04)'
+                    },
+                    fontSize: 10,
+                    px: 2,
+                    py: 0.5,
+                    minWidth: 'auto',
+                  }}
+                >
+                  Finish
+                </Button>
+              </Paper>
+            ))}
+          </Box>
         )}
 
         {/* Search Bar */}
@@ -365,8 +389,8 @@ const Home = () => {
                       book={book}
                       onBorrowRequest={handleBorrowRequest}
                       onStartReading={handleStartReading}
-                      onSessionStart={refetchActiveSession}
-                      activeSession={activeSession}
+                      onSessionStart={refetchActiveSessions}
+                      activeSessions={activeSessions}
                     />
                   </Grid>
                 ))}

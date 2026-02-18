@@ -41,7 +41,7 @@ export class TypesController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all book types' })
   @ApiResponse({ status: 200, description: 'Return all book types' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -54,7 +54,7 @@ export class TypesController {
   }
 
   @Get('search')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Search book types by name' })
   @ApiResponse({ status: 200, description: 'Return matching book types' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -67,7 +67,7 @@ export class TypesController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get a book type by ID' })
   @ApiResponse({ status: 200, description: 'Return the book type' })
   @ApiResponse({ status: 404, description: 'Book type not found' })

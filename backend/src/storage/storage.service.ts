@@ -183,21 +183,10 @@ export class StorageService {
     contentType: string;
     filePath: string;
   }> {
-    console.log(`[getFileStream] Looking up file record with ID: ${id}`);
     const fileRecord = await this.fileRepository.findOne({ where: { id } });
     if (!fileRecord) {
-      console.error(`[getFileStream] File record not found for ID: ${id}`);
       throw new NotFoundException('File not found in database');
     }
-
-    console.log(`[getFileStream] Found file record:`, {
-      id: fileRecord.id,
-      originalName: fileRecord.originalName,
-      storagePath: fileRecord.storagePath,
-      mimeType: fileRecord.mimeType,
-      variant: variant || 'original',
-      requestedFormat: format || 'original',
-    });
 
     // The storagePath is relative to the storage directory
     // For original files, they are stored in the 'originals' directory
@@ -206,7 +195,6 @@ export class StorageService {
       'originals',
       fileRecord.storagePath,
     );
-    console.log(`[getFileStream] Original file path: ${originalFilePath}`);
 
     let filePath = originalFilePath;
     let contentType = fileRecord.mimeType;
@@ -227,25 +215,12 @@ export class StorageService {
           : variantPath,
       );
 
-      console.log(
-        `[getFileStream] Variant path (${variant}): ${variantFilePath}`,
-      );
-
       // If variant doesn't exist, generate it
       if (!(await this.fileExists(variantFilePath))) {
-        console.log(`[getFileStream] Generating ${variant} variant...`);
         try {
           await this.generateImageVariant(fileRecord, variant);
-          console.log(
-            `[getFileStream] Successfully generated ${variant} variant`,
-          );
         } catch (error) {
-          console.error(
-            `[getFileStream] Error generating ${variant} variant:`,
-            error,
-          );
           // Fall back to original if variant generation fails
-          console.log(`[getFileStream] Falling back to original file`);
           filePath = originalFilePath;
         }
       } else {
@@ -257,11 +232,8 @@ export class StorageService {
       }
     }
 
-    console.log(`[getFileStream] Final file path: ${filePath}`);
-
     if (!(await this.fileExists(filePath))) {
       const errorMsg = `File not found at path: ${filePath}`;
-      console.error(`[getFileStream] ${errorMsg}`);
 
       // Check if the file exists in a different location (for debugging)
       const possiblePaths = [
@@ -272,15 +244,10 @@ export class StorageService {
 
       for (const p of possiblePaths) {
         const exists = await this.fileExists(p);
-        console.log(
-          `[getFileStream] Check path ${p}: ${exists ? 'EXISTS' : 'NOT FOUND'}`,
-        );
       }
 
       throw new NotFoundException('File not found on disk');
     }
-
-    console.log(`[getFileStream] Successfully located file at: ${filePath}`);
 
     // Return the file stream, file record, and content type
     return {

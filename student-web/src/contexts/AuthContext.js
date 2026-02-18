@@ -107,11 +107,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await ApiService.login(credentials);
       
-      console.log('Login response structure:', response);
+      console.log('Login response:', response);
       
-      // Handle different response formats
-      const token = response.access_token || response.token;
-      const userData = response.user || response.userData || response;
+      // Simple response format: { access_token, user }
+      const token = response.access_token;
+      const userData = response.user;
       
       if (!token || !userData) {
         throw new Error('Invalid login response: missing token or user data');
