@@ -24,7 +24,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {showTopbar && <Topbar />}
         
         <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'auto', p: 3, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+          <Box sx={{ 
+            flexGrow: 1, 
+            minWidth: 0, 
+            overflow: 'auto', 
+            p: 3, 
+            width: '100%',
+            maxWidth: '100%',
+            scrollbarWidth: 'none', 
+            '&::-webkit-scrollbar': { display: 'none' } 
+          }}>
             {children}
           </Box>
           

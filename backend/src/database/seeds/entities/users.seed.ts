@@ -287,15 +287,14 @@ export class UsersSeed implements ISeeder {
     const userRoleRepository = dataSource.getRepository(UserRole);
 
     // Get required roles
-    const [adminRole, librarianRole, studentRole, facultyRole] =
+    const [adminRole, librarianRole, memberRole] =
       await Promise.all([
         userRoleRepository.findOneBy({ name: 'Admin' }),
         userRoleRepository.findOneBy({ name: 'Librarian' }),
-        userRoleRepository.findOneBy({ name: 'Student' }),
-        userRoleRepository.findOneBy({ name: 'Faculty' }),
+        userRoleRepository.findOneBy({ name: 'Member' }),
       ]);
 
-    if (!adminRole || !librarianRole || !studentRole || !facultyRole) {
+    if (!adminRole || !librarianRole || !memberRole) {
       console.warn('Skipping users seeding: Required roles not found');
       return { entity: 'User', count: 0 };
     }
@@ -370,10 +369,10 @@ export class UsersSeed implements ISeeder {
         lastName,
         email: `faculty${i + 1}@isbat.edu`,
         rollNumber: `FAC${String(i + 1).padStart(3, '0')}`,
-        role: facultyRole,
-        roleId: facultyRole.id,
+        role: memberRole,
+        roleId: memberRole.id,
         ...commonUserData,
-        ...generateAcademicInfo(facultyRole, i),
+        ...generateAcademicInfo(memberRole, i),
         researchGateUrl: `https://www.researchgate.net/profile/${firstName}-${lastName}-${i + 1}`,
         googleScholarUrl: `https://scholar.google.com/citations?user=${faker.string.alphanumeric(12)}`,
         orcidId: faker.string
@@ -394,10 +393,10 @@ export class UsersSeed implements ISeeder {
         lastName,
         email: `student${i + 1}@isbat.edu`,
         rollNumber: `STU${String(i + 1).padStart(4, '0')}`,
-        role: studentRole,
-        roleId: studentRole.id,
+        role: memberRole,
+        roleId: memberRole.id,
         ...commonUserData,
-        ...generateAcademicInfo(studentRole, i),
+        ...generateAcademicInfo(memberRole, i),
         parentName: faker.person.fullName(),
         parentPhone: generateUgandanPhoneNumber(),
         parentEmail: faker.internet.email({
@@ -421,7 +420,7 @@ export class UsersSeed implements ISeeder {
     const users = [
       ...adminUsers,
       ...librarianUsers,
-      // ...facultyUsers,
+      // ...memberUsers,
       ...studentUsers,
     ];
 

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import {
   ApiTags,
@@ -29,6 +30,31 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('register-student')
+  @Public()
+  @ApiOperation({ summary: 'Register student with roll number' })
+  @ApiResponse({ status: 201, description: 'Student registered successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async registerStudent(@Body() createUserDto: CreateUserDto) {
+    return this.authService.registerStudent(createUserDto);
+  }
+
+  @Post('verify-student')
+  @Public()
+  @ApiOperation({ summary: 'Verify student registration with university' })
+  @ApiResponse({ status: 200, description: 'Student verification completed' })
+  async verifyStudent(@Body() body: { rollNumber: string }) {
+    return this.authService.verifyStudent(body.rollNumber);
+  }
+
+  @Post('check-membership')
+  @Public()
+  @ApiOperation({ summary: 'Check library membership status' })
+  @ApiResponse({ status: 200, description: 'Membership check completed' })
+  async checkMembership(@Body() body: { rollNumber: string }) {
+    return this.authService.checkMembership(body.rollNumber);
   }
 
   @UseGuards(JwtAuthGuard)

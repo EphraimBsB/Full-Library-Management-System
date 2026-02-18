@@ -12,7 +12,6 @@ import BookTypesManagement from './BookTypesManagement';
 import PublishersManagement from './PublishersManagement';
 import LocationsManagement from './LocationsManagement';
 import ShelvesManagement from './ShelvesManagement';
-import UserRolesManagement from './UserRolesManagement';
 import MembershipTypesManagement from './MembershipTypesManagement';
 
 interface TabPanelProps {
@@ -79,8 +78,7 @@ const SystemConfigs: React.FC = () => {
             <Tab label="Publishers" {...a11yProps(3)} />
             <Tab label="Locations" {...a11yProps(4)} />
             <Tab label="Shelves" {...a11yProps(5)} />
-            <Tab label="User Roles" {...a11yProps(6)} />
-            <Tab label="Membership Types" {...a11yProps(7)} />
+            <Tab label="Membership Types" {...a11yProps(6)} />
           </Tabs>
         </Box>
 
@@ -109,10 +107,10 @@ const SystemConfigs: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={value} index={6}>
-          <UserRolesManagement />
+          {/* <UserRolesManagement />
         </TabPanel>
 
-        <TabPanel value={value} index={7}>
+        <TabPanel value={value} index={7}> */}
           <MembershipTypesManagement />
         </TabPanel>
       </Paper>

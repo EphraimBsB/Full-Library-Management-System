@@ -32,7 +32,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import BorrowRequestDialog from './BorrowRequestDialog';
 import LoginDialog from '../auth/LoginDialog';
 
-const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activeSession }) => {
+const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activeSessions }) => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [selectedCopy, setSelectedCopy] = useState(null);
@@ -47,9 +47,10 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
   const availableCopies = book.copies?.filter(copy => copy.status === 'AVAILABLE') || [];
   const isAvailable = availableCopies.length > 0;
   
-  // Check if user has an active session
-  const hasActiveSession = !!activeSession;
-  const isCurrentBookInSession = activeSession?.copy?.book?.id === book.id;
+  // Check if user has any active sessions
+  // const hasActiveSessions = activeSessions && activeSessions.length > 0;
+  const isCurrentBookInSession = activeSessions && 
+    activeSessions.some(session => session.copy.book.id === book.id);
 
   const handleReadClick = () => {
     if (!isAuthenticated) {
@@ -58,54 +59,51 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
       return;
     }
     
-    // Check if user has an active session with a different book
-    if (hasActiveSession && !isCurrentBookInSession) {
-      setRestrictionSnackbar({
-        open: true,
-        message: `You already have an active reading session for "${activeSession.copy.book.title}". Please finish that session first.`,
-      });
-      return;
-    }
-    
-    // Always show the reading options dialog
+    // Always show the reading options dialog - allow multiple sessions
     setReadDialogOpen(true);
   };
 
-  const startReadingSession = async () => {
-    try {
-      // Find an available copy for this book
-      const availableCopy = availableCopies[0];
+  // const startReadingSession = async () => {
+  //   try {
+  //     // Find an available copy for this book
+  //     const availableCopy = availableCopies[0];
       
-      if (!availableCopy) {
-        console.error('No available copies for this book');
-        return;
-      }
+  //     if (!availableCopy) {
+  //       console.error('No available copies for this book');
+  //       return;
+  //     }
 
-      // Start the in-house usage session
-      await ApiService.startInhouseUsage(book.id, availableCopy.id);
+  //     // Start the in-house usage session
+  //     await ApiService.startInhouseUsage(book.id, availableCopy.id);
       
-      // Store session data globally for other components to check
-      window.activeSessionData = {
-        id: 'temp-' + Date.now(), // This would be the actual session ID from API
-        copy: {
-          book: { title: book.title },
-          accessNumber: availableCopy.accessNumber,
-        },
-        startedAt: new Date().toISOString(),
-      };
-
-      // Open the ebook reader or reading interface
-      console.log('Started reading session for:', book.title);
-      setReadDialogOpen(false);
+  //     // Store session data globally for other components to check
+  //     window.activeSessionData = {
+  //       id: 'temp-' + Date.now(), // This would be the actual session ID from API
+  //       copy: {
+  //         book: { id: book.id, title: book.title },
+  //         accessNumber: availableCopy.accessNumber,
+  //       },
+  //       startedAt: new Date().toISOString(),
+  //     };
       
-      // You could navigate to a reading page here
-      // navigate('/reading/' + book.id);
+  //     // Update global sessions array (support multiple sessions)
+  //     if (!window.activeSessions) {
+  //       window.activeSessions = [];
+  //     }
+  //     window.activeSessions.push(window.activeSessionData);
       
-    } catch (error) {
-      console.error('Error starting reading session:', error);
-      // Show error message to user
-    }
-  };
+  //     // Open the ebook reader or reading interface
+  //     console.log('Started reading session for:', book.title);
+  //     setReadDialogOpen(false);
+      
+  //     // You could navigate to a reading page here
+  //     // navigate('/reading/' + book.id);
+      
+  //   } catch (error) {
+  //     console.error('Error starting reading session:', error);
+  //     // Show error message to user
+  //   }
+  // };
 
   const handleBorrowClick = () => {
     if (!isAuthenticated) {
@@ -114,11 +112,14 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
       return;
     }
     
-    // Check if user has an active session with any book
-    if (hasActiveSession) {
+    // Check if user has an active session with the same book
+    const hasActiveSessionForSameBook = activeSessions && 
+      activeSessions.some(session => session.copy.book.id === book.id);
+    
+    if (hasActiveSessionForSameBook) {
       setRestrictionSnackbar({
         open: true,
-        message: `You already have an active reading session for "${activeSession.copy.book.title}". Please finish that session first before borrowing books.`,
+        message: `You already have an active reading session for "${book.title}". You can read multiple different books simultaneously.`,
       });
       return;
     }
@@ -164,7 +165,7 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
   };
 
   const handleLibraryRead = () => {
-    setReadDialogOpen(false);
+    // setReadDialogOpen(false);
     if (isAvailable) {
       setCopyDialogOpen(true);
     }
@@ -389,12 +390,12 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
               variant="contained"
               startIcon={<MenuBook />}
               onClick={handleReadClick}
-              disabled={hasActiveSession && !isCurrentBookInSession}
+              disabled={isCurrentBookInSession}
               sx={{
                 flex: 1,
-                backgroundColor: hasActiveSession && !isCurrentBookInSession ? '#ccc' : '#BF0019',
+                backgroundColor: isCurrentBookInSession ? '#ccc' : '#BF0019',
                 '&:hover': { 
-                  backgroundColor: hasActiveSession && !isCurrentBookInSession ? '#bbb' : '#A00015' 
+                  backgroundColor: isCurrentBookInSession ? '#bbb' : '#A00015' 
                 },
                 fontSize: 10,
                 py: 0.5,
@@ -407,14 +408,14 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
               variant="outlined"
               startIcon={isAvailable ? <AddShoppingCart /> : <AddToQueue />}
               onClick={handleBorrowClick}
-              disabled={hasActiveSession}
+              disabled={false}
               sx={{
                 flex: 1,
-                borderColor: hasActiveSession ? '#ccc' : (isAvailable ? '#BF0019' : '#ccc'),
-                color: hasActiveSession ? '#999' : (isAvailable ? '#BF0019' : '#666'),
+                borderColor: isAvailable ? '#BF0019' : '#ccc',
+                color: isAvailable ? '#BF0019' : '#666',
                 '&:hover': {
-                  borderColor: hasActiveSession ? '#bbb' : (isAvailable ? '#A00015' : '#999'),
-                  backgroundColor: hasActiveSession ? 'rgba(0, 0, 0, 0.02)' : (isAvailable ? 'rgba(191, 0, 25, 0.04)' : 'rgba(0, 0, 0, 0.04)'),
+                  borderColor: isAvailable ? '#A00015' : '#999',
+                  backgroundColor: isAvailable ? 'rgba(191, 0, 25, 0.04)' : 'rgba(0, 0, 0, 0.04)',
                 },
                 fontSize: 10,
                 py: 0.5,
@@ -430,66 +431,52 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
       {/* Reading Options Dialog */}
       <Dialog open={readDialogOpen} onClose={() => setReadDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {window.activeSessionData ? 'Active Reading Session' : 'Choose Reading Option'}
+          Choose Reading Option
         </DialogTitle>
         <DialogContent>
-          {window.activeSessionData ? (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                You already have an active reading session for:
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box
+              sx={{
+                p: 2,
+                border: '1px solid #e0e0e0',
+                borderRadius: 1,
+                cursor: book.ebookUrl ? 'pointer' : 'not-allowed',
+                opacity: book.ebookUrl ? 1 : 0.6,
+              }}
+              onClick={book.ebookUrl ? handleEbookRead : undefined}
+            >
+              <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <MenuBook />
+                Read Ebook
               </Typography>
-              <Typography variant="h6" sx={{ color: '#BF0019', mb: 2 }}>
-                {window.activeSessionData.copy?.book?.title}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#666' }}>
-                Please finish your current session before starting a new one.
+              <Typography variant="body2" color={book.ebookUrl ? 'success.main' : 'error.main'}>
+                {book.ebookUrl ? 'Ebook available' : 'Ebook not available'}
               </Typography>
             </Box>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box
-                sx={{
-                  p: 2,
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 1,
-                  cursor: book.ebookUrl ? 'pointer' : 'not-allowed',
-                  opacity: book.ebookUrl ? 1 : 0.6,
-                }}
-                onClick={book.ebookUrl ? handleEbookRead : undefined}
-              >
-                <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <MenuBook />
-                  Read Ebook
-                </Typography>
-                <Typography variant="body2" color={book.ebookUrl ? 'success.main' : 'error.main'}>
-                  {book.ebookUrl ? 'Ebook available' : 'Ebook not available'}
-                </Typography>
-              </Box>
 
-              <Box
-                sx={{
-                  p: 2,
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 1,
-                  cursor: isAvailable ? 'pointer' : 'not-allowed',
-                  opacity: isAvailable ? 1 : 0.6,
-                }}
-                onClick={isAvailable ? handleLibraryRead : undefined}
-              >
-                <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <MenuBook />
-                  Read in Library
-                </Typography>
-                <Typography variant="body2" color={isAvailable ? 'success.main' : 'error.main'}>
-                  {isAvailable ? 'Available' : 'Not available'}
-                </Typography>
-              </Box>
+            <Box
+              sx={{
+                p: 2,
+                border: '1px solid #e0e0e0',
+                borderRadius: 1,
+                cursor: isAvailable ? 'pointer' : 'not-allowed',
+                opacity: isAvailable ? 1 : 0.6,
+              }}
+              onClick={isAvailable ? handleLibraryRead : undefined}
+            >
+              <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <MenuBook />
+                Read in Library
+              </Typography>
+              <Typography variant="body2" color={isAvailable ? 'success.main' : 'error.main'}>
+                {isAvailable ? 'Available' : 'Not available'}
+              </Typography>
             </Box>
-          )}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReadDialogOpen(false)}>
-            {window.activeSessionData ? 'Close' : 'Cancel'}
+            {activeSessions && activeSessions.length > 0 ? 'Close' : 'Cancel'}
           </Button>
         </DialogActions>
       </Dialog>

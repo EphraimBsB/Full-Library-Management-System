@@ -161,15 +161,7 @@ export class EmailService implements OnModuleInit {
         },
       };
 
-      console.log('Sending email with options:', {
-        to,
-        subject,
-        from: mailOptions.from,
-        template: templateName,
-      });
-
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('Message sent successfully. Message ID:', info.messageId);
       return info;
     } catch (error) {
       const errorDetails = {

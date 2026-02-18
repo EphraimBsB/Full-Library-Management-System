@@ -151,6 +151,25 @@ export class BookLoanController {
     return this.bookLoanService.renewLoan(loanId, userId);
   }
 
+  @Post('mark-lost/:loanId')
+  @Roles(UserRole.LIBRARIAN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Mark a book loan as lost' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Loan marked as lost successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Loan not found' })
+  @ApiResponse({ status: 409, description: 'Cannot mark loan as lost' })
+  async markLoanAsLost(
+    @Param('loanId') loanId: string,
+    @Body() body: { notes?: string },
+    @Req() req: any,
+  ) {
+    const markedById = req.user.id;
+    return this.bookLoanService.markLoanAsLost(loanId, markedById, body.notes);
+  }
+
   @Get('my-loans')
   @Roles(UserRole.MEMBER, UserRole.LIBRARIAN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all active loans for the current user' })

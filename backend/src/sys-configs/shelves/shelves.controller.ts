@@ -40,7 +40,7 @@ export class ShelvesController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all shelves' })
   @ApiResponse({
     status: 200,
@@ -52,7 +52,7 @@ export class ShelvesController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get a shelf by ID' })
   @ApiResponse({ status: 200, description: 'Return the shelf', type: Shelf })
   findOne(@Param('id', ParseIntPipe) id: number) {

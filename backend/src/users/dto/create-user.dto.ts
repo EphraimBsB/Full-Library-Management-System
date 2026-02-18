@@ -40,6 +40,10 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   degree?: string;
+  
+  @IsString()
+  @IsOptional()
+  semester?: string;
 
   @IsDateString()
   @IsOptional()

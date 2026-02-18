@@ -25,6 +25,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
       sx={{
         width: '100%',
         minWidth: 0,
+        maxWidth: '280px',
         aspectRatio: '0.7',
         backgroundColor: '#F3F4F6',
         borderRadius: '12px',
@@ -105,8 +106,8 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
       <Typography
         sx={{
           position: 'absolute',
-          top: 35, // Position below the status badge
-          right: 10,
+          top: 8,
+          right: 8,
           fontSize: '9px',
           fontWeight: 500,
           color: book.availableCopies > 0 ? '#027A48' : '#B42318',
@@ -115,6 +116,11 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
           borderRadius: '8px',
           zIndex: 2,
           letterSpacing: '0.5px',
+          maxWidth: '80px',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
       >
         {book.availableCopies > 0 ? 'Available' : 'Borrowed'}
@@ -125,8 +131,8 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
         <Box
           sx={{
             position: 'absolute',
-            top: 10,
-            right: 10,
+            top: 8,
+            left: 8,
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
             backdropFilter: 'blur(4px)',
             borderRadius: '12px',

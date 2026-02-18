@@ -4,11 +4,10 @@ import {
   UseGuards,
   Request,
   Query,
-  Post,
   Body,
   Param,
   ParseUUIDPipe,
-  BadRequestException,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiTags,

@@ -155,21 +155,10 @@ export class ApiService {
   static async login(credentials) {
     console.log('Login request data:', credentials);
     try {
-      // Convert to URL-encoded form data to match Flutter app
-      const formData = new URLSearchParams();
-      
-      // Add email or roll number (Flutter sends both but only one is used)
-      if (credentials.email) {
-        formData.append('email', credentials.email);
-      }
-      if (credentials.rollNumber) {
-        formData.append('rollNumber', credentials.rollNumber);
-      }
-      formData.append('password', credentials.password);
-      
-      const response = await api.post('/auth/login', formData, {
+      // Send as JSON for simple login
+      const response = await api.post('/auth/login', credentials, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
       });
       console.log('Login response:', response.data);

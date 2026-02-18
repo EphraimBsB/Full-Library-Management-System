@@ -37,7 +37,7 @@ export class SourcesController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all book sources' })
   @ApiResponse({ status: 200, description: 'Return all book sources' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -50,7 +50,7 @@ export class SourcesController {
   }
 
   @Get('search')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Search book sources by name' })
   @ApiResponse({ status: 200, description: 'Return matching book sources' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -63,7 +63,7 @@ export class SourcesController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get a book source by ID' })
   @ApiResponse({ status: 200, description: 'Return the book source' })
   @ApiResponse({ status: 404, description: 'Book source not found' })

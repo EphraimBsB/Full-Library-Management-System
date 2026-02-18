@@ -40,7 +40,7 @@ export class PublishersController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all publishers' })
   @ApiResponse({
     status: 200,
@@ -52,7 +52,7 @@ export class PublishersController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get a publisher by ID' })
   @ApiResponse({
     status: 200,

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEmail, IsUrl, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsUrl, MaxLength, IsEnum } from 'class-validator';
+import { MembershipStatus } from '../../membership/entities/membership.entity';
 
 export class UpdateProfileDto {
   @ApiProperty({ description: 'First name', required: false })
@@ -41,4 +42,10 @@ export class UpdateProfileDto {
   @IsUrl({}, { message: 'Please provide a valid URL for avatar' })
   @IsOptional()
   avatarUrl?: string;
+
+  @ApiProperty({ description: 'Membership status', required: false })
+  @IsString()
+  @IsOptional()
+  @IsEnum(MembershipStatus)
+  membershipStatus?: MembershipStatus;
 }

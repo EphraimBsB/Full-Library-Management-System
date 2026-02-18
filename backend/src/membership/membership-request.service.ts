@@ -170,19 +170,10 @@ export class MembershipRequestService {
           createDto.rollNumber,
         );
         isStudentVerified = true;
-      } else {
-        console.log(`No roll number provided for student verification`);
       }
     } catch (error) {
-      console.log(
-        `Student verification FAILED for roll number: ${createDto.rollNumber}. Error:`,
-        error.message,
-      );
-      console.log(`Request will remain pending.`);
       isStudentVerified = false;
     }
-
-    console.log(`Final verification status: ${isStudentVerified}`);
 
     // Determine initial request status
     const initialStatus = isStudentVerified
@@ -208,40 +199,17 @@ export class MembershipRequestService {
 
     // If student is verified, automatically create membership
     if (isStudentVerified && studentDetails) {
-      console.log(
-        `Starting automatic membership creation for verified student: ${user.email}`,
-      );
       try {
-        console.log(
-          `Creating membership for user ID: ${user.id}, membership type: ${membershipType.name}`,
-        );
         const membership = await this.createMembershipForVerifiedUser(
           request,
           user,
           membershipType,
         );
-        console.log(
-          `Membership created successfully with ID: ${membership.id}, number: ${membership.membershipNumber}`,
-        );
 
         // Update user to active
-        console.log(`Updating user ${user.email} to active status`);
         await this.userRepository.update(user.id, { isActive: true });
-        console.log(`User ${user.email} activated successfully`);
-
-        console.log(
-          `Automatic membership creation completed for verified student: ${user.email}`,
-        );
       } catch (error) {
-        console.error(
-          'Failed to create automatic membership for verified student:',
-          error,
-        );
-        console.error('Error details:', error.message);
         // If automatic membership creation fails, keep the request as pending
-        console.log(
-          `Reverting request ${request.id} to pending status due to membership creation failure`,
-        );
         await this.requestRepository.update(request.id, {
           status: MembershipRequestStatus.PENDING,
           processedAt: null,
@@ -249,10 +217,6 @@ export class MembershipRequestService {
           processedBy: null,
         });
       }
-    } else {
-      console.log(
-        `Student not verified or no student details. Request will remain pending.`,
-      );
     }
 
     // Return the request with user and membership type details
@@ -264,17 +228,9 @@ export class MembershipRequestService {
     user: User,
     membershipType: MembershipType,
   ): Promise<Membership> {
-    console.log(
-      `Creating membership for verified user - User ID: ${user.id}, Request ID: ${request.id}`,
-    );
-
     const now = new Date();
     const expiryDate = this.calculateExpiryDate(membershipType.maxDurationDays);
     const membershipNumber = await this.generateMembershipNumber();
-
-    console.log(
-      `Membership details - Number: ${membershipNumber}, Start: ${now}, Expiry: ${expiryDate}, Duration: ${membershipType.maxDurationDays} days`,
-    );
 
     const membership = this.membershipRepository.create({
       membershipNumber,
@@ -286,9 +242,7 @@ export class MembershipRequestService {
       requestId: request.id,
     });
 
-    console.log(`Saving membership to database...`);
     const savedMembership = await this.membershipRepository.save(membership);
-    console.log(`Membership saved successfully - ID: ${savedMembership.id}`);
 
     return savedMembership;
   }

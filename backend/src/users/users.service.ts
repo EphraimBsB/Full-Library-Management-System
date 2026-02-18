@@ -24,7 +24,7 @@ import { BookNoteService } from '../books/services/book-note.service';
 import { BookLoan, LoanStatus } from '../books/entities/book-loan.entity';
 import { BookFavorite } from '../books/entities/book-favorite.entity';
 import { BookNote } from '../books/entities/book-note.entity';
-import { MembershipService } from '../membership/membership.service';
+import { MembershipService, MembershipStatus } from '../membership/membership.service';
 import { MembershipType } from '../sys-configs/membership-types/entities/membership-type.entity';
 
 @Injectable()
@@ -249,11 +249,11 @@ export class UsersService {
     let rollNumber = createMemberDto.rollNumber;
     if (!rollNumber) {
       rollNumber = await this.generateRollNumber();
-      
+
       // Ensure generated roll number doesn't already exist
       let attempts = 0;
       const maxAttempts = 10;
-      
+
       while (attempts < maxAttempts) {
         const existingRollNumber = await this.userRepository.findOne({
           where: { rollNumber, deletedAt: IsNull() },
@@ -285,8 +285,16 @@ export class UsersService {
 
     // Hash password or generate default
     const password = createMemberDto.password || 'Password@123';
-    const hashedPassword = await this.hashPassword(password);
+    let hashedPassword: string;
 
+    // Check if password is already hashed (starts with $2b$)
+    if (password.startsWith('$2b$')) {
+      hashedPassword = password;
+    } else {
+      hashedPassword = await this.hashPassword(password);
+    }
+
+    // Create user entity
     const user = this.userRepository.create({
       firstName: createMemberDto.firstName,
       lastName: createMemberDto.lastName,
@@ -294,29 +302,45 @@ export class UsersService {
       phoneNumber: createMemberDto.phoneNumber,
       rollNumber: createMemberDto.rollNumber,
       degree: createMemberDto.degree,
+      semester: createMemberDto.semester, // ✅ Save semester
       passwordHash: hashedPassword,
       isActive: true,
-      roleId: createMemberDto.roleId || 3, // Default to STUDENT role if not specified
+      roleId: createMemberDto.roleId || 3, // Default to MEMBER role if not specified
     });
 
+    // Save user to database
     const savedUser = await this.userRepository.save(user);
 
-    // Automatically create membership for the member
+    // Load user with role relation
+    const userWithRole = await this.userRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ['role'],
+    });
+
+    if (!userWithRole) {
+      throw new Error('Failed to load user with role');
+    }
+
+    // Automatically create membership for member
     try {
+      // Map membershipStatus string to MembershipStatus enum
+      // 'Active' -> ACTIVE (has library membership), 'Inactive' -> INACTIVE (no library membership yet)
+      const membershipInitialStatus =
+        createMemberDto.membershipStatus === 'Active'
+          ? MembershipStatus.ACTIVE
+          : MembershipStatus.INACTIVE;
+
       await this.membershipService.createMembership(
-        savedUser,
+        userWithRole,
         createMemberDto.membershipTypeId.toString(),
         new Date(),
+        membershipInitialStatus, // ✅ Pass correct status based on checkMembership() result
       );
     } catch (error) {
-      console.error(
-        'Failed to create automatic membership for member:',
-        error,
-      );
       // Don't throw error here - user creation should succeed even if membership creation fails
     }
 
-    return savedUser;
+    return userWithRole;
   }
 
   async findAll({
@@ -327,6 +351,8 @@ export class UsersService {
     const skip = (page - 1) * limit;
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.memberships', 'membership')
+      .leftJoinAndSelect('membership.type', 'membershipType')
       .where('user.deletedAt IS NULL');
 
     if (search) {
@@ -443,6 +469,24 @@ export class UsersService {
       }
     }
 
+    // Handle membership updates separately
+    if (updateUserDto.membershipTypeId || updateUserDto.membershipStatus) {
+      const membershipsResult = await this.membershipService.findAllMemberships(undefined, id, { page: 1, limit: 1 });
+      const currentMembership = membershipsResult.data[0];
+
+      if (currentMembership) {
+        if (updateUserDto.membershipStatus) {
+          await this.membershipService.updateMembershipStatus(currentMembership.id, updateUserDto.membershipStatus);
+        }
+        if (updateUserDto.membershipTypeId) {
+          await this.membershipService.updateMembershipType(currentMembership.id, updateUserDto.membershipTypeId);
+        }
+      } else if (updateUserDto.membershipTypeId) {
+        // Create new membership if user doesn't have one
+        await this.membershipService.createMembership(user, updateUserDto.membershipTypeId.toString());
+      }
+    }
+
     // Handle password update separately if needed
     if ('password' in updateUserDto && updateUserDto.password) {
       const hashedPassword = await this.hashPassword(updateUserDto.password);
@@ -450,7 +494,15 @@ export class UsersService {
       delete updateUserDto['password'];
     }
 
-    Object.assign(user, updateUserDto);
+    // Remove membership fields from user update as they're handled separately
+    const { membershipTypeId, membershipStatus, course, ...userUpdateData } = updateUserDto;
+
+    // Map course to semester since that's what the User entity expects
+    if (course !== undefined) {
+      userUpdateData.semester = course;
+    }
+
+    Object.assign(user, userUpdateData);
     return this.userRepository.save(user);
   }
 
@@ -480,9 +532,12 @@ export class UsersService {
       user = await this.findByRollNumber(identifier);
     }
 
-    if (!user) return null;
+    if (!user) {
+      return null;
+    }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
     return isPasswordValid ? user : null;
   }
 
@@ -537,14 +592,7 @@ export class UsersService {
         studentMembershipType.id.toString(),
         new Date(),
       );
-      console.log(
-        `Automatic membership created for student: ${savedUser.email}`,
-      );
     } catch (error) {
-      console.error(
-        'Failed to create automatic membership for student:',
-        error,
-      );
       // Don't throw error here - user creation should succeed even if membership creation fails
     }
 
@@ -600,8 +648,21 @@ export class UsersService {
       }
     }
 
+    // Handle membership status update separately
+    if (updateProfileDto.membershipStatus) {
+      const membershipsResult = await this.membershipService.findAllMemberships(undefined, userId, { page: 1, limit: 1 });
+      const currentMembership = membershipsResult.data[0];
+      
+      if (currentMembership) {
+        await this.membershipService.updateMembershipStatus(currentMembership.id, updateProfileDto.membershipStatus);
+      }
+    }
+
+    // Remove membershipStatus from user update as it's not a User entity field
+    const { membershipStatus, ...userUpdateData } = updateProfileDto;
+
     // Update only provided fields
-    Object.assign(user, updateProfileDto);
+    Object.assign(user, userUpdateData);
     
     return this.userRepository.save(user);
   }
@@ -617,7 +678,6 @@ export class UsersService {
 
     // TODO: Implement email sending logic
     // Generate reset token, send email with reset link
-    console.log(`Password reset requested for email: ${email}`);
     // For now, just log - in production, integrate with email service
   }
 }

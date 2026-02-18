@@ -40,7 +40,7 @@ export class LocationsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get all locations' })
   @ApiResponse({
     status: 200,
@@ -52,7 +52,7 @@ export class LocationsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.STUDENT)
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN, UserRole.MEMBER)
   @ApiOperation({ summary: 'Get a location by ID' })
   @ApiResponse({
     status: 200,

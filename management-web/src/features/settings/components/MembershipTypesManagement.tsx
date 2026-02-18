@@ -36,8 +36,10 @@ interface MembershipType {
   description?: string;
   maxBooks: number;
   maxDurationDays: number;
+  loanPeriodDays: number;
   renewalLimit: number;
   fineRate: number;
+  gracePeriodDays: number;
   isActive: boolean;
   deletedAt?: string;
 }
@@ -47,8 +49,10 @@ interface MembershipTypeFormData {
   description?: string;
   maxBooks: number;
   maxDurationDays: number;
+  loanPeriodDays: number;
   renewalLimit: number;
   fineRate: number;
+  gracePeriodDays: number;
   isActive: boolean;
 }
 
@@ -68,8 +72,10 @@ const MembershipTypesManagement: React.FC = () => {
     description: '',
     maxBooks: 3,
     maxDurationDays: 14,
+    loanPeriodDays: 14,
     renewalLimit: 1,
     fineRate: 100,
+    gracePeriodDays: 0,
     isActive: true,
   });
   
@@ -122,8 +128,10 @@ const MembershipTypesManagement: React.FC = () => {
         description: membershipType.description || '',
         maxBooks: membershipType.maxBooks,
         maxDurationDays: membershipType.maxDurationDays,
+        loanPeriodDays: membershipType.loanPeriodDays,
         renewalLimit: membershipType.renewalLimit,
         fineRate: membershipType.fineRate,
+        gracePeriodDays: membershipType.gracePeriodDays,
         isActive: membershipType.isActive,
       });
     } else {
@@ -133,8 +141,10 @@ const MembershipTypesManagement: React.FC = () => {
         description: '',
         maxBooks: 3,
         maxDurationDays: 14,
+        loanPeriodDays: 14,
         renewalLimit: 1,
         fineRate: 100,
+        gracePeriodDays: 0,
         isActive: true,
       });
     }
@@ -149,8 +159,10 @@ const MembershipTypesManagement: React.FC = () => {
       description: '',
       maxBooks: 3,
       maxDurationDays: 14,
+      loanPeriodDays: 14,
       renewalLimit: 1,
       fineRate: 100,
+      gracePeriodDays: 0,
       isActive: true,
     });
   };
@@ -241,6 +253,8 @@ const MembershipTypesManagement: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Description</TableCell>
               <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Max Books</TableCell>
               <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Max Duration</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Loan Period</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Grace Period</TableCell>
               <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Renewal Limit</TableCell>
               <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Fine Rate</TableCell>
               <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Status</TableCell>
@@ -250,13 +264,13 @@ const MembershipTypesManagement: React.FC = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   <Typography sx={{ fontSize: '0.75rem' }}>Loading...</Typography>
                 </TableCell>
               </TableRow>
             ) : membershipTypes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   <Typography sx={{ fontSize: '0.75rem' }}>No membership types found</Typography>
                 </TableCell>
               </TableRow>
@@ -267,6 +281,8 @@ const MembershipTypesManagement: React.FC = () => {
                   <TableCell sx={{ fontSize: '0.75rem' }}>{membershipType.description || '-'}</TableCell>
                   <TableCell sx={{ fontSize: '0.75rem' }}>{membershipType.maxBooks}</TableCell>
                   <TableCell sx={{ fontSize: '0.75rem' }}>{membershipType.maxDurationDays} days</TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}>{membershipType.loanPeriodDays} days</TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}>{membershipType.gracePeriodDays} days</TableCell>
                   <TableCell sx={{ fontSize: '0.75rem' }}>{membershipType.renewalLimit}</TableCell>
                   <TableCell sx={{ fontSize: '0.75rem' }}>${membershipType.fineRate}</TableCell>
                   <TableCell>
@@ -366,6 +382,17 @@ const MembershipTypesManagement: React.FC = () => {
             />
             <TextField
               margin="dense"
+              label="Loan Period (Days)"
+              fullWidth
+              variant="outlined"
+              type="number"
+              value={formData.loanPeriodDays}
+              onChange={(e) => setFormData({ ...formData, loanPeriodDays: parseInt(e.target.value) })}
+              required
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="dense"
               label="Renewal Limit"
               fullWidth
               variant="outlined"
@@ -373,6 +400,16 @@ const MembershipTypesManagement: React.FC = () => {
               value={formData.renewalLimit}
               onChange={(e) => setFormData({ ...formData, renewalLimit: parseInt(e.target.value) })}
               required
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="dense"
+              label="Grace Period (Days)"
+              fullWidth
+              variant="outlined"
+              type="number"
+              value={formData.gracePeriodDays}
+              onChange={(e) => setFormData({ ...formData, gracePeriodDays: parseInt(e.target.value) })}
               sx={{ mb: 2 }}
             />
             <TextField

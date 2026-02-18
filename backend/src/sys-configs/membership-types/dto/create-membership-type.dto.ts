@@ -15,6 +15,14 @@ export class CreateMembershipTypeDto {
 
   @Type(() => Number)
   @IsInt()
+  loanPeriodDays: number;
+
+  @Type(() => Number)
+  @IsInt()
+  gracePeriodDays: number;
+
+  @Type(() => Number)
+  @IsInt()
   renewalLimit: number;
 
   @Type(() => Number)

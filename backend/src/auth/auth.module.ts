@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { User } from '../users/entities/user.entity';
 import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
@@ -15,6 +16,7 @@ import { StudentsModule } from './students/students.module';
     forwardRef(() => UsersModule),
     StudentsModule,
     PassportModule,
+    HttpModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

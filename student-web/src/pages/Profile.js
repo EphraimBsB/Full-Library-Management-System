@@ -30,6 +30,8 @@ import {
   TextField,
   Snackbar,
   Container,
+  Tooltip,
+  Icon,
 } from '@mui/material';
 import {
   Person,
@@ -45,6 +47,7 @@ import {
   Refresh,
   RequestPage,
   FilterList,
+  Warning,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
@@ -346,6 +349,23 @@ const Profile = () => {
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">
                         Membership Status
+                        {profileSummary?.membershipStatus === 'inactive' && (
+                          <Tooltip 
+                            title="Your library membership is currently inactive. Please contact the librarian to activate your membership to explore more of the library."
+                            arrow
+                            placement="top"
+                          >
+                            <Warning 
+                              sx={{ 
+                                ml: 1, 
+                                color: 'warning.main', 
+                                fontSize: 16,
+                                cursor: 'help',
+                                verticalAlign: 'middle'
+                              }} 
+                            />
+                          </Tooltip>
+                        )}
                       </Typography>
                       <Typography variant="body1">
                         {profileSummary?.membershipStatus || 'N/A'}

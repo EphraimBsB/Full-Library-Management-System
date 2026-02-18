@@ -36,17 +36,18 @@ export class InhouseUsageService {
     const { bookId, copyId } = startUsageDto;
     const startedAt = new Date();
 
-    // Check if user has any active sessions
-    const activeSession = await this.inhouseUsageRepository.findOne({
+    // Check if user has active session for the same book
+    const activeSessionForSameBook = await this.inhouseUsageRepository.findOne({
       where: {
         user: { id: userId },
+        book: { id: Number(bookId) },
         status: InhouseUsageStatus.ACTIVE,
       },
     });
 
-    if (activeSession) {
+    if (activeSessionForSameBook) {
       throw new ForbiddenException(
-        'You already have an active in-house usage session',
+        'You already have an active in-house usage session for this book',
       );
     }
 

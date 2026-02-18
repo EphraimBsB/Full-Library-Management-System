@@ -30,6 +30,7 @@ const schema: yup.ObjectSchema<MemberFormData> = yup.object({
   degree: yup.string().optional(),
   course: yup.string().optional(),
   membershipTypeId: yup.number().required('Membership type is required'),
+  membershipStatus: yup.string().oneOf(['active', 'inactive', 'expired', 'suspended', 'cancelled']).optional(),
   password: yup.string().when('$isEdit', {
     is: false,
     then: (s) => s.required('Password is required').min(6, 'At least 6 characters'),
@@ -52,6 +53,7 @@ export interface MemberFormData {
   degree?: string;
   course?: string;
   membershipTypeId: number;
+  membershipStatus?: string;
   password?: string;
 }
 
@@ -82,6 +84,7 @@ export const MemberFormDialog: React.FC<MemberFormDialogProps> = ({ open, onClos
       degree: '',
       course: '',
       membershipTypeId: 1,
+      membershipStatus: 'active',
       password: '',
     },
   });
@@ -96,7 +99,8 @@ export const MemberFormDialog: React.FC<MemberFormDialogProps> = ({ open, onClos
         rollNumber: member.rollNumber || '',
         degree: member.degree || '',
         course: member.course || '',
-        membershipTypeId: member.memberships?.[0]?.membershipType.id || 1,
+        membershipTypeId: member.memberships?.[0]?.type?.id || 1,
+        membershipStatus: member.memberships?.[0]?.status || 'active',
         password: '',
       });
     } else {
@@ -109,19 +113,20 @@ export const MemberFormDialog: React.FC<MemberFormDialogProps> = ({ open, onClos
         degree: '',
         course: '',
         membershipTypeId: 1,
+        membershipStatus: 'active',
         password: '',
       });
     }
   }, [member, reset, open]);
 
   const mutation = useMutation({
-    mutationFn: (data: MemberFormData) => {
+    mutationFn: async (data: MemberFormData) => {
       if (isEdit) {
         // Exclude password if it's empty during edit
         if (!data.password) delete data.password;
-        // Remove membershipTypeId as it's not part of User entity
-        const { membershipTypeId, ...userData } = data;
-        return UserService.updateUser(member!.id, userData);
+        
+        // Use updateUser endpoint for admin member updates
+        return UserService.updateUser(member!.id, data);
       }
       return UserService.createMember(data);
     },
@@ -264,6 +269,31 @@ export const MemberFormDialog: React.FC<MemberFormDialogProps> = ({ open, onClos
                 )}
               />
             </Box>
+            {isEdit && (
+              <Box sx={{ gridColumn: 'span 2' }}>
+                <Controller
+                  name="membershipStatus"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      label="Membership Status"
+                      fullWidth
+                      size="small"
+                      error={!!errors.membershipStatus}
+                      helperText={errors.membershipStatus?.message}
+                    >
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="inactive">Inactive</MenuItem>
+                      <MenuItem value="expired">Expired</MenuItem>
+                      <MenuItem value="suspended">Suspended</MenuItem>
+                      <MenuItem value="cancelled">Cancelled</MenuItem>
+                    </TextField>
+                  )}
+                />
+              </Box>
+            )}
             {!isEdit && (
               <Box sx={{ gridColumn: 'span 2' }}>
                 <Controller
