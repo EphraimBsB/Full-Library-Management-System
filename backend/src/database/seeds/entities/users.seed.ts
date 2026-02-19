@@ -318,15 +318,15 @@ export class UsersSeed implements ISeeder {
     };
 
     // Admin users (2)
-    const adminUsers = Array.from({ length: 2 }, (_, i) => {
+    const adminUsers = Array.from({ length: 1 }, (_, i) => {
       const gender = i % 2 === 0 ? 'male' : ('female' as const);
       const { firstName, lastName } = generateUgandanName(gender);
       const email = i === 0 ? 'admin@isbat.edu' : `admin${i + 1}@isbat.edu`;
 
       return {
-        firstName,
-        lastName,
-        email,
+        firstName: 'Ephraim',
+        lastName: 'Basubi',
+        email: 'basubiephrem@gmail.com',
         rollNumber: `ADM${String(i + 1).padStart(3, '0')}`,
         role: adminRole,
         roleId: adminRole.id,
@@ -384,7 +384,7 @@ export class UsersSeed implements ISeeder {
     });
 
     // Student users (50)
-    const studentUsers = Array.from({ length: 4 }, (_, i) => {
+    const studentUsers = Array.from({ length: 1 }, (_, i) => {
       const gender = Math.random() > 0.5 ? 'male' : ('female' as const);
       const { firstName, lastName } = generateUgandanName(gender);
 

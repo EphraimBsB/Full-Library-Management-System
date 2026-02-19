@@ -19,7 +19,7 @@ export class MembershipsSeed implements ISeeder {
       userRepository.find({
         relations: ['role'],
         where: {
-          role: { name: 'Student' }, // Only seed for students initially
+          role: { name: 'Member' }, // Fix: Look for 'Member' not 'Student'
         },
         take: 5,
       }),
@@ -37,6 +37,7 @@ export class MembershipsSeed implements ISeeder {
       membershipNumber: string;
       user: { id: string };
       type: MembershipType;
+      membershipTypeId: number; // Add membershipTypeId
       startDate: Date;
       expiryDate: Date;
       status: MembershipStatus;
@@ -55,19 +56,19 @@ export class MembershipsSeed implements ISeeder {
       // For variety, assign different membership types
       const membershipType = membershipTypes[index % membershipTypes.length];
 
-      // Calculate dates
+      // Calculate dates - use current date to avoid expired memberships
       const startDate = new Date(now);
-      startDate.setMonth(startDate.getMonth() - (index % 12)); // Vary start dates
+      startDate.setDate(startDate.getDate() - (index % 30)); // Vary start dates within last 30 days
 
       const expiryDate = new Date(startDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year membership
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year membership from start date
 
       // Determine status based on dates
       let status = MembershipStatus.ACTIVE;
       if (expiryDate < now) {
         status = MembershipStatus.EXPIRED;
-      } else if (index % 5 === 0) {
-        // 20% chance of being suspended
+      } else if (index % 10 === 0) {
+        // 10% chance of being suspended (not 20% to have more active members)
         status = MembershipStatus.SUSPENDED;
       }
 
@@ -75,6 +76,7 @@ export class MembershipsSeed implements ISeeder {
         membershipNumber: `MEM${String(index + 1).padStart(5, '0')}`,
         user: { id: user.id },
         type: membershipType,
+        membershipTypeId: membershipType.id, // Add explicit membershipTypeId
         startDate,
         expiryDate,
         status,
