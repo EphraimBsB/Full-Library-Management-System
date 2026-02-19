@@ -25,6 +25,7 @@
     "db:seed": "ts-node -r tsconfig-paths/register src/seed-runner.ts",
     "seed": "ts-node -r tsconfig-paths/register src/seed-runner.ts",
     "seed:single": "ts-node -r tsconfig-paths/register scripts/seed-single.ts",
+    "reset:user-tables": "ts-node -r tsconfig-paths/register scripts/reset-user-tables.ts",
     "seed:table": "ts-node -r tsconfig-paths/register src/database/seeds/",
     "reset:table": "ts-node -r tsconfig-paths/register scripts/reset-single-table.ts",
     "reset:id": "ts-node -r tsconfig-paths/register scripts/reset-auto-increment.ts"

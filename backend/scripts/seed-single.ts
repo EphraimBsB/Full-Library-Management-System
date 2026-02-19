@@ -20,6 +20,8 @@ import { Publisher } from '../src/sys-configs/publishers/entities/publisher.enti
 import { MembershipType } from '../src/sys-configs/membership-types/entities/membership-type.entity';
 import { Degree } from '../src/sys-configs/degrees/entities/degree.entity';
 import { UserRole } from '../src/sys-configs/user-roles/entities/user-role.entity';
+import { User } from '../src/users/entities/user.entity';
+import { Membership } from '../src/membership/entities/membership.entity';
 
 interface SeederConfig {
   entityName: string;
@@ -38,6 +40,8 @@ const AVAILABLE_SEEDERS: SeederConfig[] = [
   { entityName: 'MembershipType', entityClass: MembershipType, seedFile: 'membership-types' },
   { entityName: 'Degree', entityClass: Degree, seedFile: 'degrees' },
   { entityName: 'UserRole', entityClass: UserRole, seedFile: 'user-roles' },
+  { entityName: 'User', entityClass: User, seedFile: 'users' },
+  { entityName: 'Membership', entityClass: Membership, seedFile: 'memberships' },
 ];
 
 async function resetAndSeedTable(entityName: string): Promise<void> {
