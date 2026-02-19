@@ -420,6 +420,13 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                 />
 
                 <Grid container spacing={2}>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller
+                      name="ddc"
+                      control={control}
+                      render={({ field }) => <TextField {...field} label="DDC" fullWidth size="small" />}
+                    />
+                  </Grid>
                   <Grid size={{ xs: 6 }}>
                     <Controller
                       name="location"
@@ -427,6 +434,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                       render={({ field }) => <TextField {...field} label="Location" fullWidth size="small" />}
                     />
                   </Grid>
+                  
                   <Grid size={{ xs: 6 }}>
                     <Controller
                       name="shelf"
