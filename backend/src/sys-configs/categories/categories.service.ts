@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Inject } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { IsNull, Not } from 'typeorm';
+import { Not } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -36,27 +36,13 @@ export class CategoriesService {
   }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    // Check if category with the same name already exists (not soft deleted)
+    // Check if category with same name already exists
     const existingCategory = await this.categoryRepository.findOne({
-      where: { name: createCategoryDto.name, deletedAt: IsNull() },
+      where: { name: createCategoryDto.name },
     });
 
     if (existingCategory) {
       throw new ConflictException('A category with this name already exists');
-    }
-
-    // Check if there's a soft-deleted category with same name to restore
-    const softDeletedCategory = await this.categoryRepository.findOne({
-      where: { name: createCategoryDto.name, deletedAt: Not(IsNull()) },
-    });
-
-    if (softDeletedCategory) {
-      // Restore the soft-deleted category
-      softDeletedCategory.deletedAt = undefined;
-      softDeletedCategory.description = createCategoryDto.description || softDeletedCategory.description;
-      const restored = await this.categoryRepository.save(softDeletedCategory);
-      await this.resetCache();
-      return restored;
     }
 
     const category = this.categoryRepository.create(createCategoryDto);
@@ -167,7 +153,7 @@ export class CategoriesService {
       );
     }
 
-    await this.categoryRepository.softRemove(category);
+    await this.categoryRepository.remove(category);
     await this.resetCache();
   }
 

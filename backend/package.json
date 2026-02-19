@@ -24,6 +24,7 @@
     "db:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
     "db:seed": "ts-node -r tsconfig-paths/register src/seed-runner.ts",
     "seed": "ts-node -r tsconfig-paths/register src/seed-runner.ts",
+    "seed:single": "ts-node -r tsconfig-paths/register scripts/seed-single.ts",
     "seed:table": "ts-node -r tsconfig-paths/register src/database/seeds/",
     "reset:table": "ts-node -r tsconfig-paths/register scripts/reset-single-table.ts",
     "reset:id": "ts-node -r tsconfig-paths/register scripts/reset-auto-increment.ts"
