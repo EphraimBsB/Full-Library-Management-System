@@ -12,13 +12,8 @@ import {
   Grid,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL, API_ENDPOINTS, DEFAULT_HEADERS } from '../constants/api';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  School,
-  Person,
-  Check,
-  Error as ErrorIcon,
-} from '@mui/icons-material';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -39,9 +34,6 @@ const Signup = () => {
     password: '',
     confirmPassword: '',
   });
-
-  // API base URL for third-party integration
-  const API_BASE_URL = 'https://ilimsapi.isbatuniversity.ac.ug:9093/api';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,11 +64,9 @@ const Signup = () => {
 
     try {
       // Check if student is registered via our backend proxy
-      const response = await fetch('http://localhost:3000/api/v1/auth/verify-student', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFY_STUDENT || '/auth/verify-student'}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({ rollNumber: formData.rollNumber }),
       });
       const data = await response.json();
@@ -97,6 +87,8 @@ const Signup = () => {
           degree: data.programme || '',
           course: data.programme || '',
           semester: data.semester || '',
+          email: data.UniversityEmail || '', // Add university email
+          phoneNumber: data.Mobile || '',      // Add mobile number
         }));
         setRollNumberVerified(true);
         setError('');
@@ -144,11 +136,9 @@ const Signup = () => {
     
     try {
       // Create user account in backend
-      const response = await fetch('http://localhost:3000/api/v1/auth/register-student', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.REGISTER_STUDENT}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: DEFAULT_HEADERS,
         body: JSON.stringify({
           rollNumber: formData.rollNumber,
           password: formData.password,
