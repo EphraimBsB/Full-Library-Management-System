@@ -5,6 +5,8 @@ export const API_ENDPOINTS = {
   // Authentication
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
+  VERIFY_STUDENT: '/auth/verify-student',
+  REGISTER_STUDENT: '/auth/register-student',
   
   // Books
   BOOKS: '/books',
