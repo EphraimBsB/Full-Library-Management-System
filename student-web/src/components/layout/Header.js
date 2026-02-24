@@ -194,19 +194,19 @@ const Header = () => {
             </>
           ) : (
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {!isMobile && (
-                <Button
-                  onClick={handleLoginClick}
-                  sx={{
-                    color: '#333333',
-                    fontWeight: 500,
-                    textTransform: 'none',
-                    fontSize: 12,
-                  }}
-                >
-                  Sign In
-                </Button>
-              )}
+              <Button
+                onClick={handleLoginClick}
+                sx={{
+                  color: '#333333',
+                  fontWeight: 500,
+                  textTransform: 'none',
+                  fontSize: isMobile ? 10 : 12,
+                  minWidth: isMobile ? 'auto' : 'auto',
+                  px: isMobile ? 1 : 2,
+                }}
+              >
+                {isMobile ? 'Sign In' : 'Sign In'}
+              </Button>
               <Button
                 variant="contained"
                 onClick={() => navigate('/signup')}
@@ -215,10 +215,12 @@ const Header = () => {
                   '&:hover': { backgroundColor: '#A00015' },
                   borderRadius: 5,
                   textTransform: 'none',
-                  fontSize: 12,
+                  fontSize: isMobile ? 10 : 12,
+                  minWidth: isMobile ? 'auto' : 'auto',
+                  px: isMobile ? 1 : 2,
                 }}
               >
-                Sign Up
+                {isMobile ? 'Sign Up' : 'Sign Up'}
               </Button>
             </Box>
           )}

@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   REGISTER: '/auth/register',
   VERIFY_STUDENT: '/auth/verify-student',
   REGISTER_STUDENT: '/auth/register-student',
+  CHANGE_PASSWORD: '/auth/change-password',
   
   // Books
   BOOKS: '/books',
@@ -19,6 +20,7 @@ export const API_ENDPOINTS = {
   // Student specific
   STUDENT_DETAILS: '/student-details',
   PROFILE_SUMMARY: (userId) => `/users/${userId}/profile-summary`,
+  UPDATE_PROFILE: (userId) => `/users/${userId}/profile`,
   BORROW_HISTORY: (userId) => `/users/${userId}/borrow-history`,
   FAVORITES: (userId) => `/users/${userId}/favorites`,
   NOTES: (userId) => `/users/${userId}/notes`,
