@@ -294,6 +294,27 @@ export class ApiService {
     return response.data;
   }
 
+  // Profile Management
+  static async updateProfile(userId, profileData) {
+    try {
+      const response = await api.patch(`/users/profile`, profileData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
+
+  static async changePassword(passwordData) {
+    try {
+      const response = await api.post('/users/change-password', passwordData);
+      return response.data;
+    } catch (error) {
+      console.error('Error changing password:', error);
+      throw error;
+    }
+  }
+
   // Reading History (In-house usage)
   static async getReadingHistory(userId, params = {}) {
     const response = await api.get(`/books/inhouse-usage/history`, { params });

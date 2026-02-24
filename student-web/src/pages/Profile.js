@@ -77,6 +77,19 @@ const Profile = () => {
   const [renewalReason, setRenewalReason] = useState('');
   const [requestStatusFilter, setRequestStatusFilter] = useState('all');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+  });
+  const [passwordFormData, setPasswordFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -210,6 +223,81 @@ const Profile = () => {
     setRenewalDialogOpen(false);
     setSelectedLoan(null);
     setRenewalReason('');
+  };
+
+  const handleEditProfileClick = () => {
+    setEditFormData({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      phoneNumber: user.phoneNumber || '',
+    });
+    setEditProfileDialogOpen(true);
+  };
+
+  const handleChangePasswordClick = () => {
+    setPasswordFormData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+    setChangePasswordDialogOpen(true);
+  };
+
+  const handleEditProfileSubmit = async () => {
+    try {
+      await ApiService.updateProfile(user.id, editFormData);
+      setEditProfileDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Profile updated successfully!',
+        severity: 'success'
+      });
+      // TODO: Refresh user data in auth context
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || 'Failed to update profile',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleChangePasswordSubmit = async () => {
+    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+      setSnackbar({
+        open: true,
+        message: 'New passwords do not match',
+        severity: 'error'
+      });
+      return;
+    }
+
+    try {
+      await ApiService.changePassword({
+        currentPassword: passwordFormData.currentPassword,
+        newPassword: passwordFormData.newPassword,
+        confirmPassword: passwordFormData.confirmPassword,
+      });
+      setChangePasswordDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Password changed successfully!',
+        severity: 'success'
+      });
+      // Clear password form
+      setPasswordFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.message || 'Failed to change password',
+        severity: 'error'
+      });
+    }
   };
 
   const getUserInitials = () => {
@@ -422,14 +510,14 @@ const Profile = () => {
           <TabPanel value={tabValue} index={0}>
             <Typography variant="h6" sx={{ mb: 3, fontSize: 14, fontWeight: 'bold', color: '#000000' }}>Account Settings</Typography>
             <List>
-              <ListItem button>
+              <ListItem button onClick={handleEditProfileClick}>
                 <ListItemIcon>
                   <Edit />
                 </ListItemIcon>
                 <ListItemText primary="Edit Profile" />
               </ListItem>
               <Divider />
-              <ListItem button>
+              <ListItem button onClick={handleChangePasswordClick}>
                 <ListItemIcon>
                   <Lock />
                 </ListItemIcon>
@@ -937,6 +1025,82 @@ const Profile = () => {
           </TabPanel>
         </Paper>
       </Container>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={editProfileDialogOpen} onClose={() => setEditProfileDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Profile</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <TextField
+              label="First Name"
+              fullWidth
+              value={editFormData.firstName}
+              onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
+            />
+            <TextField
+              label="Last Name"
+              fullWidth
+              value={editFormData.lastName}
+              onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              value={editFormData.email}
+              onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+            />
+            <TextField
+              label="Phone Number"
+              fullWidth
+              value={editFormData.phoneNumber}
+              onChange={(e) => setEditFormData({ ...editFormData, phoneNumber: e.target.value })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditProfileDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleEditProfileSubmit} variant="contained" color="primary">
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={changePasswordDialogOpen} onClose={() => setChangePasswordDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Change Password</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <TextField
+              label="Current Password"
+              type="password"
+              fullWidth
+              value={passwordFormData.currentPassword}
+              onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
+            />
+            <TextField
+              label="New Password"
+              type="password"
+              fullWidth
+              value={passwordFormData.newPassword}
+              onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
+            />
+            <TextField
+              label="Confirm New Password"
+              type="password"
+              fullWidth
+              value={passwordFormData.confirmPassword}
+              onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setChangePasswordDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleChangePasswordSubmit} variant="contained" color="primary">
+            Change Password
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Renewal Request Dialog */}
       <Dialog open={renewalDialogOpen} onClose={closeRenewalDialog} maxWidth="sm" fullWidth>
