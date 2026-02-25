@@ -87,7 +87,16 @@ export class StorageService {
     options: FileUploadOptions = {},
   ): Promise<FileRecord> {
     try {
-      // Validate file
+      // Validate file size
+      if (!FileUtils.validateFileSize(file.size)) {
+        const maxSizeMB = FileUtils.getMaxFileSizeMB();
+        const fileSizeMB = Math.round(file.size / (1024 * 1024));
+        throw new BadRequestException(
+          `File size ${fileSizeMB}MB exceeds maximum allowed size of ${maxSizeMB}MB`,
+        );
+      }
+
+      // Validate file type
       if (!FileUtils.validateMimeType(file.mimetype)) {
         throw new BadRequestException(
           `File type ${file.mimetype} is not allowed`,
