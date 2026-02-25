@@ -9,6 +9,11 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors();
 
+  // Configure body parser limits for file uploads
+  const bodyParser = require('body-parser');
+  app.use(bodyParser.json({ limit: '100mb' }));
+  app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
+
   app.setGlobalPrefix('api/v1');
 
   // Global validation pipe

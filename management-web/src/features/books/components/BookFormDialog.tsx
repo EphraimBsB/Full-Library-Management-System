@@ -65,6 +65,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
   const [subjects, setSubjects] = useState<{ name: string }[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingEbook, setUploadingEbook] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const { control, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(schema),
@@ -167,17 +168,64 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Client-side file size validation (100MB limit)
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = Math.round(file.size / (1024 * 1024));
+      alert(`File size ${fileSizeMB}MB exceeds maximum allowed size of 100MB`);
+      return;
+    }
+
+    // Client-side file type validation for ebooks
+    if (type === 'ebook') {
+      const allowedTypes = [
+        'application/pdf',
+        'application/epub+zip', 
+        'application/x-mobipocket-ebook',
+        'application/vnd.amazon.ebook',
+        'application/x-fictionbook+xml'
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Unsupported file type. Please upload PDF, EPUB, MOBI, AZW, or FB2 files.');
+        return;
+      }
+    }
+
     if (type === 'image') setUploadingImage(true);
     else setUploadingEbook(true);
 
+    setUploadProgress(0);
+
     try {
-      const response = await StorageService.uploadFile(file, type === 'image' ? 'book-covers' : 'ebooks');
+      const response = await StorageService.uploadFile(
+        file, 
+        type === 'image' ? 'book-covers' : 'ebooks',
+        true,
+        (progress) => setUploadProgress(progress)
+      );
       setValue(type === 'image' ? 'coverImageUrl' : 'ebookUrl', response.url);
     } catch (err) {
       console.error('Upload failed:', err);
+      
+      let errorMessage = 'Upload failed';
+      if (err && typeof err === 'object' && 'message' in err) {
+        const errorMsg = String(err.message);
+        if (errorMsg.includes('File size') || errorMsg.includes('413')) {
+          errorMessage = 'File too large. Maximum size is 100MB.';
+        } else if (errorMsg.includes('File type')) {
+          errorMessage = 'Unsupported file type.';
+        } else if (errorMsg.includes('Authentication')) {
+          errorMessage = 'Authentication required. Please log in again.';
+        } else {
+          errorMessage = errorMsg;
+        }
+      }
+      
+      alert(errorMessage);
     } finally {
       if (type === 'image') setUploadingImage(false);
       else setUploadingEbook(false);
+      setUploadProgress(0);
     }
   };
 
@@ -533,7 +581,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
 
                   <Box>
                     <input
-                      accept=".pdf,.epub"
+                      accept=".pdf,.epub,.mobi,.azw,.fb2"
                       style={{ display: 'none' }}
                       id="upload-ebook"
                       type="file"
@@ -545,7 +593,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          label="E-book URL (PDF/EPUB)"
+                          label="E-book URL (PDF/EPUB/MOBI/AZW/FB2)"
                           fullWidth
                           size="small"
                           placeholder="https://example.com/book.pdf"
@@ -571,6 +619,11 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                     {watch('ebookUrl') && watch('ebookUrl')?.startsWith('http') && !uploadingEbook && (
                       <Typography variant="caption" sx={{ color: 'success.main', display: 'flex', alignItems: 'center', mt: 0.5 }}>
                         <CloudDone sx={{ fontSize: 14, mr: 0.5 }} /> E-book URL set
+                      </Typography>
+                    )}
+                    {uploadingEbook && uploadProgress > 0 && (
+                      <Typography variant="caption" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                        Uploading... {uploadProgress}%
                       </Typography>
                     )}
                   </Box>

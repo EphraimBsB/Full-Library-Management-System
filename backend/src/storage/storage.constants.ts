@@ -1,6 +1,6 @@
 export const STORAGE_CONSTANTS = {
   // 50MB max file size for images, 100MB for ebooks
-  MAX_FILE_SIZE: 200 * 1024 * 1024,
+  MAX_FILE_SIZE: 100 * 1024 * 1024,
 
   // Allowed MIME types for uploads
   ALLOWED_MIME_TYPES: [
