@@ -25,6 +25,14 @@ export class FileUtils {
     return STORAGE_CONSTANTS.ALLOWED_MIME_TYPES.includes(mimeType);
   }
 
+  static validateFileSize(size: number): boolean {
+    return size <= STORAGE_CONSTANTS.MAX_FILE_SIZE;
+  }
+
+  static getMaxFileSizeMB(): number {
+    return STORAGE_CONSTANTS.MAX_FILE_SIZE / (1024 * 1024);
+  }
+
   static isImageMimeType(mimeType: string): boolean {
     return STORAGE_CONSTANTS.IMAGE_MIME_TYPES.includes(mimeType);
   }
