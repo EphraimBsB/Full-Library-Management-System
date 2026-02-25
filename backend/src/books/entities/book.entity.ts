@@ -108,7 +108,6 @@ export class Book {
   coverImageUrl?: string;
 
   @ManyToMany(() => Category, (category) => category.books, {
-    cascade: true,
     eager: true,
   })
   @JoinTable({
@@ -119,11 +118,9 @@ export class Book {
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => Category)
-  @ArrayMinSize(1, { message: 'At least one category is required' })
   categories: Category[];
 
   @ManyToMany(() => Subject, (subject) => subject.books, {
-    cascade: true,
     eager: true,
   })
   @JoinTable({
