@@ -60,11 +60,11 @@ export class SubjectsService {
     page = 1,
     limit = 10,
     search,
-  }: PaginationOptions): Promise<Subject[]> {
+  }: PaginationOptions): Promise<PaginatedResponseDto<Subject>> {
     const cacheKey = this.getSubjectsListCacheKey({ page, limit, search });
 
     // Check cache first
-    const cachedData = await this.cacheManager.get<Subject[]>(cacheKey);
+    const cachedData = await this.cacheManager.get<PaginatedResponseDto<Subject>>(cacheKey);
     if (cachedData) {
       return cachedData;
     }
@@ -80,11 +80,24 @@ export class SubjectsService {
 
     const [data, total] = await queryBuilder
       .orderBy('subject.name', 'ASC')
+      .skip(skip)
+      .take(limit)
       .getManyAndCount();
 
+    const totalPages = Math.ceil(total / limit);
+    const response = new PaginatedResponseDto({
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
+    });
+
     // Cache the result for 60 seconds
-    await this.cacheManager.set(cacheKey, data, 60);
-    return data;
+    await this.cacheManager.set(cacheKey, response, 60);
+    return response;
   }
 
   async findOne(id: number): Promise<Subject> {
@@ -147,7 +160,7 @@ export class SubjectsService {
       );
     }
 
-    await this.subjectRepository.softRemove(subject);
+    await this.subjectRepository.remove(subject);
     await this.resetCache();
   }
 

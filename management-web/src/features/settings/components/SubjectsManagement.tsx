@@ -75,19 +75,10 @@ const SubjectsManagement: React.FC = () => {
           search: search || undefined,
         },
       });
-      // The response is a direct data array, not nested under 'data'
-      const data = (response as any).data || (response as any);
-      
-      // Handle both paginated and non-paginated responses
-      if (Array.isArray(data)) {
-        // Direct array response
-        setSubjects(data);
-        setTotal(data.length);
-      } else {
-        // Paginated response
-        setSubjects(data.data || data);
-        setTotal(data.total || data.length);
-      }
+      // Backend now returns PaginatedResponseDto consistently
+      const paginated = response as any;
+      setSubjects(paginated.data || []);
+      setTotal(paginated.total || 0);
     } catch (error: any) {
       setMessage(`Failed to fetch subjects: ${error.message || 'Unknown error'}`);
       setMessageType('error');
@@ -136,7 +127,7 @@ const SubjectsManagement: React.FC = () => {
 
     try {
       if (editingSubject) {
-        await apiClient.patch(API_CONFIG.ENDPOINTS.SUBJECTS.UPDATE.replace(':id', editingSubject.id.toString()), formData);
+        await apiClient.put(API_CONFIG.ENDPOINTS.SUBJECTS.UPDATE.replace(':id', editingSubject.id.toString()), formData);
         setMessage('Subject updated successfully!');
       } else {
         await apiClient.post(API_CONFIG.ENDPOINTS.SUBJECTS.CREATE, formData);

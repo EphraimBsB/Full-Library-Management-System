@@ -18,7 +18,7 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { Subject } from './entities/subject.entity';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { PaginatedResponseDto } from 'src/common';
+import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Subjects')
@@ -54,7 +54,7 @@ export class SubjectsController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
     @Query('search') search?: string,
-  ): Promise<Subject[]> {
+  ): Promise<PaginatedResponseDto<Subject>> {
     return this.subjectsService.findAll({ page, limit, search });
   }
 
