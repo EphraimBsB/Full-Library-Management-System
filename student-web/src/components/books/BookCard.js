@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -25,6 +25,7 @@ import {
   CheckCircle,
   CheckCircleOutline,
   LockOutlined,
+  WarningOutlined,
 } from '@mui/icons-material';
 import { ApiService } from '../../services/api';
 import { getImageUrl } from '../../services/api';
@@ -43,6 +44,8 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
   const [successSnackbar, setSuccessSnackbar] = useState({ open: false, message: '' });
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null); // Track what action to retry after login
+  const [inLibraryNetworkAllowed, setInLibraryNetworkAllowed] = useState(true);
+  const [networkMessage, setNetworkMessage] = useState('');
 
   const availableCopies = book.copies?.filter(copy => copy.status === 'AVAILABLE') || [];
   const isAvailable = availableCopies.length > 0;
@@ -52,14 +55,31 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
   const isCurrentBookInSession = activeSessions && 
     activeSessions.some(session => session.copy.book.id === book.id);
 
+  // perform network check when read dialog opens
+  useEffect(() => {
+    if (!readDialogOpen) return;
+
+    const checkNetwork = async () => {
+      try {
+        const result = await ApiService.checkInhouseNetwork();
+        setInLibraryNetworkAllowed(result.allowed);
+        setNetworkMessage(result.message);
+      } catch (error) {
+        console.error('Error checking network:', error);
+        // Default to allowing on error (don't block if check fails)
+        setInLibraryNetworkAllowed(true);
+      }
+    };
+    checkNetwork();
+  }, [readDialogOpen]);
+
   const handleReadClick = () => {
     if (!isAuthenticated) {
       setPendingAction('read');
       setLoginDialogOpen(true);
       return;
     }
-    
-    // Always show the reading options dialog - allow multiple sessions
+    // always show the reading options dialog; network will be checked there
     setReadDialogOpen(true);
   };
 
@@ -166,6 +186,13 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
 
   const handleLibraryRead = () => {
     // setReadDialogOpen(false);
+    if (!inLibraryNetworkAllowed) {
+      setRestrictionSnackbar({
+        open: true,
+        message: networkMessage,
+      });
+      return;
+    }
     if (isAvailable) {
       setCopyDialogOpen(true);
     }
@@ -454,24 +481,35 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
               </Typography>
             </Box>
 
+            <Tooltip title={!inLibraryNetworkAllowed ? networkMessage : ''} disableHoverListener={inLibraryNetworkAllowed}>
+              {/* network check has been run above when dialog opened; disable if not allowed */}
             <Box
-              sx={{
-                p: 2,
-                border: '1px solid #e0e0e0',
-                borderRadius: 1,
-                cursor: isAvailable ? 'pointer' : 'not-allowed',
-                opacity: isAvailable ? 1 : 0.6,
-              }}
-              onClick={isAvailable ? handleLibraryRead : undefined}
-            >
-              <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <MenuBook />
-                Read in Library
-              </Typography>
-              <Typography variant="body2" color={isAvailable ? 'success.main' : 'error.main'}>
-                {isAvailable ? 'Available' : 'Not available'}
-              </Typography>
-            </Box>
+                sx={{
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                  cursor: isAvailable && inLibraryNetworkAllowed ? 'pointer' : 'not-allowed',
+                  opacity: isAvailable && inLibraryNetworkAllowed ? 1 : 0.6,
+                }}
+                onClick={isAvailable && inLibraryNetworkAllowed ? handleLibraryRead : undefined}
+              >
+                <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <MenuBook />
+                  Read in Library
+                </Typography>
+                <Typography variant="body2" color={isAvailable ? 'success.main' : 'error.main'}>
+                  {isAvailable ? 'Available' : 'Not available'}
+                </Typography>
+                {!inLibraryNetworkAllowed && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                    <WarningOutlined sx={{ fontSize: 14, color: 'warning.main' }} />
+                    <Typography variant="caption" color="warning.main" sx={{ fontSize: 11, fontWeight: 'bold' }}>
+                      {networkMessage}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Tooltip>
           </Box>
         </DialogContent>
         <DialogActions>

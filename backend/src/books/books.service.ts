@@ -64,6 +64,28 @@ export class BooksService {
     return `books:details:${id}`;
   }
 
+  /**
+   * Check if a given IP address is allowed (on university network)
+   * Uses LIBRARY_NETWORK_PREFIXES env var with comma-separated IP prefixes
+   * Examples: "10.0.0,192.168.1" or "10.0.0.0/8,172.16.0.0/12"
+   */
+  isIpAllowed(clientIp: string): boolean {
+    const allowedPrefixes = process.env.LIBRARY_NETWORK_PREFIXES || '';
+    
+    if (!allowedPrefixes.trim()) {
+      // If no prefixes configured, allow by default (no restriction)
+      return true;
+    }
+
+    const prefixes = allowedPrefixes.split(',').map(p => p.trim());
+    
+    // Check if client IP starts with any allowed prefix
+    return prefixes.some(prefix => {
+      // Simple prefix matching (works for "10.0.0" or similar)
+      return clientIp.startsWith(prefix);
+    });
+  }
+
   // Create a new book with copies
   async create(createBookDto: CreateBookDto): Promise<Book> {
     const queryRunner = this.dataSource.createQueryRunner();

@@ -170,7 +170,7 @@ export const BooksPage: React.FC = () => {
               sx={{ borderRadius: '8px', height: '40px' }}
             >
               <MenuItem value="">All Subjects</MenuItem>
-              {subjects?.map(subject => (
+              {(Array.isArray(subjects) ? subjects : []).map(subject => (
                 <MenuItem key={subject.id} value={subject.name}>{subject.name}</MenuItem>
               ))}
             </Select>
