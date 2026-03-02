@@ -37,6 +37,16 @@ api.interceptors.response.use(
 // API Service class
 export class ApiService {
   // In-house Usage
+  static async checkInhouseNetwork() {
+    try {
+      const response = await api.get('/books/inhouse-usage/check-network');
+      return response.data; // { allowed: boolean, message: string }
+    } catch (error) {
+      console.error('Error checking in-house network:', error);
+      throw error;
+    }
+  }
+
   static async getActiveSession() {
     try {
       const response = await api.get('/books/inhouse-usage/history?status=active');

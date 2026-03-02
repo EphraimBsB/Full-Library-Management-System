@@ -9,6 +9,8 @@ import {
   UseGuards,
   Request,
   Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { getSchemaPath } from '@nestjs/swagger';
 import {
@@ -17,10 +19,12 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Public } from '../../auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { InhouseUsageService } from '../services/inhouse-usage.service';
+import { BooksService } from '../books.service';
 import {
   StartInhouseUsageDto,
   InhouseUsageResponseDto,
@@ -33,7 +37,41 @@ import { UserRole } from 'src/common/enums/user-role.enum';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class InhouseUsageController {
-  constructor(private readonly inhouseUsageService: InhouseUsageService) {}
+  constructor(
+    private readonly inhouseUsageService: InhouseUsageService,
+    private readonly booksService: BooksService,
+  ) {}
+
+  @Get('inhouse-usage/check-network')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Check if client is on university network' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Network check result',
+    schema: {
+      type: 'object',
+      properties: {
+        allowed: { type: 'boolean' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  async checkNetwork(
+    @Request() req,
+  ): Promise<{ allowed: boolean; message: string }> {
+    // Extract client IP (considering X-Forwarded-For header for proxies)
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip || req.socket.remoteAddress || '';
+    
+    const allowed = this.booksService.isIpAllowed(clientIp);
+    
+    return {
+      allowed,
+      message: allowed
+        ? 'You are on the university network'
+        : 'In-library reading is only available on the university network',
+    };
+  }
 
   @Post('inhouse-usage/start')
   @Roles(UserRole.MEMBER, UserRole.ADMIN)

@@ -47,8 +47,11 @@ const EbookReader = ({ book, open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [pageWidth, setPageWidth] = useState(null);
   
   const pdfRef = useRef(null);
+  const containerRef = useRef(null);
+  const pageRefs = useRef([]); // store refs to each rendered page for scrolling
 
   // Load notes when component mounts or book changes
   useEffect(() => {
@@ -56,6 +59,19 @@ const EbookReader = ({ book, open, onClose }) => {
       loadNotes();
     }
   }, [open, book?.id]);
+
+  // measure container width for responsive page sizing
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        // leave some padding
+        setPageWidth(containerRef.current.offsetWidth - 32);
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [containerRef]);
 
   const loadNotes = async () => {
     try {
@@ -129,14 +145,16 @@ const EbookReader = ({ book, open, onClose }) => {
     // Jump to the page of the note
     if (note.pageNumber) {
       setCurrentPage(note.pageNumber);
-      console.log('Jumping to page:', note.pageNumber);
+      const el = pageRefs.current[note.pageNumber - 1];
+      if (el && el.scrollIntoView) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
   const handleDocumentLoadSuccess = ({ numPages }) => {
     setTotalPages(numPages);
     setPdfLoading(false);
-    console.log('PDF loaded successfully with', numPages, 'pages');
   };
 
   const handleDocumentLoadError = (error) => {
@@ -150,10 +168,19 @@ const EbookReader = ({ book, open, onClose }) => {
   };
 
   const handlePageChange = (direction) => {
+    let newPage = currentPage;
     if (direction === 'prev' && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      newPage = currentPage - 1;
     } else if (direction === 'next' && currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+      newPage = currentPage + 1;
+    }
+    if (newPage !== currentPage) {
+      setCurrentPage(newPage);
+      // scroll to new page if ref available
+      const el = pageRefs.current[newPage - 1];
+      if (el && el.scrollIntoView) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -242,7 +269,7 @@ const EbookReader = ({ book, open, onClose }) => {
             </Box>
           )}
           
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <Box ref={containerRef} sx={{ display: 'flex', justifyContent: 'center', py: 2, width: '100%' }}>
             <Document
               file={book.ebookUrl}
               onLoadSuccess={handleDocumentLoadSuccess}
@@ -263,13 +290,21 @@ const EbookReader = ({ book, open, onClose }) => {
                 </Box>
               }
             >
-              <Page 
-                pageNumber={currentPage} 
-                renderTextLayer={true}
-                renderAnnotationLayer={true}
-                scale={1.2}
-                width={800}
-              />
+              {/* render all pages vertically to allow scrolling/navigation */}
+              {Array.from({ length: totalPages }, (_, idx) => (
+                <div
+                  key={idx}
+                  ref={(el) => (pageRefs.current[idx] = el)}
+                  style={{ marginBottom: 16 }}
+                >
+                  <Page
+                    pageNumber={idx + 1}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                    width={pageWidth || 600}
+                  />
+                </div>
+              ))}
             </Document>
           </Box>
 

@@ -130,13 +130,12 @@ const EbookReader = ({ book, open, onClose }) => {
     // Jump to the page of the note
     if (note.pageNumber) {
       setCurrentPage(note.pageNumber);
-      console.log('Jumping to page:', note.pageNumber);
+
     }
   };
 
   const handlePdfLoad = () => {
     setPdfLoading(false);
-    console.log('PDF loaded successfully');
   };
 
   const handlePdfError = (error) => {
@@ -293,7 +292,7 @@ const EbookReader = ({ book, open, onClose }) => {
           {/* PDF iframe - fallback approach */}
           <iframe
             ref={pdfRef}
-            src={`${book.ebookUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&zoom=auto`}
+            src={`${book.ebookUrl}#toolbar=0&navpanes=0&statusbar=0&messages=0&zoom=auto`}
             style={{
               width: '100%',
               height: '100%',
