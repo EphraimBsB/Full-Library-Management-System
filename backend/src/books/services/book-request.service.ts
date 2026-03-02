@@ -233,8 +233,16 @@ export class BookRequestService {
             (preferredCopyId ? ` (preferred copy: ${preferredCopyId})` : ''),
         );
 
-        // Save the approved request first
-        await transactionalEntityManager.save(BookRequest, request);
+        // Mark request as approved (so it appears processed) without persisting full relations
+        await transactionalEntityManager.update(
+          BookRequest,
+          { id: request.id },
+          {
+            status: request.status,
+            approvedAt: request.approvedAt,
+            approvedById: request.approvedById,
+          },
+        );
 
         // Add to queue if not already in queue
         if (!request.queueEntry) {
@@ -244,7 +252,11 @@ export class BookRequestService {
           );
           request.queueEntry = queueEntry;
           request.queueEntryId = queueEntry.id;
-          await transactionalEntityManager.save(BookRequest, request);
+          await transactionalEntityManager.update(
+            BookRequest,
+            { id: request.id },
+            { queueEntryId: queueEntry.id },
+          );
           return { queueEntry };
         }
 
@@ -261,7 +273,7 @@ export class BookRequestService {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const request = await transactionalEntityManager.findOne(BookRequest, {
         where: { id: requestId },
-        relations: ['queueEntry', 'user', 'book'], // Add user and book relations
+        relations: ['queueEntry', 'user', 'book'], // relations needed only for email/queue logic
       });
 
       if (!request) {
@@ -272,19 +284,20 @@ export class BookRequestService {
         throw new ConflictException('Request is not in a pending state');
       }
 
-      // Update request status
-      request.status = BookRequestStatus.REJECTED;
-      request.rejectedAt = new Date();
-      request.rejectionReason = reason;
-      request.rejectedBy = { id: rejectedById } as User;
-      request.rejectedById = rejectedById;
+      // Prepare update payload without carrying the full user object back into save
+      const updatePayload: Partial<BookRequest> = {
+        status: BookRequestStatus.REJECTED,
+        rejectedAt: new Date(),
+        rejectionReason: reason,
+        rejectedById: rejectedById,
+      };
 
-      // If there's an associated queue entry, remove it
+      // remove queue entry if necessary
       if (request.queueEntry) {
         await transactionalEntityManager.remove(QueueEntry, request.queueEntry);
       }
 
-      // Send email notification (only if user exists)
+      // send email if we have the user and book available
       if (request.user && request.user.email) {
         await this.emailUtilsService.sendRequestRejectedEmail(
           request.user,
@@ -296,7 +309,16 @@ export class BookRequestService {
         this.logger.warn(`Cannot send rejection email: user or user.email is undefined for request ${requestId}`);
       }
 
-      return transactionalEntityManager.save(BookRequest, request);
+      // apply the update without touching relations
+      await transactionalEntityManager.update(BookRequest, { id: requestId }, updatePayload);
+
+      // return the fresh request so caller can see new status
+      const updated = await transactionalEntityManager.findOne(BookRequest, {
+        where: { id: requestId },
+        relations: ['user', 'book', 'queueEntry', 'approvedBy', 'rejectedBy'],
+      });
+      // updated should always exist here
+      return updated!;
     });
   }
 
@@ -586,9 +608,9 @@ export class BookRequestService {
     rejectedById: string,
     reason?: string,
   ): Promise<BookRequest> {
+    // load minimal data necessary
     const request = await this.bookRequestRepository.findOne({
       where: { id: requestId },
-      relations: ['user', 'loan'],
     });
 
     if (!request) {
@@ -603,20 +625,23 @@ export class BookRequestService {
       throw new ConflictException('This is not a renewal request');
     }
 
-    // Update request status
-    request.status = BookRequestStatus.RENEWAL_REJECTED;
-    request.rejectedAt = new Date();
-    request.rejectionReason = reason || 'Renewal request rejected';
-    request.rejectedBy = { id: rejectedById } as User;
-    request.rejectedById = rejectedById;
-
-    const savedRequest = await this.bookRequestRepository.save(request);
+    // perform a direct update to avoid cascades
+    await this.bookRequestRepository.update(
+      { id: requestId },
+      {
+        status: BookRequestStatus.RENEWAL_REJECTED,
+        rejectedAt: new Date(),
+        rejectionReason: reason || 'Renewal request rejected',
+        rejectedById: rejectedById,
+      },
+    );
 
     this.logger.log(
       `Renewal request rejected: ${requestId}, reason: ${reason}`,
     );
 
-    return savedRequest;
+    const updated = await this.bookRequestRepository.findOne({ where: { id: requestId } });
+    return updated!;
   }
 
   /**

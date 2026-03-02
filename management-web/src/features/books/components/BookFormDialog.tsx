@@ -28,6 +28,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BookService } from '../services/book.service';
 import type { Book } from '../services/book.service';
 import { SysConfigService } from '../services/sys-config.service';
+import type { Category, Subject } from '../services/sys-config.service';
 import { WorldCatService } from '../services/worldcat.service';
 import { StorageService } from '../services/storage.service';
 import { theme } from '../../../core/theme';
@@ -124,8 +125,17 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
     }
   }, [open, book, reset]);
 
-  const { data: configCategories } = useQuery({ queryKey: ['categories'], queryFn: SysConfigService.getCategories });
-  const { data: configSubjects } = useQuery({ queryKey: ['subjects'], queryFn: SysConfigService.getSubjects });
+  const { data: configCategories } = useQuery<Category[]>({ queryKey: ['categories'], queryFn: SysConfigService.getCategories });
+  const { data: configSubjects } = useQuery<Subject[]>({ queryKey: ['subjects'], queryFn: SysConfigService.getSubjects });
+
+  // unwrap paginated responses (backend returns PaginatedResponseDto)
+  const categoryOptions: Category[] = Array.isArray(configCategories)
+    ? configCategories
+    : // paginated response has data property
+      (configCategories as any)?.data || [];
+  const subjectOptions: Subject[] = Array.isArray(configSubjects)
+    ? configSubjects
+    : (configSubjects as any)?.data || []; 
   const { data: configTypes } = useQuery({ queryKey: ['types'], queryFn: SysConfigService.getTypes });
   const { data: configSources } = useQuery({ queryKey: ['sources'], queryFn: SysConfigService.getSources });
 
@@ -348,9 +358,9 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
 
                 <Autocomplete
                   multiple
-                  options={configCategories || []}
+                  options={categoryOptions}
                   getOptionLabel={(option) => option.name}
-                  value={categories.map(c => (Array.isArray(configCategories) ? configCategories : [])?.find(cc => cc.name === c.name) || c)}
+                  value={categories.filter(c => categoryOptions.some((cc: Category) => cc.name === c.name))}
                   onChange={(_, newValue) => setCategories(newValue.map((v: any) => ({ name: v.name })))}
                   renderInput={(params) => (
                     <TextField 
@@ -379,9 +389,9 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
 
                 <Autocomplete
                   multiple
-                  options={configSubjects || []}
+                  options={subjectOptions}
                   getOptionLabel={(option) => option.name}
-                  value={subjects.map(s => (Array.isArray(configSubjects) ? configSubjects : [])?.find(ss => ss.name === s.name) || s)}
+                  value={subjects.filter(s => subjectOptions.some((ss: Subject) => ss.name === s.name))}
                   onChange={(_, newValue) => setSubjects(newValue.map((v: any) => ({ name: v.name })))}
                   renderInput={(params) => <TextField {...params} label="Subjects" size="small" />}
                   renderTags={(value, getTagProps) =>
