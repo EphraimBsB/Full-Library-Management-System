@@ -60,6 +60,11 @@ export const BooksPage: React.FC = () => {
     queryFn: SysConfigService.getSubjects,
   });
 
+  // unwrap paginated responses
+  const subjectOptions = Array.isArray(subjects)
+    ? subjects
+    : (subjects as any)?.data || []; // categories not needed for book listing filter
+
   const refetchBooks = () => {
     queryClient.invalidateQueries({ queryKey: ['books'] });
   };
@@ -170,7 +175,7 @@ export const BooksPage: React.FC = () => {
               sx={{ borderRadius: '8px', height: '40px' }}
             >
               <MenuItem value="">All Subjects</MenuItem>
-              {(Array.isArray(subjects) ? subjects : []).map(subject => (
+              {subjectOptions.map((subject: any) => (
                 <MenuItem key={subject.id} value={subject.name}>{subject.name}</MenuItem>
               ))}
             </Select>

@@ -73,6 +73,18 @@ export const LoansPage: React.FC = () => {
     queryFn: () => LoanService.getRenewalRequests(), // Don't filter by status to get all renewal requests
   });
 
+  // Fetch rejected requests
+  const { data: rejectedRequests, isLoading: rejectedLoading, error: rejectedError } = useQuery({
+    queryKey: ['rejected-requests'],
+    queryFn: async () => {
+      const [borrowRequests, renewalRequests] = await Promise.all([
+        LoanService.getAllBookRequests(BookRequestStatus.REJECTED),
+        LoanService.getRenewalRequests(BookRequestStatus.RENEWAL_REJECTED),
+      ]);
+      return { borrowRequests, renewalRequests };
+    },
+  });
+
   // Renew loan mutation
   // const renewLoanMutation = useMutation({
   //   mutationFn: LoanService.renewLoan,
@@ -325,6 +337,7 @@ export const LoansPage: React.FC = () => {
           <Tab label="Pending Requests" sx={{ fontSize: '0.8rem' }} />
           <Tab label="All Loans" sx={{ fontSize: '0.8rem' }} />
           <Tab label="Overdue" sx={{ fontSize: '0.8rem' }} />
+          <Tab label="Rejected" sx={{ fontSize: '0.8rem' }} />
         </Tabs>
       </Box>
 
@@ -414,6 +427,63 @@ export const LoansPage: React.FC = () => {
       {/* Overdue Tab */}
       <TabPanel value={activeTab} index={2}>
         <Alert severity="info">Overdue loans feature coming soon...</Alert>
+      </TabPanel>
+
+      {/* Rejected Requests Tab */}
+      <TabPanel value={activeTab} index={3}>
+        {rejectedLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : rejectedError ? (
+          <Alert severity="error">Error loading rejected requests</Alert>
+        ) : (!rejectedRequests?.borrowRequests?.length && !rejectedRequests?.renewalRequests?.length) ? (
+          <Alert severity="info">No rejected requests</Alert>
+        ) : (
+          <>
+            {/* Rejected Borrow Requests Section */}
+            {rejectedRequests?.borrowRequests && rejectedRequests.borrowRequests.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: '0.9rem', fontWeight: 600 }}>
+                  Rejected Borrow Requests ({rejectedRequests.borrowRequests.length})
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>
+                  {rejectedRequests.borrowRequests.map((request) => (
+                    <Box key={request.id}>
+                      <RequestCard
+                        request={request}
+                        onApprove={handleApproveRequest}
+                        onReject={handleRejectRequest}
+                        onViewDetails={() => console.log('View rejected request details', request.id)}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </>
+            )}
+
+            {/* Rejected Renewal Requests Section */}
+            {rejectedRequests?.renewalRequests && rejectedRequests.renewalRequests.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: '0.9rem', fontWeight: 600 }}>
+                  Rejected Renewal Requests ({rejectedRequests.renewalRequests.length})
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2 }}>
+                  {rejectedRequests.renewalRequests.map((request) => (
+                    <Box key={request.id}>
+                      <RequestCard
+                        request={request}
+                        onApprove={handleApproveRenewalRequest}
+                        onReject={handleRejectRenewalRequest}
+                        onViewDetails={() => console.log('View rejected renewal request details', request.id)}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </>
+            )}
+          </>
+        )}
       </TabPanel>
 
       {/* Loan Details Dialog - Coming Soon */}
