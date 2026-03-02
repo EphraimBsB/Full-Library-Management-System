@@ -350,7 +350,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                   multiple
                   options={configCategories || []}
                   getOptionLabel={(option) => option.name}
-                  value={categories.map(c => configCategories?.find(cc => cc.name === c.name) || c)}
+                  value={categories.map(c => (Array.isArray(configCategories) ? configCategories : [])?.find(cc => cc.name === c.name) || c)}
                   onChange={(_, newValue) => setCategories(newValue.map((v: any) => ({ name: v.name })))}
                   renderInput={(params) => (
                     <TextField 
@@ -381,7 +381,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                   multiple
                   options={configSubjects || []}
                   getOptionLabel={(option) => option.name}
-                  value={subjects.map(s => configSubjects?.find(ss => ss.name === s.name) || s)}
+                  value={subjects.map(s => (Array.isArray(configSubjects) ? configSubjects : [])?.find(ss => ss.name === s.name) || s)}
                   onChange={(_, newValue) => setSubjects(newValue.map((v: any) => ({ name: v.name })))}
                   renderInput={(params) => <TextField {...params} label="Subjects" size="small" />}
                   renderTags={(value, getTagProps) =>
@@ -446,7 +446,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                     <Autocomplete
                       options={configTypes || []}
                       getOptionLabel={(option) => option.name}
-                      value={configTypes?.find(t => t.id === field.value) || null}
+                      value={(Array.isArray(configTypes) ? configTypes : []).find(t => t.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue?.id)}
                       renderInput={(params) => <TextField {...params} label="Book Type *" size="small" error={!!errors.typeId} />}
                     />
@@ -460,7 +460,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
                     <Autocomplete
                       options={configSources || []}
                       getOptionLabel={(option) => option.name}
-                      value={configSources?.find(s => s.id === field.value) || null}
+                      value={(Array.isArray(configSources) ? configSources : []).find(s => s.id === field.value) || null}
                       onChange={(_, newValue) => field.onChange(newValue?.id)}
                       renderInput={(params) => <TextField {...params} label="Source" size="small" />}
                     />
