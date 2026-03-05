@@ -60,7 +60,7 @@ export class EmailUtilsService {
           issueDate: issueDate.toLocaleDateString(),
           dueDate: dueDate.toLocaleDateString(),
           loanId,
-          supportEmail: 'library@example.com',
+          supportEmail: ' ilims@isbatuniversity.com',
         },
       );
     } catch (error) {
@@ -94,7 +94,7 @@ export class EmailUtilsService {
           issueDate: issueDate.toLocaleDateString(),
           dueDate: dueDate.toLocaleDateString(),
           loanId,
-          supportEmail: 'library@example.com',
+          supportEmail: ' ilims@isbatuniversity.com',
         },
       );
     } catch (error) {
@@ -130,7 +130,7 @@ export class EmailUtilsService {
           dueDate: dueDate.toLocaleDateString(),
           fineAmount: fineAmount.toFixed(2),
           loanId,
-          supportEmail: 'library@example.com',
+          supportEmail: ' ilims@isbatuniversity.com',
         },
       );
     } catch (error) {
@@ -227,7 +227,7 @@ export class EmailUtilsService {
           issueDate: issueDate.toLocaleDateString(),
           dueDate: dueDate.toLocaleDateString(),
           loanId,
-          supportEmail: 'library@example.com',
+          supportEmail: ' ilims@isbatuniversity.com',
         },
       );
     } catch (error) {
@@ -256,7 +256,7 @@ export class EmailUtilsService {
           bookAuthor: book.author,
           reason,
           rejectedById,
-          supportEmail: 'library@example.com',
+          supportEmail: ' ilims@isbatuniversity.com',
         },
       );
     } catch (error) {

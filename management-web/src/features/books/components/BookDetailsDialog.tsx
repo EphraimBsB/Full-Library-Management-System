@@ -41,6 +41,7 @@ import { IssueBookDialog } from './IssueBookDialog';
 import { BookFormDialog } from './BookFormDialog';
 import { UpdateCopyDialog } from './UpdateCopyDialog';
 import type { BookCopy } from '../services/book.service';
+import { EbookReader } from './EbookReader';
 
 interface BookDetailsDialogProps {
   open: boolean;
@@ -78,6 +79,7 @@ export const BookDetailsDialog: React.FC<BookDetailsDialogProps> = ({ open, onCl
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [selectedCopy, setSelectedCopy] = useState<BookCopy | null>(null);
   const [isUpdateCopyDialogOpen, setIsUpdateCopyDialogOpen] = useState(false);
+  const [isEbookReaderOpen, setIsEbookReaderOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: details, isLoading, error, refetch } = useQuery({
@@ -272,7 +274,7 @@ export const BookDetailsDialog: React.FC<BookDetailsDialogProps> = ({ open, onCl
                       fontWeight: 600,
                       py: 1
                     }}
-                    onClick={() => window.open(book.ebookUrl, '_blank')}
+                    onClick={() => setIsEbookReaderOpen(true)}
                   >
                     Read E-Book
                   </Button>
@@ -562,6 +564,15 @@ export const BookDetailsDialog: React.FC<BookDetailsDialogProps> = ({ open, onCl
           }}
           bookId={book.id}
           copy={selectedCopy}
+        />
+      )}
+
+      {book.ebookUrl && (
+        <EbookReader
+          open={isEbookReaderOpen}
+          onClose={() => setIsEbookReaderOpen(false)}
+          ebookUrl={book.ebookUrl}
+          title={book.title}
         />
       )}
     </Dialog>

@@ -42,8 +42,14 @@ export const SysConfigService = {
     return apiClient.get<Category[]>('/categories');
   },
 
-  getSubjects: async (): Promise<Subject[]> => {
-    return apiClient.get<Subject[]>('/subjects');
+  getSubjects: async (params: { page?: number; limit?: number; search?: string } = {}): Promise<any> => {
+    // backend returns PaginatedResponseDto<Subject>; caller should unwrap
+    const query = new URLSearchParams();
+    if (params.page !== undefined) query.append('page', params.page.toString());
+    if (params.limit !== undefined) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    const url = '/subjects' + (query.toString() ? `?${query.toString()}` : '');
+    return apiClient.get<any>(url);
   },
 
   getTypes: async (): Promise<BookType[]> => {

@@ -55,9 +55,9 @@ export const BooksPage: React.FC = () => {
     queryFn: SysConfigService.getCategories,
   });
 
-  const { data: subjects } = useQuery({
-    queryKey: ['subjects'],
-    queryFn: SysConfigService.getSubjects,
+  const { data: subjects } = useQuery<any>({
+    queryKey: ['subjects', 'dropdown'],
+    queryFn: () => SysConfigService.getSubjects({ page: 1, limit: 1000 }),
   });
 
   // unwrap paginated responses

@@ -126,7 +126,10 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
   }, [open, book, reset]);
 
   const { data: configCategories } = useQuery<Category[]>({ queryKey: ['categories'], queryFn: SysConfigService.getCategories });
-  const { data: configSubjects } = useQuery<Subject[]>({ queryKey: ['subjects'], queryFn: SysConfigService.getSubjects });
+  const { data: configSubjects } = useQuery<any>({
+    queryKey: ['subjects', 'dropdown'],
+    queryFn: () => SysConfigService.getSubjects({ page: 1, limit: 1000 }),
+  });
 
   // unwrap paginated responses (backend returns PaginatedResponseDto)
   const categoryOptions: Category[] = Array.isArray(configCategories)
