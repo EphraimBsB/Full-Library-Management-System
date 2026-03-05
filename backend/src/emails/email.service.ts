@@ -28,7 +28,7 @@ export class EmailService implements OnModuleInit {
     try {
       const host = this.configService.get<string>(
         'SMTP_HOST',
-        'smtp-relay.brevo.com',
+        'smtp.office365.com',
       );
       const port = parseInt(
         this.configService.get<string>('SMTP_PORT', '587'),
@@ -57,18 +57,16 @@ export class EmailService implements OnModuleInit {
       //   pass: pass ? '***' : 'not set'
       // });
 
-      // Check if we should use the first password or the xkeysib format
-      const useXKeySib = pass.startsWith('xkeysib-');
-
       const transporterConfig: any = {
         host,
         port,
-        secure: false, // Always false for Brevo with port 587
+        secure: false, // false for port 587 (TLS), true for port 465 (SSL)
         auth: {
           user,
-          pass: useXKeySib ? pass : pass,
+          pass,
         },
         tls: {
+          ciphers: 'SSLv3',
           rejectUnauthorized: false,
           minVersion: 'TLSv1.2',
         },
@@ -78,16 +76,15 @@ export class EmailService implements OnModuleInit {
         debug: true,
       };
 
-      // Special handling for xkeysib format
-      if (useXKeySib) {
-        transporterConfig.authMethod = 'PLAIN';
-      }
-
       this.transporter = nodemailer.createTransport(transporterConfig);
 
-      // Add event listeners for better debugging
-      this.transporter.on('token', (token) => {
-        console.log('SMTP Auth token:', token);
+      // Verify connection on startup
+      this.transporter.verify((error, success) => {
+        if (error) {
+          console.error('SMTP transporter verification failed:', error);
+        } else {
+          console.log('SMTP transporter is ready to send emails');
+        }
       });
     } catch (error) {
       console.error('Failed to initialize email transporter:', error);
@@ -139,7 +136,7 @@ export class EmailService implements OnModuleInit {
         ),
         supportEmail: this.configService.get<string>(
           'SUPPORT_EMAIL',
-          'support@yourlibrary.com',
+          ' ilims@isbatuniversity.com',
         ),
       };
 
