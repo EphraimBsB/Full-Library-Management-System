@@ -102,7 +102,7 @@ export class ApiService {
 
   static async getBookDetails(bookId) {
     try {
-      const response = await api.get(`/books/${bookId}`);
+      const response = await api.get(`/books/${bookId}/details`);
       return response.data;
     } catch (error) {
       console.error('Error getting book details:', error);

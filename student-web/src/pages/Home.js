@@ -18,6 +18,7 @@ import { ApiService } from '../services/api';
 import BookCard from '../components/books/BookCard';
 import Header from '../components/layout/Header';
 import ActiveSessionBanner from '../components/reading/ActiveSessionBanner';
+import HeroSection from '../components/home/HeroSection';
 import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
@@ -86,7 +87,7 @@ const Home = () => {
         page,
         limit: 12,
         search: debouncedSearch || undefined,
-        subjects: selectedSubjects.length > 0 ? 
+        subjects: selectedSubjects.length > 0 ?
           selectedSubjects.map(subjectId => {
             // Find subject name from subjects data
             const subject = subjectsData?.data?.find(s => s.id === subjectId);
@@ -169,8 +170,48 @@ const Home = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff', paddingTop: '64px' }}>
       <Header />
-      
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+
+      {/* Hero Section using Books Data */}
+      {!isLoading && !error && booksData?.data?.length > 0 && (
+        <HeroSection books={booksData.data} />
+      )}
+
+      {/* Search Bar Stacked on Hero Section */}
+      <Box
+        sx={{
+          position: 'relative',
+          mt: -7.5,
+          zIndex: 10,
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              // backdropFilter: 'blur(10px)',
+              my: 2,
+            }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Search by title, author, or ISBN"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  backgroundColor: '#f5f5f5',
+                  fontSize: 13,
+                },
+              }}
+            />
+          </Box>
+        </Container>
+      </Box>
+
+      <Container maxWidth="lg" sx={{ py: 4, pt: 0 }}>
         {/* Active Session Banner */}
         {isAuthenticated && activeSessions && activeSessions.length > 0 && (
           <ActiveSessionBanner
@@ -178,26 +219,6 @@ const Home = () => {
             onSessionEnd={refetchActiveSessions}
           />
         )}
-
-        {/* Hero Section */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, color: '#000000', fontSize: 18 }}>
-            Find a book
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: '#666666',
-              maxWidth: 600,
-              mx: 'auto',
-              lineHeight: 1.6,
-              fontSize: 12,
-            }}
-          >
-            Today a reader, Tomorrow a leader<br />
-            find a book by title or by author, borrow a book, find book location in the library. Everything you need for better future and success has already been writen.
-          </Typography>
-        </Box>
 
         {/* Active Session Cards */}
         {isAuthenticated && activeSessions && activeSessions.length > 0 && (
@@ -237,10 +258,10 @@ const Home = () => {
                   variant="outlined"
                   size="small"
                   onClick={() => handleEndIndividualSession(session.id)}
-                  sx={{ 
-                    borderColor: '#BF0019', 
+                  sx={{
+                    borderColor: '#BF0019',
                     color: '#BF0019',
-                    '&:hover': { 
+                    '&:hover': {
                       borderColor: '#A00015',
                       backgroundColor: 'rgba(191, 0, 25, 0.04)'
                     },
@@ -256,26 +277,6 @@ const Home = () => {
             ))}
           </Box>
         )}
-
-        {/* Search Bar */}
-        <Box sx={{ mb: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Search by title, author, or ISBN"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                backgroundColor: '#f5f5f5',
-                fontSize: 13,
-              },
-            }}
-          />
-        </Box>
 
         {/* Loading State */}
         {isLoading && (
@@ -313,23 +314,23 @@ const Home = () => {
                     {subjectsData.data
                       .slice(0, showAllSubjects ? subjectsData.data.length : visibleSubjectCount)
                       .map((subject) => (
-                      <Chip
-                        key={subject.id}
-                        label={subject.name}
-                        size="small"
-                        clickable
-                        onClick={() => handleSubjectToggle(subject.id)}
-                        color={selectedSubjects.includes(subject.id) ? 'primary' : 'default'}
-                        variant={selectedSubjects.includes(subject.id) ? 'filled' : 'outlined'}
-                        sx={{ 
-                          fontSize: 10,
-                          height: 22,
-                          '& .MuiChip-label': {
-                            px: 1,
-                          },
-                        }}
-                      />
-                    ))}
+                        <Chip
+                          key={subject.id}
+                          label={subject.name}
+                          size="small"
+                          clickable
+                          onClick={() => handleSubjectToggle(subject.id)}
+                          color={selectedSubjects.includes(subject.id) ? 'primary' : 'default'}
+                          variant={selectedSubjects.includes(subject.id) ? 'filled' : 'outlined'}
+                          sx={{
+                            fontSize: 10,
+                            height: 22,
+                            '& .MuiChip-label': {
+                              px: 1,
+                            },
+                          }}
+                        />
+                      ))}
                     {selectedSubjects.length > 0 && (
                       <Chip
                         label="Clear all"
@@ -338,7 +339,7 @@ const Home = () => {
                         onClick={handleClearSubjects}
                         color="secondary"
                         variant="outlined"
-                        sx={{ 
+                        sx={{
                           fontSize: 10,
                           height: 22,
                           '& .MuiChip-label': {
@@ -355,7 +356,7 @@ const Home = () => {
                         onClick={() => setShowAllSubjects(!showAllSubjects)}
                         color="default"
                         variant="text"
-                        sx={{ 
+                        sx={{
                           fontSize: 10,
                           height: 22,
                           '& .MuiChip-label': {
@@ -377,12 +378,12 @@ const Home = () => {
             {booksData?.data?.length > 0 ? (
               <Grid container spacing={{ xs: 0.5, sm: 1, md: 1.5, lg: 2 }}>
                 {booksData.data.map((book) => (
-                  <Grid 
-                    item 
-                    xs={12} 
-                    sm={6} 
-                    md={4} 
-                    lg={4} 
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={4}
                     key={book.id}
                   >
                     <BookCard
@@ -419,7 +420,7 @@ const Home = () => {
           </>
         )}
       </Container>
-      
+
       {/* Footer Watermark */}
       <Box
         component="footer"
@@ -431,10 +432,10 @@ const Home = () => {
           mt: 'auto',
         }}
       >
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            fontSize: 10, 
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: 10,
             color: '#999999',
             fontFamily: 'monospace',
             letterSpacing: 0.5,
@@ -444,10 +445,10 @@ const Home = () => {
         >
           © 2026- ISBAT University. All Rights Reserved.
         </Typography>
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            fontSize: 10, 
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: 10,
             color: '#999999',
             fontFamily: 'monospace',
             letterSpacing: 0.5,

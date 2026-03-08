@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import EbookReaderPage from './pages/EbookReaderPage';
+import BookDetailsPage from './pages/BookDetailsPage';
 
 // Create a theme
 const theme = createTheme({
@@ -112,6 +113,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/books/:id" element={<BookDetailsPage />} />
               <Route
                 path="/profile"
                 element={
