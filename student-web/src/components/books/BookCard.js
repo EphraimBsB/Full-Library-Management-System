@@ -269,14 +269,18 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
       >
         {/* Book Cover */}
         <Box sx={{ position: 'relative', width: 140, flexShrink: 0 }}>
-          <CardMedia
+          <Box
             component="img"
+            onClick={() => navigate(`/books/${book.id}`)}
             sx={{
               width: 140,
               height: 200,
               objectFit: 'cover',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+              '&:hover': { transform: 'scale(1.02)' },
             }}
-            image={getImageUrl(book.coverImageUrl)}
+            src={getImageUrl(book.coverImageUrl)}
             alt={book.title}
             onError={(e) => {
               e.target.src = '/assets/default-book.jpg';
@@ -314,6 +318,7 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
           <Box sx={{ mb: 0.5 }}>
             <Typography
               variant="h6"
+              onClick={() => navigate(`/books/${book.id}`)}
               sx={{
                 fontSize: 13,
                 fontWeight: 'bold',
@@ -323,6 +328,8 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
                 lineHeight: 1.2,
+                cursor: 'pointer',
+                '&:hover': { color: '#1976d2', textDecoration: 'underline' },
               }}
             >
               {book.title}
@@ -359,42 +366,23 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
             />
           </Box>
 
-          {/* Description Preview with Hover Tooltip */}
+          {/* Description Preview */}
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Tooltip
-              title={
-                <Box sx={{ maxWidth: 300, p: 1 }}>
-                  <Typography variant="body2" sx={{ fontSize: 12, lineHeight: 1.4 }}>
-                    {book.description || 'No description available'}
-                  </Typography>
-                </Box>
-              }
-              arrow
-              placement="top"
-              enterDelay={500}
-              leaveDelay={100}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                fontSize: 10,
+                lineHeight: 1.3,
+                flex: 1,
+              }}
             >
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  fontSize: 10,
-                  lineHeight: 1.3,
-                  flex: 1,
-                  cursor: 'help',
-                  '&:hover': {
-                    color: '#1976d2',
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                {book.description?.substring(0, 120) || 'No description available'}...
-              </Typography>
-            </Tooltip>
+              {book.description?.substring(0, 120) || 'No description available'}...
+            </Typography>
           </Box>
 
           {/* Action Buttons at Very Bottom */}
