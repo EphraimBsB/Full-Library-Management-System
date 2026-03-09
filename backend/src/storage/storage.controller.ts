@@ -165,7 +165,7 @@ export class StorageController {
     @GetUser() user: User,
   ): Promise<void> {
     try {
-      await this.storageService.deleteFile(id);
+      await this.storageService.deleteFile(id, user);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException('File not found');

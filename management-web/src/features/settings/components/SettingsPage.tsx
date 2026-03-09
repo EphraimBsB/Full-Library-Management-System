@@ -9,6 +9,7 @@ import DataManagement from './DataManagement';
 import PasswordSettings from './PasswordSettings';
 import ProfileSettings from './ProfileSettings';
 import SystemConfigs from './SystemConfigs';
+import FileManagement from '../../storage/components/FileManagement';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -53,10 +54,10 @@ const SettingsPage: React.FC = () => {
   return (
     <Box>
       <Box>
-        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, fontSize: '1.5rem' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: 18 }}>
           Settings
         </Typography>
-        <Typography variant="body2" sx={{ color: '#667085', fontSize: '0.8rem', mb: 2 }}>
+        <Typography variant="body2" sx={{ color: '#667085', fontSize: 12, mb: 2 }}>
           Manage your profile, security settings, system configurations, and data operations
         </Typography>
       </Box>
@@ -70,8 +71,8 @@ const SettingsPage: React.FC = () => {
           scrollButtons="auto"
           sx={{
             '& .MuiTab-root': {
-              fontSize: '0.75rem',
-              minHeight: 48,
+              fontSize: 12,
+              minHeight: 40,
             }
           }}
         >
@@ -79,6 +80,7 @@ const SettingsPage: React.FC = () => {
           <Tab label="Security" {...a11yProps(1)} />
           <Tab label="System Configs" {...a11yProps(2)} />
           <Tab label="Data Management" {...a11yProps(3)} />
+          <Tab label="File Management" {...a11yProps(4)} />
         </Tabs>
       </Box>
 
@@ -96,6 +98,10 @@ const SettingsPage: React.FC = () => {
 
       <TabPanel value={value} index={3}>
         <DataManagement />
+      </TabPanel>
+
+      <TabPanel value={value} index={4}>
+        <FileManagement />
       </TabPanel>
     </Box>
   );

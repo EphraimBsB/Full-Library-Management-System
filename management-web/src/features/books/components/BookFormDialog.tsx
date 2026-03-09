@@ -272,7 +272,7 @@ export const BookFormDialog: React.FC<BookFormDialogProps> = ({ open, onClose, b
       totalCopies: count,
       description: data.description || undefined,
       coverImageUrl: data.coverImageUrl?.trim() || undefined,
-      ebookUrl: data.ebookUrl?.trim() || undefined,
+      ebookUrl: data.ebookUrl?.trim() || null,
       typeId: parseInt(data.typeId),
       sourceId: data.sourceId ? parseInt(data.sourceId) : undefined,
       ddc: data.ddc || undefined,

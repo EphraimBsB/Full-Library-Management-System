@@ -46,7 +46,7 @@ export const InHouseReadings: React.FC = () => {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <Typography sx={{ fontWeight: 700, mb: 1, fontSize: '0.9rem', color: '#101828' }}>In Library Readings</Typography>
+      <Typography sx={{ fontWeight: 600, mb: 1, fontSize: '12px', color: '#101828' }}>In Library Readings</Typography>
       <Divider sx={{ mb: 2 }} />
 
       <Box sx={{ 
@@ -68,7 +68,7 @@ export const InHouseReadings: React.FC = () => {
                 padding: '6px 14px',
                 borderRadius: '100px',
                 cursor: 'pointer',
-                fontSize: '9px',
+                fontSize: '10px',
                 fontWeight: 600,
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 backgroundColor: isSelected ? theme.colors.primary : '#F9FAFB',
@@ -130,7 +130,7 @@ export const InHouseReadings: React.FC = () => {
                   <Typography 
                     sx={{ 
                       fontWeight: 600, 
-                      fontSize: '11px', 
+                      fontSize: '10px', 
                       color: '#101828',
                       mb: 0.1,
                       display: '-webkit-box',

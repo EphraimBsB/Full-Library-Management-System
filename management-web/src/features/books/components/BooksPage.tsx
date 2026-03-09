@@ -103,10 +103,10 @@ export const BooksPage: React.FC = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#101828' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#101828', fontSize: 18 }}>
             Book Management
           </Typography>
-          <Typography variant="body2" sx={{ color: '#667085' }}>
+          <Typography variant="body2" sx={{ color: '#667085', fontSize: 12 }}>
             Manage your library's collection, search, and track availability.
           </Typography>
         </Box>
@@ -151,9 +151,10 @@ export const BooksPage: React.FC = () => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search sx={{ color: '#667085' }} />
+                  <Search sx={{ color: '#667085', fontSize: 16 }} />
                 </InputAdornment>
               ),
+              sx: { fontSize: 12 }
             }}
             sx={{
               flexGrow: 1,
@@ -161,52 +162,52 @@ export const BooksPage: React.FC = () => {
               maxWidth: { xs: '100%', sm: 400 },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '8px',
-                height: '40px',
+                height: '36px',
               },
             }}
           />
 
           <FormControl size="small" sx={{ minWidth: 120, flexShrink: 0 }}>
-            <InputLabel>Subject</InputLabel>
+            <InputLabel sx={{ fontSize: 12 }}>Subject</InputLabel>
             <Select
               value={params.subject}
               label="Subject"
               onChange={(e) => handleFilterChange('subject', e.target.value)}
-              sx={{ borderRadius: '8px', height: '40px' }}
+              sx={{ borderRadius: '8px', height: '36px', fontSize: 12 }}
             >
-              <MenuItem value="">All Subjects</MenuItem>
+              <MenuItem value="" sx={{ fontSize: 12 }}>All Subjects</MenuItem>
               {subjectOptions.map((subject: any) => (
-                <MenuItem key={subject.id} value={subject.name}>{subject.name}</MenuItem>
+                <MenuItem key={subject.id} value={subject.name} sx={{ fontSize: 12 }}>{subject.name}</MenuItem>
               ))}
             </Select>
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 120, flexShrink: 0 }}>
-            <InputLabel>Status</InputLabel>
+            <InputLabel sx={{ fontSize: 12 }}>Status</InputLabel>
             <Select
               value={params.status}
               label="Status"
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              sx={{ borderRadius: '8px', height: '40px' }}
+              sx={{ borderRadius: '8px', height: '36px', fontSize: 12 }}
             >
-              <MenuItem value="">All Status</MenuItem>
-              <MenuItem value="available">Available</MenuItem>
-              <MenuItem value="unavailable">Unavailable</MenuItem>
+              <MenuItem value="" sx={{ fontSize: 12 }}>All Status</MenuItem>
+              <MenuItem value="available" sx={{ fontSize: 12 }}>Available</MenuItem>
+              <MenuItem value="unavailable" sx={{ fontSize: 12 }}>Unavailable</MenuItem>
             </Select>
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 130, flexShrink: 0 }}>
-            <InputLabel>Sort By</InputLabel>
+            <InputLabel sx={{ fontSize: 12 }}>Sort By</InputLabel>
             <Select
               value={params.sortBy}
               label="Sort By"
               onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-              sx={{ borderRadius: '8px', height: '40px' }}
+              sx={{ borderRadius: '8px', height: '36px', fontSize: 12 }}
             >
-              <MenuItem value="createdAt">Newest Added</MenuItem>
-              <MenuItem value="title">Title (A-Z)</MenuItem>
-              <MenuItem value="rating">Top Rated</MenuItem>
-              <MenuItem value="borrowCount">Most Borrowed</MenuItem>
+              <MenuItem value="createdAt" sx={{ fontSize: 12 }}>Newest Added</MenuItem>
+              <MenuItem value="title" sx={{ fontSize: 12 }}>Title (A-Z)</MenuItem>
+              <MenuItem value="rating" sx={{ fontSize: 12 }}>Top Rated</MenuItem>
+              <MenuItem value="borrowCount" sx={{ fontSize: 12 }}>Most Borrowed</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -224,7 +225,7 @@ export const BooksPage: React.FC = () => {
               px: 2,
               py: 0.5,
               borderRadius: '16px',
-              fontSize: '12px',
+              fontSize: '10px',
               fontWeight: 500,
               cursor: 'pointer',
               border: '1px solid',
@@ -249,7 +250,7 @@ export const BooksPage: React.FC = () => {
                 px: 2,
                 py: 0.5,
                 borderRadius: '16px',
-                fontSize: '12px',
+                fontSize: '10px',
                 fontWeight: 500,
                 cursor: 'pointer',
                 border: '1px solid',
@@ -288,11 +289,11 @@ export const BooksPage: React.FC = () => {
             sx={{ 
               display: 'grid', 
               gridTemplateColumns: {
-                xs: 'repeat(3, 1fr)',
-                sm: 'repeat(4, 1fr)',
-                md: 'repeat(5, 1fr)',
-                lg: 'repeat(6, 1fr)',
-                xl: 'repeat(7, 1fr)',
+                xs: 'repeat(2, 1fr)',
+                sm: 'repeat(5, 1fr)',
+                md: 'repeat(6, 1fr)',
+                lg: 'repeat(7, 1fr)',
+                xl: 'repeat(8, 1fr)',
               }, 
               columnGap: '16px', 
               rowGap: '24px',
@@ -332,10 +333,12 @@ export const BooksPage: React.FC = () => {
                 page={params.page} 
                 onChange={handlePageChange}
                 color="primary"
+                size="small"
                 sx={{
                   '& .MuiPaginationItem-root': {
                     borderRadius: '8px',
-                    fontWeight: 600,
+                    fontWeight: 500,
+                    fontSize: 12,
                   }
                 }}
               />

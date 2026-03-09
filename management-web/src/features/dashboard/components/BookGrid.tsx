@@ -55,13 +55,13 @@ export const BookGrid: React.FC = () => {
   return (
     <Box sx={{ width: '100%', mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '14px' }}>BOOKS</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '12px' }}>BOOKS</Typography>
         <Tabs
           value={tabIndex}
           onChange={handleChange}
           aria-label="book tabs"
           sx={{
-            minHeight: 40,
+            minHeight: 32,
             '& .MuiTabs-indicator': { display: 'none' },
             '& .MuiTabs-flexContainer': { gap: 1 }
           }}
@@ -71,8 +71,8 @@ export const BookGrid: React.FC = () => {
             sx={{
               textTransform: 'none',
               fontWeight: 500,
-              minHeight: 32,
-              fontSize: '12px',
+              minHeight: 28,
+              fontSize: '11px',
               px: 1.5,
               py: 0.75,
               borderRadius: '16px',
@@ -90,8 +90,8 @@ export const BookGrid: React.FC = () => {
             sx={{
               textTransform: 'none',
               fontWeight: 500,
-              minHeight: 32,
-              fontSize: '12px',
+              minHeight: 28,
+              fontSize: '11px',
               px: 1.5,
               py: 0.75,
               borderRadius: '16px',
@@ -109,8 +109,8 @@ export const BookGrid: React.FC = () => {
             sx={{
               textTransform: 'none',
               fontWeight: 500,
-              minHeight: 32,
-              fontSize: '12px',
+              minHeight: 28,
+              fontSize: '11px',
               px: 1.5,
               py: 0.75,
               borderRadius: '16px',

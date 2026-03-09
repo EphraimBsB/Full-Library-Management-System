@@ -24,10 +24,37 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
 
-    if (!user || !user.role) {
+    if (!user) {
+      throw new ForbiddenException('No user found');
+    }
+
+    if (!user.role) {
       throw new ForbiddenException('No user role found');
     }
 
-    return requiredRoles.some((role) => user.role === role);
+    // Log for debugging - handle both string and object role
+    let userRole: string;
+    if (typeof user.role === 'string') {
+      userRole = user.role;
+    } else if (user.role && typeof user.role === 'object' && user.role.name) {
+      userRole = user.role.name;
+    } else {
+      // console.log(`RolesGuard: Unexpected role structure: ${JSON.stringify(user.role)}`);
+      throw new ForbiddenException('Invalid role structure');
+    }
+
+    // console.log(`RolesGuard: User role is '${userRole}', required roles are: ${requiredRoles.join(', ')}`);
+
+    const hasRole = requiredRoles.some((role) => {
+      // console.log(`Checking if user.role '${userRole}' === requiredRole '${role}': ${userRole === role}`);
+      // Case-insensitive comparison
+      return userRole.toLowerCase() === role.toLowerCase();
+    });
+
+    if (!hasRole) {
+      throw new ForbiddenException(`Access denied. Required roles: ${requiredRoles.join(', ')}. User role: ${userRole}`);
+    }
+
+    return true;
   }
 }

@@ -407,7 +407,7 @@ const DataManagement: React.FC = () => {
   return (
     <Container maxWidth="lg">
       <Paper sx={{ padding: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontSize: '1.8rem' }}>
+        <Typography variant="h4" component="h1" gutterBottom sx={{ fontSize: 18, fontWeight: 600 }}>
           Data Management
         </Typography>
         
@@ -420,8 +420,8 @@ const DataManagement: React.FC = () => {
             scrollButtons="auto"
             sx={{
               '& .MuiTab-root': {
-                fontSize: '0.75rem',
-                minHeight: 48,
+                fontSize: 12,
+                minHeight: 40,
               }
             }}
           >
@@ -431,10 +431,10 @@ const DataManagement: React.FC = () => {
         </Box>
 
         <TabPanel value={value} index={0}>
-          <Typography variant="h6" gutterBottom sx={{ fontSize: '0.9rem' }}>
+          <Typography variant="h6" gutterBottom sx={{ fontSize: 14, fontWeight: 600 }}>
             Import Books from Excel
           </Typography>
-          <Typography variant="body2" gutterBottom sx={{ fontSize: '0.75rem' }}>
+          <Typography variant="body2" gutterBottom sx={{ fontSize: 12 }}>
             Upload an Excel file containing book data to bulk import into the system. The file should contain columns for title, author, ISBN, publisher, etc.
           </Typography>
           
@@ -442,7 +442,7 @@ const DataManagement: React.FC = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <Card>
                 <CardContent>
-                  <Typography variant="subtitle2" gutterBottom sx={{ fontSize: '0.8rem' }}>
+                  <Typography variant="subtitle2" gutterBottom sx={{ fontSize: 11 }}>
                     Upload Excel File
                   </Typography>
                   <TextField
@@ -455,12 +455,20 @@ const DataManagement: React.FC = () => {
                     }}
                     disabled={importLoading}
                     helperText="Maximum file size: 10MB"
-                    sx={{ fontSize: '0.75rem' }}
+                    sx={{ 
+                      fontSize: 12,
+                      '& .MuiFormLabel-root': {
+                        fontSize: 11
+                      },
+                      '& .MuiFormHelperText-root': {
+                        fontSize: 10
+                      }
+                    }}
                   />
                   {uploadProgress > 0 && (
                     <Box sx={{ mt: 2 }}>
                       <LinearProgress variant="determinate" value={uploadProgress} />
-                      <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                      <Typography variant="caption" sx={{ mt: 1, display: 'block', fontSize: 10 }}>
                         Uploading: {uploadProgress}%
                       </Typography>
                     </Box>
@@ -472,7 +480,7 @@ const DataManagement: React.FC = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <Card>
                 <CardContent>
-                  <Typography variant="subtitle2" gutterBottom sx={{ fontSize: '0.8rem' }}>
+                  <Typography variant="subtitle2" gutterBottom sx={{ fontSize: 11 }}>
                     Import Template
                   </Typography>
                   <Button
@@ -480,11 +488,11 @@ const DataManagement: React.FC = () => {
                     fullWidth
                     startIcon={<DownloadIcon />}
                     onClick={handleDownloadTemplate}
-                    sx={{ fontSize: '0.75rem' }}
+                    sx={{ fontSize: 12 }}
                   >
                     Download Template
                   </Button>
-                  <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                  <Typography variant="caption" sx={{ mt: 1, display: 'block', fontSize: 10 }}>
                     Download the Excel template with required columns
                   </Typography>
                 </CardContent>
@@ -496,7 +504,7 @@ const DataManagement: React.FC = () => {
             <Box sx={{ mt: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                 <CircularProgress size={20} />
-                <Typography sx={{ fontSize: '0.75rem' }}>
+                <Typography sx={{ fontSize: 12 }}>
                   {importProgress.message || 'Processing import...'}
                 </Typography>
               </Box>
@@ -505,7 +513,7 @@ const DataManagement: React.FC = () => {
               {(importProgress.totalRows > 0 || importProgress.progress > 0) && (
                 <Card sx={{ mb: 2 }}>
                   <CardContent sx={{ py: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom sx={{ fontSize: '0.8rem' }}>
+                    <Typography variant="subtitle2" gutterBottom sx={{ fontSize: 11 }}>
                       Import Progress
                     </Typography>
                     
@@ -515,48 +523,48 @@ const DataManagement: React.FC = () => {
                         value={importProgress.progress} 
                         sx={{ mb: 1 }}
                       />
-                      <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                      <Typography variant="caption" sx={{ fontSize: 10 }}>
                         {importProgress.progress}% Complete
                       </Typography>
                     </Box>
 
-                    <Grid container spacing={2} sx={{ fontSize: '0.75rem' }}>
+                    <Grid container spacing={2} sx={{ fontSize: 11 }}>
                       <Grid size={{ xs: 6, sm: 3 }}>
                         <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h6" color="primary" sx={{ fontSize: '1rem' }}>
+                          <Typography variant="h6" color="primary" sx={{ fontSize: 14 }}>
                             {importProgress.totalRows}
                           </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                          <Typography variant="caption" sx={{ fontSize: 10 }}>
                             Total Rows
                           </Typography>
                         </Box>
                       </Grid>
                       <Grid size={{ xs: 6, sm: 3 }}>
                         <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h6" color="info.main" sx={{ fontSize: '1rem' }}>
+                          <Typography variant="h6" color="info.main" sx={{ fontSize: 14 }}>
                             {importProgress.currentRow}
                           </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                          <Typography variant="caption" sx={{ fontSize: 10 }}>
                             Current Row
                           </Typography>
                         </Box>
                       </Grid>
                       <Grid size={{ xs: 6, sm: 3 }}>
                         <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h6" color="success.main" sx={{ fontSize: '1rem' }}>
+                          <Typography variant="h6" color="success.main" sx={{ fontSize: 14 }}>
                             {importProgress.importedRows}
                           </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                          <Typography variant="caption" sx={{ fontSize: 10 }}>
                             Imported
                           </Typography>
                         </Box>
                       </Grid>
                       <Grid size={{ xs: 6, sm: 3 }}>
                         <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h6" color="error.main" sx={{ fontSize: '1rem' }}>
+                          <Typography variant="h6" color="error.main" sx={{ fontSize: 14 }}>
                             {importProgress.failedRows}
                           </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                          <Typography variant="caption" sx={{ fontSize: 10 }}>
                             Failed
                           </Typography>
                         </Box>
@@ -564,7 +572,7 @@ const DataManagement: React.FC = () => {
                     </Grid>
 
                     {importProgress.type === 'processing-row' && importProgress.rowNumber && (
-                      <Typography variant="caption" sx={{ mt: 1, display: 'block', fontSize: '0.7rem' }}>
+                      <Typography variant="caption" sx={{ mt: 1, display: 'block', fontSize: 10 }}>
                         Currently processing: Row {importProgress.rowNumber}
                       </Typography>
                     )}
@@ -572,7 +580,7 @@ const DataManagement: React.FC = () => {
                 </Card>
               )}
               
-              <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+              <Typography variant="caption" sx={{ fontSize: 10 }}>
                 This may take a few minutes for large files. Real-time updates will appear above.
               </Typography>
             </Box>
@@ -580,45 +588,55 @@ const DataManagement: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={value} index={1}>
-          <Typography variant="h6" gutterBottom sx={{ fontSize: '0.9rem' }}>
+          <Typography variant="h6" gutterBottom sx={{ fontSize: 14, fontWeight: 600 }}>
             Export Library Data
           </Typography>
-          <Typography variant="body2" gutterBottom sx={{ fontSize: '0.75rem' }}>
+          <Typography variant="body2" gutterBottom sx={{ fontSize: 12 }}>
             Export various types of library data in different formats for analysis or backup purposes.
           </Typography>
           
           <Grid container spacing={3} sx={{ mt: 3 }}>
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel sx={{ fontSize: '0.75rem' }}>Export Type</InputLabel>
+                <InputLabel sx={{ fontSize: 11 }}>Export Type</InputLabel>
                 <Select
                   value={exportType}
                   label="Export Type"
                   onChange={(e) => setExportType(e.target.value)}
-                  sx={{ fontSize: '0.75rem' }}
+                  sx={{ 
+                    fontSize: 12,
+                    '& .MuiSelect-select': {
+                      fontSize: 11
+                    }
+                  }}
                 >
-                  <MenuItem value="books" sx={{ fontSize: '0.75rem' }}>Books</MenuItem>
-                  <MenuItem value="users" sx={{ fontSize: '0.75rem' }}>Users</MenuItem>
-                  <MenuItem value="loans" sx={{ fontSize: '0.75rem' }}>Loans</MenuItem>
-                  <MenuItem value="categories" sx={{ fontSize: '0.75rem' }}>Categories</MenuItem>
-                  <MenuItem value="subjects" sx={{ fontSize: '0.75rem' }}>Subjects</MenuItem>
-                  <MenuItem value="publishers" sx={{ fontSize: '0.75rem' }}>Publishers</MenuItem>
+                  <MenuItem value="books" sx={{ fontSize: 11 }}>Books</MenuItem>
+                  <MenuItem value="users" sx={{ fontSize: 11 }}>Users</MenuItem>
+                  <MenuItem value="loans" sx={{ fontSize: 11 }}>Loans</MenuItem>
+                  <MenuItem value="categories" sx={{ fontSize: 11 }}>Categories</MenuItem>
+                  <MenuItem value="subjects" sx={{ fontSize: 11 }}>Subjects</MenuItem>
+                  <MenuItem value="publishers" sx={{ fontSize: 11 }}>Publishers</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel sx={{ fontSize: '0.75rem' }}>Export Format</InputLabel>
+                <InputLabel sx={{ fontSize: 11 }}>Export Format</InputLabel>
                 <Select
                   value={exportFormat}
                   label="Export Format"
                   onChange={(e) => setExportFormat(e.target.value)}
-                  sx={{ fontSize: '0.75rem' }}
+                  sx={{ 
+                    fontSize: 12,
+                    '& .MuiSelect-select': {
+                      fontSize: 11
+                    }
+                  }}
                 >
-                  <MenuItem value="excel" sx={{ fontSize: '0.75rem' }}>Excel (.xlsx)</MenuItem>
-                  <MenuItem value="csv" sx={{ fontSize: '0.75rem' }}>CSV (.csv)</MenuItem>
-                  <MenuItem value="json" sx={{ fontSize: '0.75rem' }}>JSON (.json)</MenuItem>
+                  <MenuItem value="excel" sx={{ fontSize: 11 }}>Excel (.xlsx)</MenuItem>
+                  <MenuItem value="csv" sx={{ fontSize: 11 }}>CSV (.csv)</MenuItem>
+                  <MenuItem value="json" sx={{ fontSize: 11 }}>JSON (.json)</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -631,7 +649,7 @@ const DataManagement: React.FC = () => {
                 disabled={exportLoading}
                 startIcon={exportLoading ? <CircularProgress size={20} /> : <DownloadIcon />}
                 onClick={handleExport}
-                sx={{ fontSize: '0.75rem' }}
+                sx={{ fontSize: 12 }}
               >
                 {exportLoading ? 'Exporting...' : `Export ${exportType.toUpperCase()}`}
               </Button>
@@ -647,7 +665,7 @@ const DataManagement: React.FC = () => {
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle sx={{ fontSize: '0.9rem' }}>
+        <DialogTitle sx={{ fontSize: 14, fontWeight: 600 }}>
           Import Results Summary
           <IconButton
             aria-label="close"

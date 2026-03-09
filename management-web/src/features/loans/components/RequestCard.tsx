@@ -178,13 +178,13 @@ const handleCancelRenewalApprove = () => {
               />
             </Box>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="body1" sx={{ fontWeight: 700, color: '#101828', fontSize: '0.8rem', mb: 0.0 }}>
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#101828', fontSize: 11, mb: 0.0 }}>
                 {request.book?.title || 'Unknown Book'}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#667085', fontSize: '11px' }}>
+              <Typography variant="caption" sx={{ color: '#667085', fontSize: 9 }}>
                 {request.book?.author || 'Unknown Author'}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#667085', fontSize: '11px', display: 'block', mt: 0.5 }}>
+              <Typography variant="caption" sx={{ color: '#667085', fontSize: 9, display: 'block', mt: 0.5 }}>
                 {isRenewal ? 'Renewal Request' : 'Borrow Request'}
               </Typography>
             </Box>
@@ -194,8 +194,8 @@ const handleCancelRenewalApprove = () => {
               label={request.status}
               size="small"
               sx={{
-                height: '18px',
-                fontSize: '8px',
+                height: '16px',
+                fontSize: 7,
                 fontWeight: 600,
                 backgroundColor: getStatusColor(request.status).bg,
                 color: getStatusColor(request.status).color,
@@ -227,7 +227,7 @@ const handleCancelRenewalApprove = () => {
                 <Typography
                   variant="body2"
                   sx={{
-                    fontSize: '10px',
+                    fontSize: 9,
                     fontWeight: 600,
                     color: '#101828',
                     lineHeight: 1.3,
@@ -240,7 +240,7 @@ const handleCancelRenewalApprove = () => {
                   <Typography
                     variant="caption"
                     sx={{
-                      fontSize: '9px',
+                      fontSize: 7,
                       color: '#667085',
                       lineHeight: 1.2,
                       mt: 0.2,
@@ -522,7 +522,7 @@ const InfoRow: React.FC<{
     <Typography
       variant="body2"
       sx={{
-        fontSize: '11px',
+        fontSize: 8,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',

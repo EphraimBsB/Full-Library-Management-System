@@ -222,10 +222,10 @@ export const LoansPage: React.FC = () => {
     <Box sx={{ p: 0 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, fontSize: '1.5rem' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: 18 }}>
           Loans Management
         </Typography>
-        <Typography variant="body2" sx={{ color: '#667085', fontSize: '0.8rem' }}>
+        <Typography variant="body2" sx={{ color: '#667085', fontSize: 12 }}>
           Manage loan requests, track borrowed books, and handle renewals
         </Typography>
       </Box>
@@ -260,11 +260,13 @@ export const LoansPage: React.FC = () => {
             flexGrow: 1,
             '& .MuiOutlinedInput-root': {
               borderRadius: '8px',
-              backgroundColor: 'white'
+              backgroundColor: 'white',
+              height: '36px'
             }
           }}
           InputProps={{
-            startAdornment: <Search sx={{ mr: 1, fontSize: 14 }} />,
+            startAdornment: <Search sx={{ mr: 1, fontSize: 16 }} />,
+            sx: { fontSize: 12 }
           }}
         />
         
@@ -272,7 +274,7 @@ export const LoansPage: React.FC = () => {
           variant="outlined"
           startIcon={<FilterList />}
           onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
-          sx={{ fontSize: '0.7rem' }}
+          sx={{ fontSize: 12 }}
         >
           Filter
         </Button>
@@ -281,7 +283,7 @@ export const LoansPage: React.FC = () => {
           variant="outlined"
           startIcon={<Sort />}
           onClick={(e) => setSortMenuAnchor(e.currentTarget)}
-          sx={{ fontSize: '0.7rem' }}
+          sx={{ fontSize: 12 }}
         >
           Sort
         </Button>
@@ -301,11 +303,11 @@ export const LoansPage: React.FC = () => {
         open={Boolean(filterMenuAnchor)}
         onClose={() => setFilterMenuAnchor(null)}
       >
-        <MenuItem onClick={() => { setSelectedStatus(''); setFilterMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSelectedStatus(''); setFilterMenuAnchor(null); }} sx={{ fontSize: 12 }}>
           All Statuses
         </MenuItem>
         {Object.values(LoanStatus).map((status) => (
-          <MenuItem key={status} onClick={() => { setSelectedStatus(status); setFilterMenuAnchor(null); }}>
+          <MenuItem key={status} onClick={() => { setSelectedStatus(status); setFilterMenuAnchor(null); }} sx={{ fontSize: 12 }}>
             {status}
           </MenuItem>
         ))}
@@ -317,16 +319,16 @@ export const LoansPage: React.FC = () => {
         open={Boolean(sortMenuAnchor)}
         onClose={() => setSortMenuAnchor(null)}
       >
-        <MenuItem onClick={() => { setSortBy('borrowedAt'); setSortOrder('desc'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortBy('borrowedAt'); setSortOrder('desc'); setSortMenuAnchor(null); }} sx={{ fontSize: 12 }}>
           Newest First
         </MenuItem>
-        <MenuItem onClick={() => { setSortBy('borrowedAt'); setSortOrder('asc'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortBy('borrowedAt'); setSortOrder('asc'); setSortMenuAnchor(null); }} sx={{ fontSize: 12 }}>
           Oldest First
         </MenuItem>
-        <MenuItem onClick={() => { setSortBy('dueDate'); setSortOrder('asc'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortBy('dueDate'); setSortOrder('asc'); setSortMenuAnchor(null); }} sx={{ fontSize: 12 }}>
           Due Date (Ascending)
         </MenuItem>
-        <MenuItem onClick={() => { setSortBy('dueDate'); setSortOrder('desc'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortBy('dueDate'); setSortOrder('desc'); setSortMenuAnchor(null); }} sx={{ fontSize: 12 }}>
           Due Date (Descending)
         </MenuItem>
       </Menu>
@@ -334,10 +336,10 @@ export const LoansPage: React.FC = () => {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 0 }}>
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-          <Tab label="Pending Requests" sx={{ fontSize: '0.8rem' }} />
-          <Tab label="All Loans" sx={{ fontSize: '0.8rem' }} />
-          <Tab label="Overdue" sx={{ fontSize: '0.8rem' }} />
-          <Tab label="Rejected" sx={{ fontSize: '0.8rem' }} />
+          <Tab label="Pending Requests" sx={{ fontSize: 12 }} />
+          <Tab label="All Loans" sx={{ fontSize: 12 }} />
+          <Tab label="Overdue" sx={{ fontSize: 12 }} />
+          <Tab label="Rejected" sx={{ fontSize: 12 }} />
         </Tabs>
       </Box>
 
@@ -356,7 +358,7 @@ export const LoansPage: React.FC = () => {
             {/* Borrow Requests Section */}
             {pendingRequests && pendingRequests.length > 0 && (
               <>
-                <Typography variant="h6" sx={{ mb: 2, fontSize: '0.9rem', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: 14, fontWeight: 600 }}>
                   Book Borrow Requests ({pendingRequests.length})
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>
@@ -377,7 +379,7 @@ export const LoansPage: React.FC = () => {
             {/* Renewal Requests Section */}
             {pendingRenewalRequests && pendingRenewalRequests.length > 0 && (
               <>
-                <Typography variant="h6" sx={{ mb: 2, fontSize: '0.9rem', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: 14, fontWeight: 600 }}>
                   Book Renewal Requests ({pendingRenewalRequests.length})
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2 }}>
@@ -444,7 +446,7 @@ export const LoansPage: React.FC = () => {
             {/* Rejected Borrow Requests Section */}
             {rejectedRequests?.borrowRequests && rejectedRequests.borrowRequests.length > 0 && (
               <>
-                <Typography variant="h6" sx={{ mb: 2, fontSize: '0.9rem', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: 14, fontWeight: 600 }}>
                   Rejected Borrow Requests ({rejectedRequests.borrowRequests.length})
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>
@@ -465,7 +467,7 @@ export const LoansPage: React.FC = () => {
             {/* Rejected Renewal Requests Section */}
             {rejectedRequests?.renewalRequests && rejectedRequests.renewalRequests.length > 0 && (
               <>
-                <Typography variant="h6" sx={{ mb: 2, fontSize: '0.9rem', fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: 14, fontWeight: 600 }}>
                   Rejected Renewal Requests ({rejectedRequests.renewalRequests.length})
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2 }}>

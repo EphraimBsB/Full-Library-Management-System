@@ -59,12 +59,12 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
         flexShrink: 0,
       }}
     >
-      {React.cloneElement(icon as React.ReactElement<SvgIconProps>, { sx: { fontSize: 20 } })}
+      {React.cloneElement(icon as React.ReactElement<SvgIconProps>, { sx: { fontSize: 16 } })}
     </Box>
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
       <Typography
         sx={{
-          fontSize: '16px',
+          fontSize: '14px',
           fontWeight: 600,
           color: '#101828',
           lineHeight: 1.2,
@@ -74,7 +74,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
       </Typography>
       <Typography
         sx={{
-          fontSize: '12px',
+          fontSize: '10px',
           color: '#667085',
           mt: 0.25,
         }}

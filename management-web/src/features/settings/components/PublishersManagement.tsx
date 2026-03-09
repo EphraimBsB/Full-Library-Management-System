@@ -203,14 +203,14 @@ const PublishersManagement: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontSize: '0.9rem' }}>
+        <Typography variant="h6" gutterBottom sx={{ fontSize: 14, fontWeight: 600 }}>
           Publishers Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
-          sx={{ fontSize: '0.75rem' }}
+          sx={{ fontSize: 12 }}
         >
           Add Publisher
         </Button>
@@ -223,46 +223,56 @@ const PublishersManagement: React.FC = () => {
         size="small"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 2, 
+          fontSize: 12,
+          '& .MuiFormLabel-root': {
+            fontSize: 11
+          },
+          '& .MuiInputBase-input': {
+            fontSize: 11
+          }
+        }}
       />
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Phone</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Address</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Phone</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Address</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
-                  <Typography sx={{ fontSize: '0.75rem' }}>Loading...</Typography>
+                <TableCell colSpan={6} align="center">
+                  <Typography sx={{ fontSize: 11 }}>Loading...</Typography>
                 </TableCell>
               </TableRow>
             ) : publishers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
-                  <Typography sx={{ fontSize: '0.75rem' }}>No publishers found</Typography>
+                <TableCell colSpan={6} align="center">
+                  <Typography sx={{ fontSize: 11 }}>No publishers found</Typography>
                 </TableCell>
               </TableRow>
             ) : (
               publishers.map((publisher) => (
                 <TableRow key={publisher.id}>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{publisher.name}</TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{publisher.email || '-'}</TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{publisher.phone || '-'}</TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{publisher.address || '-'}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>{publisher.name}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>{publisher.email || '-'}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>{publisher.phone || '-'}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>{publisher.address || '-'}</TableCell>
                   <TableCell>
                     <Chip
                       label={publisher.isActive ? 'Active' : 'Inactive'}
                       color={publisher.isActive ? 'success' : 'default'}
                       size="small"
+                      sx={{ fontSize: 10 }}
                     />
                   </TableCell>
                   <TableCell>
