@@ -110,6 +110,15 @@ const ProfileSettings: React.FC = () => {
                   onChange={handleChange}
                   required
                   size="small"
+                  sx={{ 
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: 11
+                    }
+                  }}
                 />
               </Grid>
               
@@ -122,6 +131,15 @@ const ProfileSettings: React.FC = () => {
                   onChange={handleChange}
                   required
                   size="small"
+                  sx={{ 
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: 11
+                    }
+                  }}
                 />
               </Grid>
               
@@ -135,6 +153,15 @@ const ProfileSettings: React.FC = () => {
                   onChange={handleChange}
                   required
                   size="small"
+                  sx={{ 
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: 11
+                    }
+                  }}
                 />
               </Grid>
               
@@ -146,6 +173,15 @@ const ProfileSettings: React.FC = () => {
                   value={formData.degree}
                   onChange={handleChange}
                   size="small"
+                  sx={{ 
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: 11
+                    }
+                  }}
                 />
               </Grid>
               
@@ -157,6 +193,15 @@ const ProfileSettings: React.FC = () => {
                   value={formData.semester}
                   onChange={handleChange}
                   size="small"
+                  sx={{ 
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiInputBase-input': {
+                      fontSize: 11
+                    }
+                  }}
                 />
               </Grid>
               
@@ -168,7 +213,7 @@ const ProfileSettings: React.FC = () => {
                   fullWidth
                   disabled={loading}
                   startIcon={loading ? <CircularProgress size={20} /> : null}
-                  sx={{ fontSize: '0.85rem', py: 1 }}
+                  sx={{ fontSize: 12, py: 1 }}
                 >
                   {loading ? 'Updating...' : 'Update Profile'}
                 </Button>

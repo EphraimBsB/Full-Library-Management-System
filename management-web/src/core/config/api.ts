@@ -22,6 +22,7 @@ export const API_CONFIG = {
       LIST: '/users',
       CREATE: '/users',
       UPDATE: '/users/:id',
+      SEARCH: '/users/search',
     },
     CATEGORIES: {
       LIST: '/categories',

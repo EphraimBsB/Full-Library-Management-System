@@ -108,7 +108,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
           position: 'absolute',
           top: 8,
           right: 8,
-          fontSize: '9px',
+          fontSize: '8px',
           fontWeight: 500,
           color: book.availableCopies > 0 ? '#027A48' : '#B42318',
           backgroundColor: book.availableCopies > 0 ? '#ECFDF3' : '#FEF3F2',
@@ -145,11 +145,11 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
             border: '1px solid rgba(255,255,255,0.1)'
           }}
         >
-          <Star sx={{ color: '#FFD700', fontSize: 14 }} />
+          <Star sx={{ color: '#FFD700', fontSize: 12 }} />
           <Typography
             sx={{
               color: 'white',
-              fontSize: '11px',
+              fontSize: '9px',
               fontWeight: 'bold',
             }}
           >
@@ -178,8 +178,8 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
       >
         <Typography
           sx={{
-            fontSize: '12px',
-            fontWeight: 700,
+            fontSize: '10px',
+            fontWeight: 600,
             color: 'white',
             lineHeight: 1.2,
             mb: 0.5,
@@ -195,7 +195,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onTap }) => {
         </Typography>
         <Typography
           sx={{
-            fontSize: '10px',
+            fontSize: '8px',
             color: 'rgba(255,255,255,0.8)',
             fontWeight: 500,
             whiteSpace: 'nowrap',

@@ -200,14 +200,14 @@ const ShelvesManagement: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontSize: '0.9rem' }}>
+        <Typography variant="h6" gutterBottom sx={{ fontSize: 14, fontWeight: 600 }}>
           Shelves Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
-          sx={{ fontSize: '0.75rem' }}
+          sx={{ fontSize: 12 }}
         >
           Add Shelf
         </Button>
@@ -220,44 +220,54 @@ const ShelvesManagement: React.FC = () => {
         size="small"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 2, 
+          fontSize: 12,
+          '& .MuiFormLabel-root': {
+            fontSize: 11
+          },
+          '& .MuiInputBase-input': {
+            fontSize: 11
+          }
+        }}
       />
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Description</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Location</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Description</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Location</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  <Typography sx={{ fontSize: '0.75rem' }}>Loading...</Typography>
+                <TableCell colSpan={5} align="center">
+                  <Typography sx={{ fontSize: 11 }}>Loading...</Typography>
                 </TableCell>
               </TableRow>
             ) : shelves.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  <Typography sx={{ fontSize: '0.75rem' }}>No shelves found</Typography>
+                <TableCell colSpan={5} align="center">
+                  <Typography sx={{ fontSize: 11 }}>No shelves found</Typography>
                 </TableCell>
               </TableRow>
             ) : (
               shelves.map((shelf) => (
                 <TableRow key={shelf.id}>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{shelf.name}</TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{shelf.description || '-'}</TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{shelf.location?.name || '-'}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>{shelf.name}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>{shelf.description || '-'}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>{shelf.location?.name || '-'}</TableCell>
                   <TableCell>
                     <Chip
                       label={shelf.isActive ? 'Active' : 'Inactive'}
                       color={shelf.isActive ? 'success' : 'default'}
                       size="small"
+                      sx={{ fontSize: 10 }}
                     />
                   </TableCell>
                   <TableCell>

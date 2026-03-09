@@ -74,10 +74,10 @@ export const MembersPage: React.FC = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, fontSize: '1.5rem' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: 18 }}>
             Library Members
           </Typography>
-          <Typography variant="body1" sx={{ color: '#667085', fontSize: '0.8rem' }}>
+          <Typography variant="body2" sx={{ color: '#667085', fontSize: 12 }}>
             Manage and monitor your library's community.
           </Typography>
         </Box>
@@ -113,15 +113,17 @@ export const MembersPage: React.FC = () => {
             flexGrow: 1,
             '& .MuiOutlinedInput-root': {
               borderRadius: '8px',
-              backgroundColor: 'white'
+              backgroundColor: 'white',
+              height: '36px'
             }
           }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <Search sx={{ color: '#667085', fontSize: 18 }} />
+                <Search sx={{ color: '#667085', fontSize: 16 }} />
               </InputAdornment>
             ),
+            sx: { fontSize: 12 }
           }}
         />
         
@@ -136,7 +138,7 @@ export const MembersPage: React.FC = () => {
             borderColor: '#D0D5DD',
             backgroundColor: 'white',
             fontWeight: 600,
-            fontSize: '0.85rem'
+            fontSize: 12
           }}
         >
           Filter
@@ -153,7 +155,7 @@ export const MembersPage: React.FC = () => {
             borderColor: '#D0D5DD',
             backgroundColor: 'white',
             fontWeight: 600,
-            fontSize: '0.85rem'
+            fontSize: 12
           }}
         >
           Sort
@@ -219,15 +221,15 @@ export const MembersPage: React.FC = () => {
       >
         <MenuItem onClick={() => { setFilter('all'); setFilterMenuAnchor(null); }}>
           <ListItemIcon>{filter === 'all' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>All Members</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>All Members</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { setFilter('active'); setFilterMenuAnchor(null); }}>
           <ListItemIcon>{filter === 'active' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>Active Only</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>Active Only</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { setFilter('inactive'); setFilterMenuAnchor(null); }}>
           <ListItemIcon>{filter === 'inactive' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>Inactive Only</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>Inactive Only</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -240,24 +242,24 @@ export const MembersPage: React.FC = () => {
       >
         <MenuItem onClick={() => { setSortBy('firstName'); setSortMenuAnchor(null); }}>
           <ListItemIcon>{sortBy === 'firstName' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>Name</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>Name</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { setSortBy('joinDate'); setSortMenuAnchor(null); }}>
           <ListItemIcon>{sortBy === 'joinDate' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>Join Date</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>Join Date</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { setSortBy('rollNumber'); setSortMenuAnchor(null); }}>
           <ListItemIcon>{sortBy === 'rollNumber' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>Roll Number</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>Roll Number</ListItemText>
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => { setSortOrder('asc'); setSortMenuAnchor(null); }}>
           <ListItemIcon>{sortOrder === 'asc' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>Ascending</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>Ascending</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { setSortOrder('desc'); setSortMenuAnchor(null); }}>
           <ListItemIcon>{sortOrder === 'desc' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText>Descending</ListItemText>
+          <ListItemText sx={{ fontSize: 12 }}>Descending</ListItemText>
         </MenuItem>
       </Menu>
 

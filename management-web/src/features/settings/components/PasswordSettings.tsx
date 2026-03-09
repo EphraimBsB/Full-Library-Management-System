@@ -51,7 +51,7 @@ const PasswordSettings: React.FC = () => {
 
       setMessage('Password changed successfully!');
       setMessageType('success');
-      
+
       // Clear form
       setFormData({
         currentPassword: '',
@@ -72,18 +72,17 @@ const PasswordSettings: React.FC = () => {
 
   return (
     <Box>
-      {/* <Typography variant="h5" gutterBottom sx={{ fontSize: '1.3rem' }}>
-        change Password
-      </Typography> */}
-      
       <Card sx={{ maxWidth: 600, margin: '0 auto' }}>
         <CardContent>
-          <Typography variant="body2" color="textSecondary" gutterBottom>
+          <Typography variant="h6" sx={{ fontSize: 14, fontWeight: 600 }}>
+            Change Password
+          </Typography>
+          <Typography color="textSecondary" gutterBottom sx={{ fontSize: 11 }} mb={2}>
             Change your password to keep your account secure.
           </Typography>
-          
+
           <Box component="form" onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
@@ -93,9 +92,19 @@ const PasswordSettings: React.FC = () => {
                   value={formData.currentPassword}
                   onChange={handleChange}
                   required
+                  size="small"
+                  sx={{
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: 10
+                    }
+                  }}
                 />
               </Grid>
-              
+
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
@@ -105,10 +114,20 @@ const PasswordSettings: React.FC = () => {
                   value={formData.newPassword}
                   onChange={handleChange}
                   required
+                  size="small"
+                  sx={{
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: 10
+                    }
+                  }}
                   helperText="Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character"
                 />
               </Grid>
-              
+
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
@@ -118,11 +137,21 @@ const PasswordSettings: React.FC = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
+                  size="small"
+                  sx={{
+                    fontSize: 12,
+                    '& .MuiFormLabel-root': {
+                      fontSize: 11
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: 10
+                    }
+                  }}
                   error={formData.confirmPassword !== '' && formData.newPassword !== formData.confirmPassword}
                   helperText={formData.confirmPassword !== '' && formData.newPassword !== formData.confirmPassword ? 'Passwords do not match' : ''}
                 />
               </Grid>
-              
+
               <Grid size={{ xs: 12 }}>
                 <Button
                   type="submit"
@@ -131,6 +160,7 @@ const PasswordSettings: React.FC = () => {
                   fullWidth
                   disabled={loading || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
                   startIcon={loading ? <CircularProgress size={20} /> : null}
+                  sx={{ fontSize: 12, py: 1 }}
                 >
                   {loading ? 'Changing Password...' : 'Change Password'}
                 </Button>

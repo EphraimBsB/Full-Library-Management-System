@@ -19,7 +19,7 @@ export const ActiveMembers: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%', p: 2, bgcolor: 'white' }}>
-      <Typography sx={{ fontWeight: 700, mb: 1, fontSize: '0.9rem', color: '#101828' }}>Most Active Members</Typography>
+      <Typography sx={{ fontWeight: 600, mb: 1, fontSize: '12px', color: '#101828' }}>Most Active Members</Typography>
       <Divider sx={{ mb: 2 }} />
       
       {isLoading ? (
@@ -28,11 +28,11 @@ export const ActiveMembers: React.FC = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {activeUsers.map((user) => (
                 <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                     <Avatar sx={{ width: 32, height: 32, bgcolor: '#F9FAFB', color: '#667085', fontSize: '11px', fontWeight: 600 }}>
+                     <Avatar sx={{ width: 32, height: 32, bgcolor: '#F9FAFB', color: '#667085', fontSize: '10px', fontWeight: 600 }}>
                          {user.firstName[0]}
                      </Avatar>
                      <Box sx={{ flexGrow: 1 }}>
-                         <Typography sx={{ fontWeight: 600, fontSize: '11px', color: '#101828' }}>
+                         <Typography sx={{ fontWeight: 600, fontSize: '10px', color: '#101828' }}>
                              {user.firstName} {user.lastName}
                          </Typography>
                          <Typography sx={{ fontSize: '9px', color: '#667085', fontWeight: 500 }}>

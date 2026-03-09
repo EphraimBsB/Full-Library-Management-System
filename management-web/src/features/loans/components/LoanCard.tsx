@@ -137,9 +137,9 @@ const isOverdue = loan.status === LoanStatus.OVERDUE;
             <Typography
               variant="body1"
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 color: '#101828',
-                fontSize: '0.8rem',
+                fontSize: 11,
                 mb: 0.5,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -155,7 +155,7 @@ const isOverdue = loan.status === LoanStatus.OVERDUE;
               variant="caption"
               sx={{
                 color: '#667085',
-                fontSize: '10px',
+                fontSize: 8,
                 display: 'block',
                 mt: 0.1,
               }}
@@ -169,8 +169,8 @@ const isOverdue = loan.status === LoanStatus.OVERDUE;
           label={loan.status}
           size="small"
           sx={{
-            height: '18px',
-            fontSize: '8px',
+            height: '16px',
+            fontSize: 7,
             fontWeight: 600,
             backgroundColor: getStatusColor(loan.status).bg,
             color: getStatusColor(loan.status).color,
@@ -201,7 +201,7 @@ const isOverdue = loan.status === LoanStatus.OVERDUE;
               <Typography
                 variant="body2"
                 sx={{
-                  fontSize: '10px',
+                  fontSize: 9,
                   fontWeight: 600,
                   color: '#101828',
                   lineHeight: 1.3,
@@ -214,7 +214,7 @@ const isOverdue = loan.status === LoanStatus.OVERDUE;
                 <Typography
                   variant="caption"
                   sx={{
-                    fontSize: '9px',
+                    fontSize: 7,
                     color: '#667085',
                     lineHeight: 1.2,
                     mt: 0.2,
@@ -385,7 +385,7 @@ const InfoRow: React.FC<{
     <Typography
       variant="body2"
       sx={{
-        fontSize: '9px',
+        fontSize: 8,
         fontWeight: bold ? 600 : highlight ? 600 : 400,
         overflow: 'hidden',
         textOverflow: 'ellipsis',

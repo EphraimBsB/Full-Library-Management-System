@@ -10,6 +10,7 @@ import {
   IsInt,
   IsISBN,
   IsUrl,
+  ValidateIf,
 } from 'class-validator';
 import { CreateCategoryDto } from 'src/sys-configs/categories/dto/create-category.dto';
 import { CreateSubjectDto } from 'src/sys-configs/subjects/dto/create-subject.dto';
@@ -111,7 +112,8 @@ export class UpdateBookDto {
     require_protocol: true,
     protocols: ['http', 'https'],
   })
-  ebookUrl?: string;
+  @ValidateIf((o) => o.ebookUrl !== null && o.ebookUrl !== '')
+  ebookUrl?: string | null;
 
   @IsOptional()
   @IsString()

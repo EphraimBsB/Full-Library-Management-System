@@ -35,7 +35,7 @@ const HeroSection = ({ books }) => {
       sx={{
         position: 'relative',
         height: '400px',
-        backgroundColor: '#121212', // Dark background
+        backgroundColor: '#ffffff', // White background
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
@@ -50,7 +50,7 @@ const HeroSection = ({ books }) => {
           backgroundImage: `url(${getImageUrl(activeBook?.coverImageUrl)})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          opacity: 0.15,
+          opacity: 0.30,
           filter: 'blur(8px)',
           transition: 'background-image 0.5s ease-in-out',
         },
@@ -61,7 +61,7 @@ const HeroSection = ({ books }) => {
           left: 0,
           width: '60%',
           height: '100%',
-          background: 'linear-gradient(to right, #121212 50%, transparent)',
+          background: 'linear-gradient(to right, #ffffff 50%, transparent)', // White gradient
           zIndex: 1,
         }
       }}
@@ -69,13 +69,13 @@ const HeroSection = ({ books }) => {
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2, display: 'flex', height: '100%', alignItems: 'center' }}>
         {/* Left Side: Content */}
         <Box sx={{ flex: 1, pr: 4, maxWidth: '50%' }}>
-          <Typography variant="body2" sx={{ color: '#ffb6c1', mb: 1, fontWeight: 'bold', fontSize: 12 }}>
+          <Typography variant="body2" sx={{ color: '#BF0019', mb: 1, fontWeight: 'bold', fontSize: 12 }}>
             #{activeIndex + 1} Spotlight
           </Typography>
           <Typography
             variant="h4"
             sx={{
-              color: '#ffffff',
+              color: '#000000',
               fontWeight: 800,
               mb: 1.5,
               lineHeight: 1.3,
@@ -91,12 +91,12 @@ const HeroSection = ({ books }) => {
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, mb: 1.5, alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#ccc', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 11 }}>
+            <Typography variant="body2" sx={{ color: '#666666', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 11 }}>
               By {activeBook?.author || 'Unknown Author'}
             </Typography>
             {activeBook?.metadata?.averageRating && (
-              <Box sx={{ backgroundColor: 'rgba(255,255,255,0.1)', px: 1, borderRadius: 1 }}>
-                <Typography variant="caption" sx={{ color: '#fff', fontSize: 10 }}>
+              <Box sx={{ backgroundColor: 'rgba(25, 118, 210, 0.1)', px: 1, borderRadius: 1 }}>
+                <Typography variant="caption" sx={{ color: '#BF0019', fontSize: 10 }}>
                   ★ {activeBook.metadata.averageRating}
                 </Typography>
               </Box>
@@ -106,7 +106,7 @@ const HeroSection = ({ books }) => {
           <Typography
             variant="body2"
             sx={{
-              color: '#aaaaaa',
+              color: '#666666',
               mb: 3,
               display: '-webkit-box',
               WebkitLineClamp: 3,
@@ -125,8 +125,8 @@ const HeroSection = ({ books }) => {
               startIcon={<PlayArrow sx={{ fontSize: 18 }} />}
               onClick={() => navigate(`/books/${activeBook?.id}`)}
               sx={{
-                backgroundColor: '#ffb6c1',
-                color: '#000',
+                backgroundColor: '#BF0019',
+                color: '#ffffff',
                 borderRadius: '24px',
                 px: 3,
                 py: 1,
@@ -134,7 +134,7 @@ const HeroSection = ({ books }) => {
                 fontWeight: 'bold',
                 textTransform: 'none',
                 '&:hover': {
-                  backgroundColor: '#ff9ba9',
+                  backgroundColor: '#A80015',
                 }
               }}
             >
@@ -145,8 +145,8 @@ const HeroSection = ({ books }) => {
               endIcon={<ArrowForwardIos sx={{ fontSize: 12 }} />}
               onClick={() => navigate(`/books/${activeBook?.id}`)}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                color: '#fff',
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                color: '#000000',
                 borderRadius: '24px',
                 px: 3,
                 py: 1,
@@ -155,7 +155,7 @@ const HeroSection = ({ books }) => {
                 textTransform: 'none',
                 backdropFilter: 'blur(4px)',
                 '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.25)',
+                  backgroundColor: 'rgba(0,0,0,0.2)',
                 }
               }}
             >
@@ -199,8 +199,8 @@ const HeroSection = ({ books }) => {
                   cursor: 'pointer',
                   overflow: 'hidden',
                   borderRadius: '8px',
-                  boxShadow: isActive ? '0 10px 30px rgba(0,0,0,0.5)' : '0 5px 15px rgba(0,0,0,0.3)',
-                  border: isActive ? '2px solid #ffb6c1' : '2px solid transparent',
+                  boxShadow: isActive ? '0 25px 80px rgba(0,0,0,0.15), 0 0 0 4px rgba(25, 118, 210, 0.2)' : '0 10px 30px rgba(0,0,0,0.1)',
+                  border: isActive ? '3px solid #BF0019' : '2px solid transparent',
                   '&:hover': {
                     transform: `skewX(-5deg) translateX(${offset * 10}px) translateY(-10px)`,
                     boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
@@ -214,7 +214,6 @@ const HeroSection = ({ books }) => {
                     width: '150%', // compensate for skew
                     height: '100%',
                     objectFit: 'cover',
-                    // transform: 'skewX(5deg) translateX(-15%)', // reverse skew for image content
                     transition: 'transform 0.4s ease',
                   }}
                   onError={(e) => {
@@ -243,9 +242,9 @@ const HeroSection = ({ books }) => {
             <IconButton 
               onClick={handlePrev}
               sx={{ 
-                backgroundColor: 'rgba(255,255,255,0.1)', 
-                color: '#fff',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' }
+                backgroundColor: 'rgba(0,0,0,0.1)', 
+                color: '#000000',
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.2)' }
               }}
             >
               <ArrowBackIos sx={{ fontSize: 16, ml: 0.5 }} />
@@ -253,9 +252,9 @@ const HeroSection = ({ books }) => {
             <IconButton 
               onClick={handleNext}
               sx={{ 
-                backgroundColor: 'rgba(255,255,255,0.1)', 
-                color: '#fff',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' }
+                backgroundColor: 'rgba(0,0,0,0.1)', 
+                color: '#000000',
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.2)' }
               }}
             >
               <ArrowForwardIos sx={{ fontSize: 16 }} />

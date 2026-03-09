@@ -195,14 +195,14 @@ const BookTypesManagement: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontSize: '0.9rem' }}>
+        <Typography variant="h6" gutterBottom sx={{ fontSize: 14, fontWeight: 600 }}>
           Book Types Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
-          sx={{ fontSize: '0.75rem' }}
+          sx={{ fontSize: 12 }}
         >
           Add Book Type
         </Button>
@@ -215,50 +215,61 @@ const BookTypesManagement: React.FC = () => {
         size="small"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 2, 
+          fontSize: 12,
+          '& .MuiFormLabel-root': {
+            fontSize: 11
+          },
+          '& .MuiInputBase-input': {
+            fontSize: 11
+          }
+        }}
       />
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Format</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Description</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Format</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Description</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', fontSize: 11 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  <Typography sx={{ fontSize: '0.75rem' }}>Loading...</Typography>
+                <TableCell colSpan={5} align="center">
+                  <Typography sx={{ fontSize: 11 }}>Loading...</Typography>
                 </TableCell>
               </TableRow>
             ) : bookTypes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  <Typography sx={{ fontSize: '0.75rem' }}>No book types found</Typography>
+                <TableCell colSpan={5} align="center">
+                  <Typography sx={{ fontSize: 11 }}>No book types found</Typography>
                 </TableCell>
               </TableRow>
             ) : (
               bookTypes.map((bookType) => (
                 <TableRow key={bookType.id}>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{bookType.name}</TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>
+                  <TableCell sx={{ fontSize: 11 }}>{bookType.name}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>
                     <Chip
                       label={bookType.format}
                       color={bookType.format === 'physical' ? 'primary' : 'secondary'}
                       size="small"
+                      sx={{ fontSize: 10 }}
                     />
                   </TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>{bookType.description || '-'}</TableCell>
-                  <TableCell sx={{ fontSize: '0.75rem' }}>
+                  <TableCell sx={{ fontSize: 11 }}>{bookType.description || '-'}</TableCell>
+                  <TableCell sx={{ fontSize: 11 }}>
                     <Chip
                       label={bookType.isActive ? 'Active' : 'Inactive'}
                       color={bookType.isActive ? 'success' : 'default'}
                       size="small"
+                      sx={{ fontSize: 10 }}
                     />
                   </TableCell>
                   <TableCell>

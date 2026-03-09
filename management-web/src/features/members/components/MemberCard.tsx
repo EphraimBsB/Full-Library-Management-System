@@ -67,15 +67,15 @@ export const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
             {member.lastName[0]}
           </Avatar>
           <Box>
-            <Typography variant="body1" sx={{ fontWeight: 700, color: '#101828', fontSize: '0.8rem' }}>
+            <Typography variant="body1" sx={{ fontWeight: 600, color: '#101828', fontSize: 11 }}>
               {member.firstName} {member.lastName}
             </Typography>
             <Chip
               label={membershipStatus?.toUpperCase() || 'NO MEMBERSHIP'}
               size="small"
               sx={{
-                height: '20px',
-                fontSize: '9px',
+                height: '18px',
+                fontSize: 7,
                 fontWeight: 700,
                 backgroundColor: membershipStatus === 'active' ? '#059669' : 
                                  membershipStatus === 'inactive' ? '#9CA3AF' : 
@@ -99,8 +99,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({ member, onClick }) => {
               label={membershipTypeName || 'NO TYPE'}
               size="small"
               sx={{
-                height: '20px',
-                fontSize: '9px',
+                height: '18px',
+                fontSize: 7,
                 fontWeight: 600,
                 backgroundColor: '#F3F4F6',
                 color: '#374151',
@@ -161,7 +161,7 @@ const InfoRow: React.FC<{ icon: React.ReactNode; text: string }> = ({ icon, text
     <Typography
       variant="body2"
       sx={{
-        fontSize: '11px',
+        fontSize: 8,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
