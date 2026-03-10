@@ -305,13 +305,17 @@ const HeroSection = ({ books }) => {
         {/* Right Side: Horizontal Slanted Carousel */}
           <Box
             sx={{
-              flex: 1,
-              position: 'relative',
-              height: '80%',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              perspective: '1000px',
-            }}
+            flex: 1,
+            position: 'relative',
+            height: '80%',
+            display: 'hide',
+            '@media (min-width: 900px)': {
+              display: 'flex',
+            },
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            perspective: '1000px',
+          }}
           >
           {spotlightBooks.map((book, index) => {
             const isActive = index === activeIndex;
