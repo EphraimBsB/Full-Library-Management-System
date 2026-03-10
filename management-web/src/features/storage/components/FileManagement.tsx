@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -28,17 +28,13 @@ import {
   Alert,
   Snackbar,
   LinearProgress,
-  Tooltip,
   Menu,
-  MenuList,
   MenuItem as MenuItemComponent,
   ListItemIcon,
   ListItemText,
-  Container,
 } from '@mui/material';
 import {
   Search,
-  FilterList,
   MoreVert,
   Download,
   Delete,
@@ -58,7 +54,7 @@ import {
   CleaningServices,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fileManagementService, type FileRecord, type FileManagementQuery, type StorageStats, type SyncStatusResponse, type SyncResponse } from '../services/file-management.service';
+import { fileManagementService, type FileRecord, type FileManagementQuery } from '../services/file-management.service';
 import { useAuthStore } from '../../../core/hooks/useAuth';
 
 interface FileManagementProps { }
@@ -110,7 +106,6 @@ const FileManagement: React.FC<FileManagementProps> = () => {
   // Fetch storage stats
   const {
     data: stats,
-    isLoading: statsLoading,
     refetch: refetchStats,
   } = useQuery({
     queryKey: ['storage-stats'],
