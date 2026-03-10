@@ -35,7 +35,7 @@ import { ApiService } from '../services/api';
 const EbookReaderPage = () => {
   const { bookId } = useParams();
   const navigate = useNavigate();
-  
+
   const [book, setBook] = useState(null);
   const [notes, setNotes] = useState([]);
   const [isNotesVisible, setIsNotesVisible] = useState(false);
@@ -45,16 +45,18 @@ const EbookReaderPage = () => {
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  
+
   const pdfRef = useRef(null);
 
   const loadBookDetails = useCallback(async () => {
+    if (!bookId || bookId === 'undefined' || bookId === 'null') {
+      return;
+    }
     try {
       // You'll need to add this API method to get book details by ID
       const bookData = await ApiService.getBookDetails(bookId);
       setBook(bookData);
     } catch (error) {
-      console.error('Error loading book details:', error);
       setSnackbar({
         open: true,
         message: 'Failed to load book details',
@@ -64,11 +66,13 @@ const EbookReaderPage = () => {
   }, [bookId]);
 
   const loadNotes = useCallback(async () => {
+    if (!bookId || bookId === 'undefined' || bookId === 'null') {
+      return;
+    }
     try {
       const notesData = await ApiService.getBookNotes(bookId);
       setNotes(notesData || []);
     } catch (error) {
-      console.error('Error loading notes:', error);
       setSnackbar({
         open: true,
         message: 'Failed to load notes',
@@ -101,14 +105,13 @@ const EbookReaderPage = () => {
       setNotes([...notes, newNote]);
       setNoteText('');
       setNoteDialogOpen(false);
-      
+
       setSnackbar({
         open: true,
         message: 'Note added successfully',
         severity: 'success',
       });
     } catch (error) {
-      console.error('Error adding note:', error);
       setSnackbar({
         open: true,
         message: 'Failed to add note',
@@ -123,14 +126,13 @@ const EbookReaderPage = () => {
     try {
       await ApiService.deleteBookNote(noteId);
       setNotes(notes.filter(note => note.id !== noteId));
-      
+
       setSnackbar({
         open: true,
         message: 'Note deleted successfully',
         severity: 'success',
       });
     } catch (error) {
-      console.error('Error deleting note:', error);
       setSnackbar({
         open: true,
         message: 'Failed to delete note',
@@ -153,7 +155,6 @@ const EbookReaderPage = () => {
 
   const handlePdfError = (error) => {
     setPdfLoading(false);
-    console.error('PDF loading error:', error);
     setSnackbar({
       open: true,
       message: 'Failed to load PDF. Opening in new tab...',
@@ -161,8 +162,8 @@ const EbookReaderPage = () => {
     });
     // Fallback: open in new tab
     setTimeout(() => {
-      if (book?.ebookUrl) {
-        window.open(book.ebookUrl, '_blank');
+      if (book?.book?.ebookUrl) {
+        window.open(book.book.ebookUrl, '_blank');
       }
     }, 2000);
   };
@@ -200,26 +201,26 @@ const EbookReaderPage = () => {
           <IconButton edge="start" onClick={handleBack} sx={{ color: 'white' }}>
             <ArrowBackIcon />
           </IconButton>
-          
+
           <Typography variant="h6" sx={{ flexGrow: 1, fontSize: 16 }}>
             {book.title}
           </Typography>
-          
-          <Chip 
-            label={`ID: ${book.id} | Page ${currentPage}`} 
-            size="small" 
-            sx={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+
+          <Chip
+            label={`ID: ${book.id} | Page ${currentPage}`}
+            size="small"
+            sx={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
               color: 'white',
               fontSize: 12,
               mr: 1,
-            }} 
+            }}
           />
-          
+
           <IconButton onClick={() => setNoteDialogOpen(true)} sx={{ color: 'white' }}>
             <BookmarkAddIcon />
           </IconButton>
-          
+
           <IconButton onClick={() => setIsNotesVisible(!isNotesVisible)} sx={{ color: 'white' }}>
             {isNotesVisible ? <NotesIcon /> : <NotesOutlinedIcon />}
           </IconButton>
@@ -252,11 +253,11 @@ const EbookReaderPage = () => {
               </Box>
             </Box>
           )}
-          
+
           {/* PDF iframe */}
           <iframe
             ref={pdfRef}
-            src={`${book.ebookUrl}#toolbar=0&navpanes=0&statusbar=0&messages=0&zoom=auto`}
+            src={`${book.book.ebookUrl}#toolbar=0&navpanes=0&statusbar=0&messages=0&zoom=auto`}
             style={{
               width: '100%',
               height: '100%',
@@ -360,9 +361,9 @@ const EbookReaderPage = () => {
           <Button onClick={() => setNoteDialogOpen(false)} sx={{ fontSize: 11 }}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleAddNote} 
-            variant="contained" 
+          <Button
+            onClick={handleAddNote}
+            variant="contained"
             disabled={!noteText.trim() || loading}
             sx={{ fontSize: 11 }}
           >
