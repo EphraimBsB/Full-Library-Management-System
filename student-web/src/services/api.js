@@ -363,6 +363,17 @@ export class ApiService {
     const response = await api.get('/books/inhouse-usage/all');
     return response.data;
   }
+
+  // Password Reset
+  static async forgotPassword(email) {
+    const response = await api.post('/users/forgot-password', { email });
+    return response.data;
+  }
+
+  static async resetPassword(resetData) {
+    const response = await api.post('/users/reset-password', resetData);
+    return response.data;
+  }
 }
 
 // Image helper function

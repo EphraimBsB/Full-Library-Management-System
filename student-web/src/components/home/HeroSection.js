@@ -233,7 +233,7 @@ const HeroSection = ({ books }) => {
               </Typography>
               {activeBook?.metadata?.averageRating && (
                 <Box sx={{ backgroundColor: 'rgba(25, 118, 210, 0.1)', px: 1, borderRadius: 1 }}>
-                  <Typography variant="caption" sx={{ color: '#BF0019', fontSize: 10 }}>
+                  <Typography variant="caption" sx={{ color: '#FFD700', fontSize: 10 }}>
                     ★ {activeBook.metadata.averageRating}
                   </Typography>
                 </Box>
@@ -305,13 +305,17 @@ const HeroSection = ({ books }) => {
         {/* Right Side: Horizontal Slanted Carousel */}
           <Box
             sx={{
-              flex: 1,
-              position: 'relative',
-              height: '80%',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              perspective: '1000px',
-            }}
+            flex: 1,
+            position: 'relative',
+            height: '80%',
+            display: 'hide',
+            '@media (min-width: 900px)': {
+              display: 'flex',
+            },
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            perspective: '1000px',
+          }}
           >
           {spotlightBooks.map((book, index) => {
             const isActive = index === activeIndex;

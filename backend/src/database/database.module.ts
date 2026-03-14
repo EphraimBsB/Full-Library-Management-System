@@ -5,6 +5,7 @@ import { Book } from '../books/entities/book.entity';
 import { Category } from 'src/sys-configs/categories/entities/category.entity';
 import { Subject } from 'src/sys-configs/subjects/entities/subject.entity';
 import { User } from 'src/users/entities/user.entity';
+import { PasswordResetToken } from 'src/users/entities/password-reset-token.entity';
 import { Notification } from '../notifications/entities/notification.entity';
 import { BookCopy } from 'src/books/entities/book-copy.entity';
 import { BookLoan } from 'src/books/entities/book-loan.entity';
@@ -39,6 +40,7 @@ import { BookInhouseUsage } from 'src/books/entities/book-inhouse-usage.entity';
         database: configService.get('DB_DATABASE', 'library_db'),
         entities: [
           User,
+          PasswordResetToken,
           Book,
           BookCopy,
           Category,

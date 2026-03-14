@@ -114,28 +114,32 @@ const Login = () => {
             </form>
 
             <Box sx={{ textAlign: 'center', mt: 3 }}>
-              <Typography variant="body2">
-                Don't have an account?{' '}
-                Don't have an account? {/* <Link
-                  component="button"
-                  type="button"
-                  onClick={() => navigate('/signup')}
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  Sign Up
-                </Link> */}
-              </Typography>
+              <Button
+                onClick={() => navigate('/forgot-password')}
+                sx={{ 
+                  fontSize: '0.875rem',
+                  color: '#1976d2',
+                  textTransform: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  }
+                }}
+              >
+                Forgot Password?
+              </Button>
             </Box>
 
             <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Link
-                component="button"
-                type="button"
+              <Button
                 onClick={() => navigate('/')}
-                sx={{ fontSize: '0.875rem' }}
+                sx={{ 
+                  fontSize: '0.875rem',
+                  color: '#666666',
+                  textTransform: 'none',
+                }}
               >
                 Back to Home
-              </Link>
+              </Button>
             </Box>
           </CardContent>
         </Card>

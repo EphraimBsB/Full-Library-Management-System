@@ -5,6 +5,8 @@ import { CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './core/hooks';
 import { LoginForm } from './features/auth/components/LoginForm';
+import { ForgotPasswordPage } from './features/auth/components/ForgotPasswordPage';
+import { ResetPasswordPage } from './features/auth/components/ResetPasswordPage';
 import { DashboardLayout } from './features/dashboard/components/DashboardLayout';
 import { DashboardSummary } from './features/dashboard/components/DashboardSummary';
 import { BooksPage } from './features/books/components/BooksPage';
@@ -77,6 +79,22 @@ function App() {
               element={
                 <PublicRoute>
                   <LoginForm />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPasswordPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <PublicRoute>
+                  <ResetPasswordPage />
                 </PublicRoute>
               }
             />

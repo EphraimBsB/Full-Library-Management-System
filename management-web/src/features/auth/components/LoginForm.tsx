@@ -40,8 +40,6 @@ export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
-  const [showForgotPasswordSuccess, setShowForgotPasswordSuccess] = useState(false);
   const { setAuth, setLoading, isLoading } = useAuthStore();
 
   const {
@@ -73,30 +71,6 @@ export const LoginForm: React.FC = () => {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    // Get email from form or prompt user
-    const email = control._formValues?.email || prompt('Please enter your email address for password reset:');
-    
-    if (!email) {
-      setError('Please enter your email address first');
-      return;
-    }
-
-    try {
-      await apiClient.post('/users/forgot-password', { email });
-      setForgotPasswordMessage('Password reset email sent! Please check your inbox.');
-      setShowForgotPasswordSuccess(true);
-      setError('');
-    } catch (err: any) {
-      console.log('Forgot password error:', err);
-      setError(err.response?.data?.message || 'Failed to send password reset email. Please try again.');
-      setForgotPasswordMessage('');
-      setShowForgotPasswordSuccess(false);
     }
   };
 
@@ -229,34 +203,21 @@ export const LoginForm: React.FC = () => {
             </Button>
 
             <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Typography
-                component="a"
-                href="#"
-                onClick={handleForgotPassword}
+              <Button
+                onClick={() => navigate('/forgot-password')}
                 sx={{
                   color: theme.colors.primary,
                   fontSize: '0.875rem',
                   cursor: 'pointer',
-                  textDecoration: 'underline',
+                  textTransform: 'none',
                   '&:hover': {
                     textDecoration: 'underline',
                   }
                 }}
               >
                 Forgot Password?
-              </Typography>
+              </Button>
             </Box>
-
-            {/* Forgot Password Success Message */}
-            {showForgotPasswordSuccess && (
-              <Alert 
-                severity="success" 
-                sx={{ mt: 2, mb: 2 }}
-                onClose={() => setShowForgotPasswordSuccess(false)}
-              >
-                {forgotPasswordMessage}
-              </Alert>
-            )}
           </form>
         </CardContent>
       </Card>
