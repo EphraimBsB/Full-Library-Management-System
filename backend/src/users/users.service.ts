@@ -10,9 +10,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull, MoreThan, LessThanOrEqual } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { PaginationOptions } from '../common/interfaces/pagination-options.interface';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { UserProfileSummaryDto } from './dto/user-profile.dto';
@@ -26,6 +28,7 @@ import { BookFavorite } from '../books/entities/book-favorite.entity';
 import { BookNote } from '../books/entities/book-note.entity';
 import { MembershipService, MembershipStatus } from '../membership/membership.service';
 import { MembershipType } from '../sys-configs/membership-types/entities/membership-type.entity';
+import { EmailService } from '../emails/email.service';
 
 @Injectable()
 export class UsersService {
@@ -36,6 +39,8 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(BookLoan)
     private readonly bookLoanRepository: Repository<BookLoan>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     @Inject(forwardRef(() => BookLoanService))
     private readonly bookLoanService: BookLoanService,
     @Inject(forwardRef(() => BookFavoriteService))
@@ -44,6 +49,7 @@ export class UsersService {
     private readonly bookNoteService: BookNoteService,
     @Inject(forwardRef(() => MembershipService))
     private readonly membershipService: MembershipService,
+    private readonly emailService: EmailService,
   ) {}
 
   private getSafePaginationOptions(
@@ -676,8 +682,100 @@ export class UsersService {
       throw new NotFoundException('User with this email not found');
     }
 
-    // TODO: Implement email sending logic
-    // Generate reset token, send email with reset link
-    // For now, just log - in production, integrate with email service
+    // Invalidate any existing reset tokens for this user
+    await this.passwordResetTokenRepository.update(
+      { userId: user.id, isUsed: false },
+      { isUsed: true, usedAt: new Date() }
+    );
+
+    // Generate secure reset token
+    const resetToken = this.generateSecureToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 2); // Token expires in 2 hours
+    
+    // Save reset token
+    const passwordResetToken = this.passwordResetTokenRepository.create({
+      token: resetToken,
+      expiresAt,
+      userId: user.id,
+    });
+    await this.passwordResetTokenRepository.save(passwordResetToken);
+
+    // Send password reset email
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
+    
+    try {
+      await this.emailService.sendEmail(
+        user.email,
+        'Password Reset Request',
+        'password-reset',
+        {
+          user: {
+            firstName: user.firstName,
+            lastName: user.lastName,
+          },
+          resetUrl,
+          expiryHours: 2,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      console.error('Email error details:', {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        stack: error.stack
+      });
+      throw new BadRequestException('Failed to send password reset email. Please try again later.');
+    }
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    const { token, newPassword, confirmPassword } = resetPasswordDto;
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    // Find valid reset token
+    const resetToken = await this.passwordResetTokenRepository.findOne({
+      where: { token, isUsed: false },
+      relations: ['user'],
+    });
+
+    if (!resetToken) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    // Check if token is expired
+    if (resetToken.isExpired()) {
+      throw new BadRequestException('Reset token has expired');
+    }
+
+    // Hash new password
+    const hashedPassword = await this.hashPassword(newPassword);
+
+    // Update user password
+    await this.userRepository.update(resetToken.userId, {
+      passwordHash: hashedPassword,
+    });
+
+    // Mark token as used
+    await this.passwordResetTokenRepository.update(resetToken.id, {
+      isUsed: true,
+      usedAt: new Date(),
+    });
+
+    // Invalidate any other active reset tokens for this user
+    await this.passwordResetTokenRepository.update(
+      { userId: resetToken.userId, isUsed: false, id: Not(resetToken.id) },
+      { isUsed: true, usedAt: new Date() }
+    );
+  }
+
+  private generateSecureToken(): string {
+    const crypto = require('crypto');
+    return crypto.randomBytes(32).toString('hex');
   }
 }

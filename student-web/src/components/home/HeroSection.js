@@ -233,7 +233,7 @@ const HeroSection = ({ books }) => {
               </Typography>
               {activeBook?.metadata?.averageRating && (
                 <Box sx={{ backgroundColor: 'rgba(25, 118, 210, 0.1)', px: 1, borderRadius: 1 }}>
-                  <Typography variant="caption" sx={{ color: '#BF0019', fontSize: 10 }}>
+                  <Typography variant="caption" sx={{ color: '#FFD700', fontSize: 10 }}>
                     ★ {activeBook.metadata.averageRating}
                   </Typography>
                 </Box>

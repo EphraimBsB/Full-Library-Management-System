@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { UserRole } from '../sys-configs/user-roles/entities/user-role.entity';
 import { BookLoan } from '../books/entities/book-loan.entity';
 import { BookRequest } from '../books/entities/book-request.entity';
@@ -32,6 +33,7 @@ import { MembershipType } from 'src/sys-configs/membership-types/entities/member
     ConfigModule.forFeature(loanConfig),
     TypeOrmModule.forFeature([
       User,
+      PasswordResetToken,
       UserRole,
       BookLoan,
       BookRequest,

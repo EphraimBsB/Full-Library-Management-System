@@ -21,10 +21,12 @@ import {
   Person,
   ErrorOutline,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LoginDialog = ({ open, onClose, message = 'Please log in to continue' }) => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     emailOrRollNumber: '',
     password: '',
@@ -109,6 +111,10 @@ const LoginDialog = ({ open, onClose, message = 'Please log in to continue' }) =
     setFormData({ emailOrRollNumber: '', password: '' });
     setErrors({});
     onClose();
+  };
+
+  const handleForgotPassword = () => {
+    navigate('/forgot-password');
   };
 
   return (
@@ -220,19 +226,20 @@ const LoginDialog = ({ open, onClose, message = 'Please log in to continue' }) =
           />
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Link 
-              href="#" 
-              variant="body2" 
+            <Button
+              onClick={handleForgotPassword}
+              variant="text"
               sx={{ 
                 color: '#BF0019',
-                textDecoration: 'none',
+                textTransform: 'none',
+                fontSize: '0.875rem',
                 '&:hover': {
                   textDecoration: 'underline',
                 }
               }}
             >
               Forgot your password?
-            </Link>
+            </Button>
           </Box>
         </DialogContent>
 
