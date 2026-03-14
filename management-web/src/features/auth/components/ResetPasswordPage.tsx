@@ -22,12 +22,6 @@ import {
 import { theme } from '../../../core/theme';
 import { apiClient } from '../../../core/network/api_client';
 
-interface ResetPasswordData {
-  token: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
