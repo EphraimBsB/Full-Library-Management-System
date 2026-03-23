@@ -6,6 +6,7 @@ import { Category } from 'src/sys-configs/categories/entities/category.entity';
 import { Subject } from 'src/sys-configs/subjects/entities/subject.entity';
 import { User } from 'src/users/entities/user.entity';
 import { PasswordResetToken } from 'src/users/entities/password-reset-token.entity';
+import { EmailVerification } from 'src/users/entities/email-verification.entity';
 import { Notification } from '../notifications/entities/notification.entity';
 import { BookCopy } from 'src/books/entities/book-copy.entity';
 import { BookLoan } from 'src/books/entities/book-loan.entity';
@@ -41,6 +42,7 @@ import { BookInhouseUsage } from 'src/books/entities/book-inhouse-usage.entity';
         entities: [
           User,
           PasswordResetToken,
+          EmailVerification,
           Book,
           BookCopy,
           Category,

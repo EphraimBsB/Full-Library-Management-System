@@ -5,6 +5,7 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { EmailVerification } from './entities/email-verification.entity';
 import { UserRole } from '../sys-configs/user-roles/entities/user-role.entity';
 import { BookLoan } from '../books/entities/book-loan.entity';
 import { BookRequest } from '../books/entities/book-request.entity';
@@ -34,6 +35,7 @@ import { MembershipType } from 'src/sys-configs/membership-types/entities/member
     TypeOrmModule.forFeature([
       User,
       PasswordResetToken,
+      EmailVerification,
       UserRole,
       BookLoan,
       BookRequest,

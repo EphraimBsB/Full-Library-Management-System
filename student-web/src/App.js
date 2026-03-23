@@ -12,6 +12,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import EbookReaderPage from './pages/EbookReaderPage';
 import BookDetailsPage from './pages/BookDetailsPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 // Create a theme
 const theme = createTheme({
@@ -117,6 +118,7 @@ function App() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/books/:id" element={<BookDetailsPage />} />
               <Route
                 path="/profile"

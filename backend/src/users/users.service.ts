@@ -20,6 +20,11 @@ import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { UserProfileSummaryDto } from './dto/user-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { EmailVerification } from './entities/email-verification.entity';
+import { EmailService } from '../emails/email.service';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { BookLoanService } from '../books/services/book-loan.service';
 import { BookFavoriteService } from '../books/services/book-favorite.service';
 import { BookNoteService } from '../books/services/book-note.service';
@@ -28,7 +33,6 @@ import { BookFavorite } from '../books/entities/book-favorite.entity';
 import { BookNote } from '../books/entities/book-note.entity';
 import { MembershipService, MembershipStatus } from '../membership/membership.service';
 import { MembershipType } from '../sys-configs/membership-types/entities/membership-type.entity';
-import { EmailService } from '../emails/email.service';
 
 @Injectable()
 export class UsersService {
@@ -41,6 +45,8 @@ export class UsersService {
     private readonly bookLoanRepository: Repository<BookLoan>,
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    @InjectRepository(EmailVerification)
+    private readonly emailVerificationRepository: Repository<EmailVerification>,
     @Inject(forwardRef(() => BookLoanService))
     private readonly bookLoanService: BookLoanService,
     @Inject(forwardRef(() => BookFavoriteService))
@@ -774,8 +780,88 @@ export class UsersService {
     );
   }
 
-  private generateSecureToken(): string {
-    const crypto = require('crypto');
+  // Email verification methods
+  generateSecureToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  async sendEmailVerification(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Invalidate any existing email verification tokens for this user
+    await this.emailVerificationRepository.update(
+      { userId, isVerified: false },
+      { isVerified: true, verifiedAt: new Date() }
+    );
+
+    // Generate secure verification token
+    const verificationToken = this.generateSecureToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
+
+    // Save verification token
+    const emailVerification = this.emailVerificationRepository.create({
+      token: verificationToken,
+      expiresAt,
+      userId,
+    });
+    await this.emailVerificationRepository.save(emailVerification);
+
+    // Send verification email
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/verify-email?token=${verificationToken}`;
+    
+    try {
+      await this.emailService.sendEmail(
+        user.email,
+        'Verify Your Email Address',
+        'email-verification',
+        {
+          user: {
+            firstName: user.firstName,
+            lastName: user.lastName,
+          },
+          verificationUrl,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+      throw new BadRequestException('Failed to send verification email. Please try again later.');
+    }
+  }
+
+  async verifyEmail(token: string): Promise<{ message: string; success: boolean }> {
+    const verification = await this.emailVerificationRepository.findOne({
+      where: { token, isVerified: false },
+      relations: ['user'],
+    });
+
+    if (!verification) {
+      throw new BadRequestException('Invalid verification token');
+    }
+
+    // Check if token is expired
+    if (verification.isExpired()) {
+      throw new BadRequestException('Verification token has expired');
+    }
+
+    // Mark token as verified
+    await this.emailVerificationRepository.update(verification.id, {
+      isVerified: true,
+      verifiedAt: new Date(),
+    });
+
+    // Activate user account if not already active
+    await this.userRepository.update(verification.userId, {
+      isActive: true,
+    });
+
+    return {
+      message: 'Email verified successfully. Your account is now active.',
+      success: true,
+    };
   }
 }
