@@ -156,16 +156,61 @@ const Signup = () => {
       if (response.ok) {
         const result = await response.json();
         
-        // Auto-login after successful registration
-        await login({
-          rollNumber: formData.rollNumber,
-          password: formData.password,
-        });
-        
-        navigate('/');
+        if (result.requiresEmailVerification) {
+          // Show success message but don't auto-login
+          setError('');
+          setLoading(false);
+          
+          // Show success message that email verification is required
+          const successMessage = document.createElement('div');
+          successMessage.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+              <h3 style="color: #4caf50; margin-bottom: 10px;">✅ Registration Successful!</h3>
+              <p style="color: #666; margin-bottom: 15px;">Thank you for registering! We've sent a verification email to <strong>${formData.email}</strong>.</p>
+              <p style="color: #666; margin-bottom: 15px;">Please check your inbox and click the verification link to activate your account.</p>
+              <p style="color: #ff9800; font-size: 14px;"><strong>⚠️ Important:</strong> You must verify your email before you can log in.</p>
+              <button 
+                onclick="window.location.href='/login'" 
+                style="
+                  background: #1976d2; 
+                  color: white; 
+                  border: none; 
+                  padding: 10px 20px; 
+                  border-radius: 5px; 
+                  cursor: pointer;
+                  margin-top: 20px;
+                "
+              >
+                Go to Login
+              </button>
+            </div>
+          `;
+          
+          document.body.innerHTML = successMessage.innerHTML;
+        } else {
+          // Legacy flow - auto-login (for backward compatibility)
+          await login({
+            rollNumber: formData.rollNumber,
+            password: formData.password,
+          });
+          
+          navigate('/');
+        }
       } else {
         const errorData = await response.json();
-        setError(errorData.message || 'Registration failed');
+        
+        // Handle specific error messages
+        if (errorData.message) {
+          if (errorData.message.includes('already registered')) {
+            setError(errorData.message + ' Please try logging in instead.');
+          } else if (errorData.message.includes('already exists')) {
+            setError(errorData.message + ' Please use a different roll number or email.');
+          } else {
+            setError(errorData.message);
+          }
+        } else {
+          setError('Registration failed. Please try again.');
+        }
       }
     } catch (error) {
       setError('Network error. Please try again.');
@@ -199,7 +244,21 @@ const Signup = () => {
 
             {error && (
               <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
+                <Box>
+                  <Typography variant="body2">{error}</Typography>
+                  {error.includes('already registered') && (
+                    <Box sx={{ mt: 1 }}>
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={() => navigate('/login')}
+                        sx={{ p: 0, minWidth: 'auto' }}
+                      >
+                        Go to Login
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
               </Alert>
             )}
 

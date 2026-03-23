@@ -220,6 +220,26 @@ export class UsersController {
     return { message: 'Password reset successfully' };
   }
 
+  @Post('send-email-verification')
+  @Public()
+  @ApiOperation({ summary: 'Send email verification' })
+  @ApiResponse({ status: 200, description: 'Verification email sent' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async sendEmailVerification(@Body() body: { userId: string }) {
+    await this.usersService.sendEmailVerification(body.userId);
+    return { message: 'Verification email sent' };
+  }
+
+  @Post('verify-email')
+  @Public()
+  @ApiOperation({ summary: 'Verify email with token' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async verifyEmail(@Body() body: { token: string }) {
+    const result = await this.usersService.verifyEmail(body.token);
+    return result;
+  }
+
   @Get('profile/me')
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully', type: UserProfileSummaryDto })

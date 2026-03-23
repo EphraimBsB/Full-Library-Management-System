@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   NotFoundException,
+  BadRequestException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -91,7 +92,15 @@ export class AuthService {
       // Check if user already exists
       const existingUser = await this.usersService.findByRollNumber(rollNumber);
       if (existingUser) {
-        throw new Error('User with this roll number already exists');
+        throw new BadRequestException('A user with this roll number is already registered. Please try logging in or use a different roll number.');
+      }
+
+      // Check if email already exists (if email is provided)
+      if (email) {
+        const existingEmailUser = await this.usersService.findByEmail(email);
+        if (existingEmailUser) {
+          throw new BadRequestException('A user with this email is already registered. Please use a different email or try logging in.');
+        }
       }
 
       // Check membership status
@@ -117,21 +126,19 @@ export class AuthService {
         membershipTypeId: 1, // Always 'Student' membership type for student registrations
         membershipStatus: membershipStatus, // ✅ Pass Active/Inactive status based on checkMembership result
         roleId: 3, // MEMBER role
+        isActive: false, // Account requires email verification
       };
 
       // Use createMember to create user with proper role and membership
       const newUser = await this.usersService.createMember(createMemberData);
 
-      // Auto-login new user
-      const payload = {
-        email: newUser.email || `${rollNumber}@isbat.edu`,
-        sub: newUser.id,
-        role: 'STUDENT',
-      };
-      const token = this.jwtService.sign(payload);
+      // Send email verification
+      await this.usersService.sendEmailVerification(newUser.id);
 
-      const result = {
-        access_token: token,
+      // Return success message (no auto-login until email is verified)
+      return {
+        message: 'Registration successful! Please check your email to verify your account.',
+        requiresEmailVerification: true,
         user: {
           id: newUser.id,
           email: newUser.email || `${rollNumber}@isbat.edu`,
@@ -141,14 +148,17 @@ export class AuthService {
           degree: newUser.degree,
           semester: newUser.semester,
           role: newUser.role,
-          isActive: newUser.isActive,
+          isActive: false, // Account is inactive until email verification
           membershipStatus: membershipStatus,
         },
       };
-
-      return result;
     } catch (error) {
-      throw new Error(`Registration failed: ${error.message}`);
+      // Re-throw BadRequestException and UnauthorizedException as-is
+      if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Wrap other errors in a more user-friendly message
+      throw new BadRequestException(`Registration failed: ${error.message}`);
     }
   }
 
