@@ -74,7 +74,7 @@ export class InhouseUsageController {
   }
 
   @Post('inhouse-usage/start')
-  @Roles(UserRole.MEMBER, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Start tracking in-house book usage' })
   @ApiResponse({
     status: 201,
@@ -97,7 +97,7 @@ export class InhouseUsageController {
   }
 
   @Post('inhouse-usage/:id/end')
-  @Roles(UserRole.MEMBER, UserRole.ADMIN)
+  @Roles(UserRole.MEMBER, UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'End an active in-house book usage session' })
   @ApiResponse({
     status: 200,
