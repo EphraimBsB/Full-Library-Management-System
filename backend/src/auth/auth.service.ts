@@ -55,7 +55,8 @@ export class AuthService {
     }
 
     // Check if email is verified (students only)
-    if (user.role.name !== 'admin' && user.role.name !== 'librarian') {
+    console.log('User role:', user.role.name);
+    if (user.role.name !== 'Admin' && user.role.name !== 'Librarian') {
       const isEmailVerified = await this.usersService.checkEmailVerificationStatus(user.id);
       if (!isEmailVerified) {
         throw new UnauthorizedException('Email not verified. Please verify your email first.');
