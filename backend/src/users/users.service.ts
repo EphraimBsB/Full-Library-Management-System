@@ -553,63 +553,63 @@ export class UsersService {
     return isPasswordValid ? user : null;
   }
 
-  async createStudentFromThirdParty(
-    studentDetails: any,
-    password: string,
-  ): Promise<User> {
-    // Extract name from student details
-    const fullName = studentDetails.name || '';
-    const nameParts = fullName.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
+  // async createStudentFromThirdParty(
+  //   studentDetails: any,
+  //   password: string,
+  // ): Promise<User> {
+  //   // Extract name from student details
+  //   const fullName = studentDetails.name || '';
+  //   const nameParts = fullName.split(' ');
+  //   const firstName = nameParts[0] || '';
+  //   const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Find default student role
-    const studentRole = await this.userRepository.manager
-      .getRepository('UserRole')
-      .findOne({ where: { name: 'Student' } });
+  //   // Find default student role
+  //   const studentRole = await this.userRepository.manager
+  //     .getRepository('UserRole')
+  //     .findOne({ where: { name: 'Student' } });
 
-    if (!studentRole) {
-      throw new NotFoundException('Student role not found');
-    }
+  //   if (!studentRole) {
+  //     throw new NotFoundException('Student role not found');
+  //   }
 
-    // Find default student membership type
-    const studentMembershipType = await this.userRepository.manager
-      .getRepository(MembershipType)
-      .findOne({ where: { name: 'Student' } });
+  //   // Find default student membership type
+  //   const studentMembershipType = await this.userRepository.manager
+  //     .getRepository(MembershipType)
+  //     .findOne({ where: { name: 'Student' } });
 
-    if (!studentMembershipType) {
-      throw new NotFoundException('Student membership type not found');
-    }
+  //   if (!studentMembershipType) {
+  //     throw new NotFoundException('Student membership type not found');
+  //   }
 
-    const user = this.userRepository.create({
-      firstName,
-      lastName,
-      email: `${studentDetails.name}@student.isbatuniversity.ac.ug`, // Generate email from roll number
-      rollNumber: password,
-      phoneNumber: '', // Will be filled later if needed
-      degree: studentDetails.programme, // Map programme to degree
-      semester: studentDetails.semester, // Map semester directly
-      passwordHash: await bcrypt.hash(password, this.saltRounds),
-      role: studentRole,
-      isActive: true,
-      joinDate: new Date(),
-    });
+  //   const user = this.userRepository.create({
+  //     firstName,
+  //     lastName,
+  //     email: `${password}@isbatuniversity.com`, // Generate email from roll number
+  //     rollNumber: password,
+  //     phoneNumber: '', // Will be filled later if needed
+  //     degree: studentDetails.programme, // Map programme to degree
+  //     semester: studentDetails.semester, // Map semester directly
+  //     passwordHash: await bcrypt.hash(password, this.saltRounds),
+  //     role: studentRole,
+  //     isActive: true,
+  //     joinDate: new Date(),
+  //   });
 
-    const savedUser = await this.userRepository.save(user);
+  //   const savedUser = await this.userRepository.save(user);
 
-    // Automatically create membership for the student
-    try {
-      await this.membershipService.createMembership(
-        savedUser,
-        studentMembershipType.id.toString(),
-        new Date(),
-      );
-    } catch (error) {
-      // Don't throw error here - user creation should succeed even if membership creation fails
-    }
+  //   // Automatically create membership for the student
+  //   try {
+  //     await this.membershipService.createMembership(
+  //       savedUser,
+  //       studentMembershipType.id.toString(),
+  //       new Date(),
+  //     );
+  //   } catch (error) {
+  //     // Don't throw error here - user creation should succeed even if membership creation fails
+  //   }
 
-    return savedUser;
-  }
+  //   return savedUser;
+  // }
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
     const user = await this.findOne(userId);
@@ -863,5 +863,13 @@ export class UsersService {
       message: 'Email verified successfully. Your account is now active.',
       success: true,
     };
+  }
+
+  async checkEmailVerificationStatus(userId: string): Promise<boolean> {
+    const verification = await this.emailVerificationRepository.findOne({
+      where: { userId, isVerified: true },
+    });
+    
+    return !!verification;
   }
 }

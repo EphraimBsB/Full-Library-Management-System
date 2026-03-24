@@ -54,6 +54,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Check if email is verified
+    const isEmailVerified = await this.usersService.checkEmailVerificationStatus(user.id);
+    if (!isEmailVerified) {
+      throw new UnauthorizedException('Email not verified. Please verify your email first.');
+    }
+
     const payload = {
       email: user.email,
       sub: user.id,

@@ -326,7 +326,7 @@ export class UsersSeed implements ISeeder {
       return {
         firstName: 'Ephraim',
         lastName: 'Basubi',
-        email: 'admin@isbat.com',
+        email: 'admin@isbat.edu',
         rollNumber: `ADM${String(i + 1).padStart(3, '0')}`,
         role: adminRole,
         roleId: adminRole.id,
