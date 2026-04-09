@@ -16,6 +16,8 @@ import { CreateMembershipTypeDto } from './dto/create-membership-type.dto';
 import { UpdateMembershipTypeDto } from './dto/update-membership-type.dto';
 import { MembershipType } from './entities/membership-type.entity';
 import { Public } from 'src/auth/decorators/public.decorator';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { UserRole } from 'src/common/enums/user-role.enum';
 
 @ApiTags('membership-types')
 @Controller('membership-types')
@@ -25,6 +27,7 @@ export class MembershipTypesController {
   ) {}
 
   @Post()
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Create a new membership type' })
   @ApiResponse({
     status: 201,
@@ -63,6 +66,7 @@ export class MembershipTypesController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Update a membership type' })
   @ApiResponse({
     status: 200,
@@ -78,6 +82,7 @@ export class MembershipTypesController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Delete a membership type' })
   @ApiResponse({
     status: 200,

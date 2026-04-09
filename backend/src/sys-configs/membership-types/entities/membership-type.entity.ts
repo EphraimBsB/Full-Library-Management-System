@@ -39,6 +39,6 @@ export class MembershipType {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @OneToMany(() => Membership, (membership) => membership.type)
+  @OneToMany(() => Membership, (membership) => membership.type, { cascade: true })
   memberships: Membership[];
 }

@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MembershipType } from './entities/membership-type.entity';
+import { Membership, MembershipStatus } from 'src/membership/entities/membership.entity';
 import { CreateMembershipTypeDto } from './dto/create-membership-type.dto';
 import { UpdateMembershipTypeDto } from './dto/update-membership-type.dto';
 
@@ -10,6 +11,8 @@ export class MembershipTypesService {
   constructor(
     @InjectRepository(MembershipType)
     private readonly membershipTypeRepository: Repository<MembershipType>,
+    @InjectRepository(Membership)
+    private readonly membershipRepository: Repository<Membership>,
   ) {}
 
   async create(
@@ -45,7 +48,21 @@ export class MembershipTypesService {
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.membershipTypeRepository.softDelete(id);
+    // Check if there are any active memberships using this type
+    const activeMembershipsCount = await this.membershipRepository.count({
+      where: { 
+        membershipTypeId: id,
+        status: MembershipStatus.ACTIVE
+      },
+    });
+
+    if (activeMembershipsCount > 0) {
+      throw new ConflictException(
+        `Cannot delete membership type. It is currently being used by ${activeMembershipsCount} active membership(s). Please deactivate or reassign these memberships first.`
+      );
+    }
+
+    const result = await this.membershipTypeRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Membership type with ID ${id} not found`);
     }

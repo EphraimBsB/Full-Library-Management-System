@@ -57,6 +57,7 @@ interface ShelfFormData {
 
 const ShelvesManagement: React.FC = () => {
   const [shelves, setShelves] = useState<Shelf[]>([]);
+  const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -76,6 +77,18 @@ const ShelvesManagement: React.FC = () => {
   // Message states
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+
+  const fetchLocations = async () => {
+    try {
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.LOCATIONS.LIST);
+      const data = (response as any).data || (response as any);
+      if (Array.isArray(data)) {
+        setLocations(data.filter((loc: any) => loc.isActive));
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch locations:', error);
+    }
+  };
 
   const fetchShelves = async () => {
     setLoading(true);
@@ -111,6 +124,7 @@ const ShelvesManagement: React.FC = () => {
 
   useEffect(() => {
     fetchShelves();
+    fetchLocations();
   }, [page, rowsPerPage, search]);
 
   const handleOpenDialog = (shelf?: Shelf) => {
@@ -149,6 +163,14 @@ const ShelvesManagement: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+
+    // Validate location selection
+    if (!formData.locationId || formData.locationId === 0) {
+      setMessage('Please select a location');
+      setMessageType('error');
+      setLoading(false);
+      return;
+    }
 
     try {
       if (editingShelf) {
@@ -342,8 +364,14 @@ const ShelvesManagement: React.FC = () => {
                 value={formData.locationId}
                 onChange={(e) => setFormData({ ...formData, locationId: parseInt(e.target.value.toString()) })}
                 label="Location"
+                required
               >
-                <MenuItem value={0}>Select a location</MenuItem>
+                <MenuItem value={0} disabled>Select a location</MenuItem>
+                {locations.map((location) => (
+                  <MenuItem key={location.id} value={location.id}>
+                    {location.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </DialogContent>
