@@ -17,8 +17,10 @@ import {
   Logout,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { theme } from '../../../core/theme';
 import { useAuthStore } from '../../../core/hooks';
+import { LoanService, BookRequestStatus } from '../../../features/loans/services/loan.service';
 
 interface LeftSidebarProps {
   currentIndex?: number;
@@ -52,6 +54,21 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fetch pending requests count for notification
+  const { data: pendingRequests } = useQuery({
+    queryKey: ['book-requests', BookRequestStatus.PENDING],
+    queryFn: () => LoanService.getAllBookRequests(BookRequestStatus.PENDING),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+
+  const { data: renewalRequests } = useQuery({
+    queryKey: ['renewal-requests', BookRequestStatus.RENEWAL_PENDING],
+    queryFn: () => LoanService.getRenewalRequests(BookRequestStatus.RENEWAL_PENDING),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+
+  const pendingCount = (pendingRequests?.length || 0) + (renewalRequests?.length || 0);
 
   // Get current route to determine selected index
   const getCurrentIndex = () => {
@@ -158,8 +175,31 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                     {item.icon}
                   </Box>
                 </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
+                 <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <span>{item.label}</span>
+                      {item.label === 'Loans' && pendingCount > 0 && (
+                        <Box
+                          sx={{
+                            backgroundColor: theme.colors.primary,
+                            color: 'white',
+                            borderRadius: '10px',
+                            px: 0.8,
+                            py: 0.1,
+                            fontSize: '9px',
+                            fontWeight: 600,
+                            lineHeight: 1.5,
+                            minWidth: '16px',
+                            textAlign: 'center',
+                            ml: 1
+                          }}
+                        >
+                          {pendingCount}
+                        </Box>
+                      )}
+                    </Box>
+                  }
                   sx={{
                     '& .MuiListItemText-primary': {
                       fontSize: 11,
