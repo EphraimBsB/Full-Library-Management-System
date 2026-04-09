@@ -45,7 +45,7 @@ export class SourcesService {
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.sourceRepository.softDelete(id);
+    const result = await this.sourceRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Source with ID ${id} not found`);
     }

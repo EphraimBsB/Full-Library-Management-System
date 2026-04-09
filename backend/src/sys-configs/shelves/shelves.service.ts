@@ -90,7 +90,7 @@ export class ShelvesService {
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.shelfRepository.softDelete(id);
+    const result = await this.shelfRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Shelf with ID ${id} not found`);
     }
