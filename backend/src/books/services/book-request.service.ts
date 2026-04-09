@@ -90,7 +90,6 @@ export class BookRequestService {
             status: In([
               BookRequestStatus.PENDING,
               BookRequestStatus.QUEUED,
-              BookRequestStatus.FULFILLED,
             ]),
           },
         }),
