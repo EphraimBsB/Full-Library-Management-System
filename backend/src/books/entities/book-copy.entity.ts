@@ -21,6 +21,7 @@ export enum BookCopyStatus {
   DAMAGED = 'DAMAGED',
   IN_REPAIR = 'IN_REPAIR',
   WITHDRAWN = 'WITHDRAWN',
+  RESERVED = 'RESERVED',
 }
 
 @Entity('book_copies')

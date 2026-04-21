@@ -129,82 +129,127 @@ export class QueueService {
   }
 
   async processNextInQueue(bookId: string): Promise<void> {
-    const settings = await this.loanSettingsService.getSettings(); // e.g. from a single row in DB
+    const settings = await this.loanSettingsService.getSettings();
 
-    // 1️⃣ Find the next waiting user in queue
-    const entry = await this.queueEntryRepository.findOne({
-      where: {
-        book: { id: parseInt(bookId, 10) },
-        status: QueueStatus.WAITING,
-      },
-      relations: ['user', 'book'],
-      order: { position: 'ASC' },
-    });
+    await this.dataSource.transaction(async (manager) => {
+      // 1️⃣ Find all waiting users in queue, locked for update
+      const entries = await manager.find(QueueEntry, {
+        where: {
+          book: { id: parseInt(bookId, 10) },
+          status: QueueStatus.WAITING,
+        },
+        relations: ['user', 'book', 'bookRequest'],
+        order: { position: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    if (!entry) {
-      throw new NotFoundException(`No users in queue for this book`);
-    }
-
-    // 2️⃣ Find available copy
-    const availableCopy = await this.bookCopyRepository.findOne({
-      where: {
-        book: { id: parseInt(bookId, 10) },
-        status: BookCopyStatus.AVAILABLE,
-      },
-    });
-
-    if (!availableCopy) {
-      throw new NotFoundException(`No available copies for this book`);
-    }
-
-    // 3️⃣ Update queue entry to READY (book is available for them)
-    entry.status = QueueStatus.READY;
-    entry.readyAt = new Date();
-    entry.expiresAt = new Date(
-      Date.now() + settings.queueHoldDurationHours * 60 * 60 * 1000,
-    ); // e.g., 24 hours
-    await this.queueEntryRepository.save(entry);
-
-    // 4️⃣ Handle depending on library setting
-    if (settings.autoApproveQueueLoans) {
-      // ✅ Auto-approve: directly create a loan
-      try {
-        const requestId = await this.createPendingApproval(
-          entry,
-          true,
-          availableCopy,
-        );
-        await this.bookLoanService.createLoan(this.dataSource.manager, {
-          preferredCopyId: availableCopy.id.toString(),
-          bookId: bookId.toString(),
-          userId: entry.user.id,
-          requestId: requestId,
-        });
-
-        // Mark queue entry fulfilled
-        entry.status = QueueStatus.FULFILLED;
-        entry.fulfilledAt = new Date();
-        await this.queueEntryRepository.save(entry);
-
-        // Notify user via email
-        await this.emailUtilsService.sendLoanConfirmationEmail(
-          entry.user,
-          entry.book,
-          entry.expiresAt,
-          entry.readyAt,
-          entry.id,
-        );
-      } catch (error) {
-        console.error(
-          `Auto-loan failed for user ${entry.user.id}: ${error.message}`,
-        );
-        // Optionally fallback to pending approval
-        await this.createPendingApproval(entry, false, availableCopy);
+      if (entries.length === 0) {
+        return; // No one in queue, we can exit safely
       }
+
+      // 2️⃣ Find all available copies, locked for update
+      const availableCopies = await manager.find(BookCopy, {
+        where: {
+          book: { id: parseInt(bookId, 10) },
+          status: BookCopyStatus.AVAILABLE,
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (availableCopies.length === 0) {
+        return; // No copies available, exit safely
+      }
+
+      // 3️⃣ Match copies to users
+      const matchCount = Math.min(entries.length, availableCopies.length);
+
+      for (let i = 0; i < matchCount; i++) {
+        const entry = entries[i];
+        const copy = availableCopies[i];
+
+        // Reserve the copy
+        copy.status = BookCopyStatus.RESERVED;
+        await manager.save(BookCopy, copy);
+
+        // Update queue entry
+        entry.status = QueueStatus.READY;
+        entry.readyAt = new Date();
+        entry.expiresAt = new Date(
+          Date.now() + settings.queueHoldDurationHours * 60 * 60 * 1000,
+        );
+        await manager.save(QueueEntry, entry);
+
+        // ALWAYS create/update the pending BookRequest so the user sees it in their portal to "accept"/pick up
+        const requestId = await this.createPendingApprovalWithManager(
+          manager,
+          entry,
+          false,
+          copy,
+        );
+
+        // If the library was built to strictly auto-create a loan (bypassing pickup phase)...
+        if (settings.autoApproveQueueLoans) {
+          try {
+            await this.bookLoanService.createLoan(manager, {
+              preferredCopyId: copy.id.toString(),
+              bookId: bookId.toString(),
+              userId: entry.user.id,
+              requestId: requestId,
+            });
+
+            // Mark queue entry fulfilled
+            entry.status = QueueStatus.FULFILLED;
+            entry.fulfilledAt = new Date();
+            await manager.save(QueueEntry, entry);
+            
+            // Notify user
+             this.emailUtilsService.sendLoanConfirmationEmail(
+              entry.user,
+              entry.book,
+              entry.expiresAt,
+              entry.readyAt,
+              entry.id,
+            ).catch(e => console.error(e));
+
+          } catch (error) {
+            console.error(`Auto-loan failed for user ${entry.user.id}: ${error.message}`);
+          }
+        }
+      }
+    });
+  }
+
+  // Helper method that uses the provided entity manager to respect the transaction
+  private async createPendingApprovalWithManager(
+    manager: EntityManager,
+    entry: QueueEntry,
+    autoGenerated: boolean,
+    copy: BookCopy,
+  ): Promise<string> {
+    let request = entry.bookRequest;
+
+    if (request && request.status === BookRequestStatus.QUEUED) {
+      request.status = BookRequestStatus.PENDING;
+      request.autoGenerated = autoGenerated;
+      request.createdAt = new Date();
+      await manager.save(BookRequest, request);
     } else {
-      // 🧾 Manual approval mode — create a pending BookRequest
-      await this.createPendingApproval(entry, false, availableCopy);
+      request = manager.create(BookRequest, {
+        user: { id: entry.user.id },
+        book: { id: entry.book.id },
+        status: BookRequestStatus.PENDING,
+        createdAt: new Date(),
+        autoGenerated: autoGenerated,
+        queueEntryId: entry.id,
+      });
+      await manager.save(BookRequest, request);
     }
+
+    entry.status = QueueStatus.PENDING_APPROVAL;
+    entry.bookRequestId = request.id;
+    await manager.save(QueueEntry, entry);
+
+    return request.id;
   }
 
   private async createPendingApproval(
@@ -212,15 +257,28 @@ export class QueueService {
     autoGenerated: boolean,
     copy: BookCopy,
   ) {
-    const request = this.bookRequestRepository.create({
-      user: { id: entry.user.id },
-      book: { id: entry.book.id },
-      status: BookRequestStatus.PENDING,
-      createdAt: new Date(),
-      autoGenerated: autoGenerated,
-    });
-
-    await this.bookRequestRepository.save(request);
+    let request = entry.bookRequest;
+    
+    if (request && request.status === BookRequestStatus.QUEUED) {
+      // Reuse existing request
+      request.status = BookRequestStatus.PENDING;
+      request.autoGenerated = autoGenerated;
+      request.createdAt = new Date(); // Update timestamp to now
+      await this.bookRequestRepository.save(request);
+      console.log(`Reused existing QUEUED request ${request.id} and set to PENDING`);
+    } else {
+      // Create new request since no suitable existing one was found
+      request = this.bookRequestRepository.create({
+        user: { id: entry.user.id },
+        book: { id: entry.book.id },
+        status: BookRequestStatus.PENDING,
+        createdAt: new Date(),
+        autoGenerated: autoGenerated,
+        queueEntryId: entry.id,
+      });
+      await this.bookRequestRepository.save(request);
+      console.log(`Created new BookRequest for queue entry ${entry.id}`);
+    }
 
     // Update queue entry to "waiting for librarian"
     entry.status = QueueStatus.PENDING_APPROVAL;
