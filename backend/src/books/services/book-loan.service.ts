@@ -162,8 +162,10 @@ export class BookLoanService {
       const query = transactionalEntityManager
         .createQueryBuilder(BookCopy, 'copy')
         .where('copy.id = :id', { id: preferredCopyIdNumber })
-        .andWhere('copy.status = :status', {
-          status: BookCopyStatus.AVAILABLE,
+        .andWhere('(copy.status = :availableStatus OR (copy.status = :reservedStatus AND :hasRequest = true))', {
+          availableStatus: BookCopyStatus.AVAILABLE,
+          reservedStatus: BookCopyStatus.RESERVED,
+          hasRequest: !!requestId,
         });
 
       if (bookId) {
@@ -181,7 +183,11 @@ export class BookLoanService {
       availableCopy = await transactionalEntityManager
         .createQueryBuilder(BookCopy, 'copy')
         .where('copy.bookId = :bookId', { bookId: Number(bookId) })
-        .andWhere('copy.status = :status', { status: BookCopyStatus.AVAILABLE })
+        .andWhere('(copy.status = :availableStatus OR (copy.status = :reservedStatus AND :hasRequest = true))', { 
+            availableStatus: BookCopyStatus.AVAILABLE,
+            reservedStatus: BookCopyStatus.RESERVED,
+            hasRequest: !!requestId,
+         })
         .setLock('pessimistic_write')
         .getOne();
 
@@ -254,10 +260,10 @@ export class BookLoanService {
     await transactionalEntityManager.save(BookCopy, availableCopy);
 
     // 2. Update the book's available copies
-    // if (book.availableCopies > 0) {
-    //   book.availableCopies -= 1;
-    //   await transactionalEntityManager.save(Book, book);
-    // }
+    if (book.availableCopies > 0) {
+      book.availableCopies -= 1;
+      await transactionalEntityManager.save(Book, book);
+    }
 
     // 3. Update the metadata
     if (book.metadata) {
@@ -346,15 +352,15 @@ export class BookLoanService {
         await transactionalEntityManager.save(BookCopy, bookCopy);
 
         // Update book's available copies and metadata
-        // if (bookCopy.book) {
-        //   await transactionalEntityManager.update(
-        //     Book,
-        //     { id: bookCopy.book.id },
-        //     {
-        //       availableCopies: () => 'availableCopies + 1',
-        //     }
-        //   );
-        // }
+        if (bookCopy.book) {
+          await transactionalEntityManager.update(
+            Book,
+            { id: bookCopy.book.id },
+            {
+              availableCopies: () => 'availableCopies + 1',
+            }
+          );
+        }
       }
 
       // 4. Save the updated loan

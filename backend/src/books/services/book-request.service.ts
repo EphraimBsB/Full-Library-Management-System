@@ -144,7 +144,7 @@ export class BookRequestService {
         user: { id: userId },
         reason,
         status,
-        queueId: queueEntryId,
+        queueEntryId: queueEntryId,
       });
 
       const savedRequest = await transactionalEntityManager.save(

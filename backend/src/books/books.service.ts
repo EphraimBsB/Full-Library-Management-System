@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, QueryRunner, DataSource } from 'typeorm';
@@ -18,6 +19,7 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
 import { BookQueryDto } from './dto/book-query.dto';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { QueueService } from './services/queue.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 
@@ -37,6 +39,8 @@ export class BooksService {
     @InjectRepository(Source)
     private readonly sourceRepository: Repository<Source>,
     private dataSource: DataSource,
+    @Inject(forwardRef(() => QueueService))
+    private readonly queueService: QueueService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
   ) { }
@@ -519,6 +523,11 @@ export class BooksService {
     book.availableCopies = (book.availableCopies || 0) + savedCopies.length;
 
     await queryRunner.manager.save(book);
+
+    // If new copies were created, trigger the queue asynchronously
+    if (savedCopies.length > 0) {
+       this.queueService.processNextInQueue(book.id.toString()).catch(e => console.error(e));
+    }
   }
 
   // Helper method to update book copies
@@ -757,6 +766,11 @@ export class BooksService {
       // Update book's available copies count if status changed
       if (updateCopyDto.status !== undefined) {
         await this.updateBookAvailableCopies(bookId);
+        
+        // If the copy became available, trigger the queue
+        if (updateCopyDto.status === BookCopyStatus.AVAILABLE) {
+           this.queueService.processNextInQueue(bookId.toString()).catch(e => console.error(e));
+        }
       }
 
       await this.resetCache();

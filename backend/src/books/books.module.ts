@@ -46,6 +46,7 @@ import { InhouseUsageController } from './controllers/inhouse-usage.controller';
 import { BookFavoriteService } from './services/book-favorite.service';
 import { BookNoteService } from './services/book-note.service';
 import { InhouseUsageService } from './services/inhouse-usage.service';
+import { QueueCleanupService } from './services/queue-cleanup.service';
 
 @Module({
   imports: [
@@ -112,6 +113,7 @@ import { InhouseUsageService } from './services/inhouse-usage.service';
     BookLoanService,
     BookRequestService,
     QueueService,
+    QueueCleanupService,
     BookFavoriteService,
     BookNoteService,
     InhouseUsageService,
