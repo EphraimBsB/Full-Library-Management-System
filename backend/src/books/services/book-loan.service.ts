@@ -126,6 +126,34 @@ export class BookLoanService {
       );
     }
 
+    // Use the passed manager directly (no nested transaction)
+    const transactionalEntityManager = manager;
+
+    // 0️⃣ Verify library fee payment for students via external API
+    const requestingUser = await transactionalEntityManager.findOne(User, {
+      where: { id: userId },
+      select: ['id', 'rollNumber']
+    });
+    
+    if (requestingUser?.rollNumber) {
+      try {
+        const response = await fetch(`https://ilimsapi.isbatuniversity.ac.ug:9093/api/LibMember?rollno=${requestingUser.rollNumber}`);
+        if (response.ok) {
+          const xmlData = await response.text();
+          const match = xmlData.match(/<result>(true|false)<\/result>/i);
+          if (match && match[1].toLowerCase() === 'false') {
+            throw new BadRequestException('Student has not paid the library fee. Library fee payment is required to borrow books.');
+          }
+        } else {
+          this.logger.warn(`Library fee API returned status ${response.status}`);
+        }
+      } catch (error) {
+        if (error instanceof BadRequestException) throw error;
+        this.logger.error(`Failed to check library fee for ${requestingUser.rollNumber}`, error);
+        throw new BadRequestException('Unable to verify library fee status. Please try again later.');
+      }
+    }
+
     // 1️⃣ Check membership validity and rules
     const activeMembership =
       await this.membershipService.findActiveMembership(userId);
@@ -137,9 +165,6 @@ export class BookLoanService {
 
     const maxLoans = activeMembership.type.maxBooks;
     const loanPeriodDays = activeMembership.type.loanPeriodDays || this.loanPeriodDays;
-
-    // Use the passed manager directly (no nested transaction)
-    const transactionalEntityManager = manager;
 
     // 2️⃣ Check current active loan count for user
     const activeLoansCount = await transactionalEntityManager.count(BookLoan, {

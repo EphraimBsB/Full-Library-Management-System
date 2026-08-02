@@ -94,6 +94,13 @@
                 please verify your email address by clicking the button below.
             </div>
 
+            {{#unless hasPaidLibraryFee}}
+            <div class="security-info" style="border-left-color: #dc3545; background-color: #fff3f3; margin-bottom: 25px; margin-top: 0;">
+                <strong>📚 Important Library Notice:</strong>
+                <p style="margin: 10px 0;">Our records indicate you have not paid the library fee. You will not be able to borrow books until the fee is paid at the University Finance Office.</p>
+            </div>
+            {{/unless}}
+
             <div class="expiry-warning">
                 <strong>⚠️ Important:</strong> This verification link will expire in 24 hours for security reasons.
             </div>

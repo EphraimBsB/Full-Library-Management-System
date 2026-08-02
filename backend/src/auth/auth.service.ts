@@ -142,11 +142,16 @@ export class AuthService {
       const newUser = await this.usersService.createMember(createMemberData);
 
       // Send email verification
-      await this.usersService.sendEmailVerification(newUser.id);
+      await this.usersService.sendEmailVerification(newUser.id, isActive);
+      
+      let message = 'Registration successful! Please check your email to verify your account.';
+      if (!isActive) {
+        message += ' IMPORTANT: Our records indicate you have not paid the library fee. You will not be able to borrow books until the fee is paid at the University Finance Office.';
+      }
 
       // Return success message (no auto-login until email is verified)
       return {
-        message: 'Registration successful! Please check your email to verify your account.',
+        message,
         requiresEmailVerification: true,
         user: {
           id: newUser.id,
@@ -249,7 +254,15 @@ export class AuthService {
             },
           }),
         );
-        return response.data;
+        
+        let resultData = response.data;
+        if (typeof resultData === 'string') {
+          const match = resultData.match(/<result>(true|false)<\/result>/i);
+          if (match) {
+            resultData = { result: match[1].toLowerCase() === 'true' };
+          }
+        }
+        return resultData;
       } catch (error) {
         retryCount++;
         console.error(`Membership check attempt ${retryCount} failed:`, error.message);
