@@ -785,7 +785,7 @@ export class UsersService {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  async sendEmailVerification(userId: string): Promise<void> {
+  async sendEmailVerification(userId: string, hasPaidLibraryFee: boolean = true): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     
     if (!user) {
@@ -825,6 +825,7 @@ export class UsersService {
             lastName: user.lastName,
           },
           verificationUrl,
+          hasPaidLibraryFee,
         }
       );
     } catch (error) {

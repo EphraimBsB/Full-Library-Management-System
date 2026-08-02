@@ -1,0 +1,39 @@
+config:
+  target: 'http://localhost:3000/api/v1'
+  phases:
+    - duration: 30
+      arrivalRate: 2
+      name: 'Warm up'
+    - duration: 60
+      arrivalRate: 5
+      name: 'Sustained Load'
+    - duration: 30
+      arrivalRate: 20
+      name: 'Spike / Stress'
+
+  # Configure plugin if you want better reporting
+  plugins:
+    metrics-by-endpoint: {}
+
+scenarios:
+  - name: 'Login and fetch books'
+    flow:
+      # 1. Login to get a token
+      - post:
+          url: '/auth/login'
+          json:
+            email: 'admin@isbat.edu' # <-- UPDATE THIS
+            password: 'Password@123' # <-- UPDATE THIS
+          capture:
+            - json: '$.access_token'
+              as: 'token'
+
+      - think: 1 # Wait for 1 second
+
+      # 2. Fetch the books list using the captured token
+      - get:
+          url: '/books'
+          headers:
+            Authorization: 'Bearer {{ token }}{{ backupToken }}'
+
+      - think: 2
