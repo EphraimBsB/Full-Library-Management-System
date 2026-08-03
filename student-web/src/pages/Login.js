@@ -22,6 +22,12 @@ const Login = () => {
     password: '',
   });
 
+  React.useEffect(() => {
+    if (error) {
+      clearError();
+    }
+  }, []); // Clear any stale errors on mount
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({

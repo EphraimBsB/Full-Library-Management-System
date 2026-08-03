@@ -35,6 +35,17 @@ const LoginDialog = ({ open, onClose, message = 'Please log in to continue' }) =
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
+  React.useEffect(() => {
+    if (open) {
+      setFormData({
+        emailOrRollNumber: '',
+        password: '',
+      });
+      setErrors({});
+      setShowPassword(false);
+    }
+  }, [open]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
