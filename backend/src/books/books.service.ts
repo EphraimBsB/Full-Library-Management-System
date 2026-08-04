@@ -418,6 +418,14 @@ export class BooksService {
         // Any copies remaining in the pool are those that were either explicitly removed (missing ID)
         // or truncated (list length decreased)
         if (pool.length > 0) {
+          const inUseCopies = pool.filter(
+            (c) => c.status === BookCopyStatus.BORROWED || c.status === BookCopyStatus.READING,
+          );
+          if (inUseCopies.length > 0) {
+            throw new BadRequestException(
+              `Cannot remove book copies that are currently in use (borrowed or reading). Please return them first.`,
+            );
+          }
           await queryRunner.manager.softRemove(pool);
         }
 

@@ -63,6 +63,11 @@ export class AuthService {
       }
     }
 
+    // Check if the user account itself is active (e.g. not banned or disabled)
+    if (user.isActive === false) {
+      throw new UnauthorizedException('Your account has been deactivated. Please contact an administrator.');
+    }
+
     const payload = {
       email: user.email,
       sub: user.id,
@@ -110,6 +115,12 @@ export class AuthService {
         if (existingEmailUser) {
           throw new BadRequestException('A user with this email is already registered. Please use a different email or try logging in.');
         }
+      }
+
+      // Check if student exists in the university's system via third-party API
+      const verification = await this.verifyStudent(rollNumber);
+      if (!verification.result) {
+        throw new BadRequestException('Invalid roll number. This student is not registered at ISBAT University.');
       }
 
       // Check membership status
@@ -190,11 +201,21 @@ export class AuthService {
             headers: {
               'User-Agent': 'ISBAT-LMS/1.0',
               'Connection': 'keep-alive',
+              'Accept': 'application/json',
             },
           }),
         );
 
-        if (registeredResponse.data.result === false) {
+        let resultData = registeredResponse.data;
+        if (typeof resultData === 'string') {
+          try {
+            resultData = JSON.parse(resultData);
+          } catch (e) {
+            // parsing failed
+          }
+        }
+
+        if (resultData.result === false || resultData.result === 'false') {
           return { result: false };
         }
 
@@ -206,13 +227,21 @@ export class AuthService {
             headers: {
               'User-Agent': 'ISBAT-LMS/1.0',
               'Connection': 'keep-alive',
+              'Accept': 'application/json',
             },
           }),
         );
 
+        let detailsData = detailsResponse.data;
+        if (typeof detailsData === 'string') {
+          try {
+            detailsData = JSON.parse(detailsData);
+          } catch (e) { }
+        }
+
         return {
           result: true,
-          ...detailsResponse.data
+          ...detailsData
         };
       } catch (error) {
         retryCount++;
@@ -251,17 +280,26 @@ export class AuthService {
             headers: {
               'User-Agent': 'ISBAT-LMS/1.0',
               'Connection': 'keep-alive',
+              'Accept': 'application/json',
             },
           }),
         );
         
         let resultData = response.data;
         if (typeof resultData === 'string') {
-          const match = resultData.match(/<result>(true|false)<\/result>/i);
-          if (match) {
-            resultData = { result: match[1].toLowerCase() === 'true' };
+          try {
+            const parsed = JSON.parse(resultData);
+            resultData = parsed;
+          } catch (e) {
+            resultData = { result: false };
           }
         }
+        
+        // Ensure result is boolean
+        if (resultData && typeof resultData.result === 'string') {
+           resultData.result = resultData.result === 'true';
+        }
+        
         return resultData;
       } catch (error) {
         retryCount++;
