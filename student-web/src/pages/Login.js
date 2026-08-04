@@ -9,7 +9,6 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Link,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +25,7 @@ const Login = () => {
     if (error) {
       clearError();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Clear any stale errors on mount
 
   const handleChange = (e) => {

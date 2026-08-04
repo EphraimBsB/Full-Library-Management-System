@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  IconButton,
   Button,
   Tabs,
   Tab,
@@ -20,20 +19,16 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Tooltip,
 } from '@mui/material';
 import {
-  Close,
   Star,
   Book as BookIcon,
   History,
   People,
   HourglassEmpty,
-  ArrowBack,
   MenuBook,
   AddShoppingCart,
   AddToQueue,
-  CheckCircle,
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { format } from 'date-fns';
@@ -69,8 +64,6 @@ const BookDetailsPage = () => {
   const [borrowRequestDialogOpen, setBorrowRequestDialogOpen] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const [inLibraryNetworkAllowed, setInLibraryNetworkAllowed] = useState(true);
-  const [networkMessage, setNetworkMessage] = useState('');
 
   const { data: details, isLoading, error, refetch } = useQuery({
     queryKey: ['book-details', bookId],
@@ -150,8 +143,6 @@ const BookDetailsPage = () => {
 
     try {
       const result = await ApiService.checkInhouseNetwork();
-      setInLibraryNetworkAllowed(result.allowed);
-      setNetworkMessage(result.message);
       if (!result.allowed) {
         alert(result.message);
         return;

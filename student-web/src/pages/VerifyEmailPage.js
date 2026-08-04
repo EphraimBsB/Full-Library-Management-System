@@ -12,7 +12,6 @@ import {
 import {
   CheckCircle,
   Error as ErrorIcon,
-  Email,
 } from '@mui/icons-material';
 import { API_BASE_URL, DEFAULT_HEADERS } from '../constants/api';
 
@@ -24,7 +23,6 @@ const VerifyEmailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -45,7 +43,6 @@ const VerifyEmailPage = () => {
 
         if (response.ok) {
           setSuccess(true);
-          setVerified(true);
           setError('');
         } else {
           setError(data.message || 'Email verification failed');
