@@ -137,11 +137,30 @@ export class BookLoanService {
     
     if (requestingUser?.rollNumber) {
       try {
-        const response = await fetch(`https://ilimsapi.isbatuniversity.ac.ug:9093/api/LibMember?rollno=${requestingUser.rollNumber}`);
+        const response = await fetch(
+          `https://ilimsapi.isbatuniversity.ac.ug:9093/api/LibMember?rollno=${requestingUser.rollNumber}`,
+          { headers: { 'Accept': 'application/json' } }
+        );
         if (response.ok) {
-          const xmlData = await response.text();
-          const match = xmlData.match(/<result>(true|false)<\/result>/i);
-          if (match && match[1].toLowerCase() === 'false') {
+          const rawData = await response.text();
+          
+          let isFeePaid = true; // Default to true unless explicitly false
+          
+          // Check for JSON response format
+          try {
+            const jsonData = JSON.parse(rawData);
+            if (jsonData.result === false || jsonData.result === 'false') {
+              isFeePaid = false;
+            }
+          } catch (e) {
+            // Fallback to XML regex if not valid JSON
+            const xmlMatch = rawData.match(/<result>(true|false)<\/result>/i);
+            if (xmlMatch && xmlMatch[1].toLowerCase() === 'false') {
+              isFeePaid = false;
+            }
+          }
+
+          if (!isFeePaid) {
             throw new BadRequestException('Student has not paid the library fee. Library fee payment is required to borrow books.');
           }
         } else {
@@ -378,13 +397,8 @@ export class BookLoanService {
 
         // Update book's available copies and metadata
         if (bookCopy.book) {
-          await transactionalEntityManager.update(
-            Book,
-            { id: bookCopy.book.id },
-            {
-              availableCopies: () => 'availableCopies + 1',
-            }
-          );
+          bookCopy.book.availableCopies += 1;
+          await transactionalEntityManager.save(Book, bookCopy.book);
         }
       }
 
@@ -392,9 +406,9 @@ export class BookLoanService {
       const updatedLoan = await transactionalEntityManager.save(BookLoan, loan);
 
       // 5. Process queue for this book (outside transaction) if bookCopy exists
-      if (bookCopy) {
+      if (bookCopy && bookCopy.book) {
         this.queueService
-          .processNextInQueue(bookCopy.bookId.toString())
+          .processNextInQueue(bookCopy.book.id.toString())
           .catch((error) => {
             this.logger.error(
               `Error processing queue after returning book ${loanId}:`,
@@ -419,13 +433,8 @@ export class BookLoanService {
         );
       }
 
-      // 6. Send return confirmation email in the background
-      this.sendReturnConfirmation(updatedLoan).catch((error) => {
-        this.logger.error(
-          `Failed to send return confirmation for loan ${updatedLoan.id}: ${error.message}`,
-          error.stack,
-        );
-      });
+      // 6. Send email notification to user is already handled above in step 6.
+
 
       await this.resetCache();
       return updatedLoan;
