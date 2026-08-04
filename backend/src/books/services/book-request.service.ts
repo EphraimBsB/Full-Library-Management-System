@@ -56,6 +56,44 @@ export class BookRequestService {
     reason?: string,
   ): Promise<BookRequest> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
+      // 0️⃣ Verify library fee payment via third-party API
+      const requestingUser = await transactionalEntityManager.findOne(User, {
+        where: { id: userId },
+        select: ['id', 'rollNumber'],
+      });
+
+      if (requestingUser?.rollNumber) {
+        try {
+          const response = await fetch(
+            `https://ilimsapi.isbatuniversity.ac.ug:9093/api/LibMember?rollno=${requestingUser.rollNumber}`,
+            { headers: { 'Accept': 'application/json' } },
+          );
+          if (response.ok) {
+            const rawData = await response.text();
+            let isFeePaid = true;
+            try {
+              const jsonData = JSON.parse(rawData);
+              if (jsonData.result === false || jsonData.result === 'false') {
+                isFeePaid = false;
+              }
+            } catch (e) {
+              // ignore parse error, default to allowed
+            }
+            if (!isFeePaid) {
+              throw new BadRequestException(
+                'Student has not paid the library fee. Library fee payment is required to borrow books.',
+              );
+            }
+          } else {
+            this.logger.warn(`Library fee API returned status ${response.status} for roll ${requestingUser.rollNumber}`);
+          }
+        } catch (error) {
+          if (error instanceof BadRequestException) throw error;
+          this.logger.error(`Failed to check library fee for ${requestingUser.rollNumber}`, error);
+          throw new BadRequestException('Unable to verify library fee status. Please try again later.');
+        }
+      }
+
       // 1️⃣ Check membership status
       const membership =
         await this.membershipService.findActiveMembership(userId);

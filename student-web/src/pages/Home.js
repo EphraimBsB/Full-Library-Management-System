@@ -124,15 +124,14 @@ const Home = () => {
 
   const handleSubjectToggle = (subjectId) => {
     setSelectedSubjects(prev => {
-      // Ensure subjectId is a number for comparison
       const id = Number(subjectId);
       if (prev.includes(id)) {
-        return prev.filter(id => id !== id);
+        return prev.filter(existingId => existingId !== id);
       } else {
         return [...prev, id];
       }
     });
-    setPage(1); // Reset to first page on filter change
+    setPage(1);
   };
 
   const handleClearSubjects = () => {
@@ -161,11 +160,6 @@ const Home = () => {
     }
   };
 
-  const handleEndSession = async () => {
-    // This is now handled by the ActiveSessionBanner component
-    // Just refetch the session data
-    refetchActiveSessions();
-  };
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff', paddingTop: '64px' }}>

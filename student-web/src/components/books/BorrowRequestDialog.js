@@ -9,24 +9,37 @@ import {
   Typography,
   Box,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 
 const BorrowRequestDialog = ({ open, onClose, bookTitle, bookId, onSubmit }) => {
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async () => {
-    // Reason is optional, so we don't need to check if it's empty
     setLoading(true);
+    setError('');
     try {
       await onSubmit({
         bookId: bookId,
-        reason: reason.trim(), // Pass the raw reason, parent will handle null/empty
+        reason: reason.trim(),
       });
       setReason('');
+      setError('');
       onClose();
-    } catch (error) {
-      console.error('Error submitting borrow request:', error);
+    } catch (err) {
+      const rawMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        '';
+
+      // Detect the library fee error and show a student-friendly message
+      if (rawMessage.toLowerCase().includes('library fee')) {
+        setError('LIBRARY_FEE_UNPAID');
+      } else {
+        setError(rawMessage || 'Failed to submit borrow request. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -35,6 +48,7 @@ const BorrowRequestDialog = ({ open, onClose, bookTitle, bookId, onSubmit }) => 
   const handleClose = () => {
     if (!loading) {
       setReason('');
+      setError('');
       onClose();
     }
   };
@@ -45,6 +59,24 @@ const BorrowRequestDialog = ({ open, onClose, bookTitle, bookId, onSubmit }) => 
         Borrow Request
       </DialogTitle>
       <DialogContent>
+        {error === 'LIBRARY_FEE_UNPAID' ? (
+          <Alert severity="warning" sx={{ mb: 2, fontSize: 13 }}>
+            <strong>Your library membership is not yet active.</strong>
+            <br />
+            To borrow books, you need to pay the University Library Fee. Here's what to do:
+            <ol style={{ margin: '8px 0 0 0', paddingLeft: '18px' }}>
+              <li>Visit the <strong>University Finance Office</strong> and pay the Library Membership Fee.</li>
+              <li>Once paid, your membership will be <strong>automatically activated</strong> — no further action needed.</li>
+              <li>Return here and try borrowing again!</li>
+            </ol>
+            <br />
+            For help, contact the library at <strong>library@isbat.ac.ug</strong>.
+          </Alert>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2, fontSize: 13 }}>
+            {error}
+          </Alert>
+        ) : null}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>
             You are requesting to borrow:

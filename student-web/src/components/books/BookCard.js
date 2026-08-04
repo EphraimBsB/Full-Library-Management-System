@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
-  CardMedia,
   Typography,
   Button,
   Box,
@@ -34,7 +33,7 @@ import BorrowRequestDialog from './BorrowRequestDialog';
 import LoginDialog from '../auth/LoginDialog';
 
 const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activeSessions }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [selectedCopy, setSelectedCopy] = useState(null);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
@@ -43,9 +42,11 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
   const [borrowRequestDialogOpen, setBorrowRequestDialogOpen] = useState(false);
   const [successSnackbar, setSuccessSnackbar] = useState({ open: false, message: '' });
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null); // Track what action to retry after login
+  const [pendingAction, setPendingAction] = useState(null);
   const [inLibraryNetworkAllowed, setInLibraryNetworkAllowed] = useState(true);
   const [networkMessage, setNetworkMessage] = useState('');
+
+  const [membershipWarningOpen, setMembershipWarningOpen] = useState(false);
 
   const availableCopies = book.copies?.filter(copy => copy.status === 'AVAILABLE') || [];
   const isAvailable = availableCopies.length > 0;
@@ -125,17 +126,30 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
   //   }
   // };
 
-  const handleBorrowClick = () => {
+  const handleBorrowClick = async () => {
     if (!isAuthenticated) {
       setPendingAction('borrow');
       setLoginDialogOpen(true);
       return;
     }
-    
+
+    // Check library membership status before opening the dialog
+    if (user?.id) {
+      try {
+        const profile = await ApiService.getProfileSummary(user.id);
+        if (profile?.membershipStatus?.toLowerCase() === 'inactive') {
+          setMembershipWarningOpen(true);
+          return;
+        }
+      } catch (e) {
+        // If check fails, let the backend reject it — don't block the user
+      }
+    }
+
     // Check if user has an active session with the same book
-    const hasActiveSessionForSameBook = activeSessions && 
+    const hasActiveSessionForSameBook = activeSessions &&
       activeSessions.some(session => session.copy.book.id === book.id);
-    
+
     if (hasActiveSessionForSameBook) {
       setRestrictionSnackbar({
         open: true,
@@ -143,24 +157,20 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
       });
       return;
     }
-    
-    // Open borrow request dialog instead of direct borrow
+
     setBorrowRequestDialogOpen(true);
   };
 
   const handleBorrowRequestSubmit = async (requestData) => {
     try {
-      // Format request body to match Flutter implementation
       const requestBody = {
-        bookId: requestData.bookId.toString(), // Convert to string like Flutter
+        bookId: requestData.bookId.toString(),
       };
       
-      // Only include reason if it's not empty (like Flutter)
       if (requestData.reason && requestData.reason.trim()) {
         requestBody.reason = requestData.reason.trim();
       }
       
-      console.log('Submitting borrow request:', requestBody);
       const response = await ApiService.createBookRequest(requestBody);
       console.log('Borrow request response:', response);
       
@@ -169,18 +179,8 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
         message: 'Borrow request submitted successfully',
       });
     } catch (error) {
-      console.error('Error submitting borrow request:', error);
-      console.error('Error response:', error.response?.data);
-      
-      // Show more specific error message
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          'Failed to submit borrow request. Please try again.';
-      
-      setRestrictionSnackbar({
-        open: true,
-        message: errorMessage,
-      });
+      // Re-throw so BorrowRequestDialog can display the error inline
+      throw error;
     }
   };
 
@@ -643,6 +643,32 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
           setPendingAction(null);
         }}
       />
+
+      {/* Library Membership Warning Dialog */}
+      <Dialog open={membershipWarningOpen} onClose={() => setMembershipWarningOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: 16, fontWeight: 600, color: '#b45309' }}>
+          ⚠️ Library Membership Not Active
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2, fontSize: 13 }}>
+            <strong>Your library membership is not yet active.</strong>
+            <br />
+            To borrow books, you need to pay the University Library Fee. Here's what to do:
+            <ol style={{ margin: '8px 0 0 0', paddingLeft: '18px' }}>
+              <li>Visit the <strong>University Finance Office</strong> and pay the Library Membership Fee.</li>
+              <li>Once paid, your membership will be <strong>automatically activated</strong> — no further action needed.</li>
+              <li>Return here and try borrowing again!</li>
+            </ol>
+            <br />
+            For help, contact the library at <strong>library@isbat.ac.ug</strong>.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMembershipWarningOpen(false)} variant="contained" sx={{ fontSize: 13 }}>
+            OK, Got it
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

@@ -348,11 +348,7 @@ export class ApiService {
     return response.data;
   }
 
-  // Requests
-  static async createBookRequest(requestData) {
-    const response = await api.post('/book-requests', requestData);
-    return response.data;
-  }
+
 
   static async createMembershipRequest(requestData) {
     const response = await api.post('/membership-requests', requestData);
