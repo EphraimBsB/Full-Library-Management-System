@@ -188,7 +188,10 @@ export class MembershipService {
     };
   }
 
-  async updateMembershipStatus(id: string, status: string): Promise<Membership> {
+  async updateMembershipStatus(
+    id: string,
+    status: string,
+  ): Promise<Membership> {
     const membership = await this.membershipRepository.findOne({
       where: { id },
       relations: ['user', 'type'],
@@ -199,16 +202,27 @@ export class MembershipService {
     }
 
     // Validate status
-    const validStatuses = ['active', 'inactive', 'expired', 'suspended', 'cancelled'];
+    const validStatuses = [
+      'active',
+      'inactive',
+      'expired',
+      'suspended',
+      'cancelled',
+    ];
     if (!validStatuses.includes(status)) {
-      throw new BadRequestException(`Invalid status: ${status}. Valid statuses are: ${validStatuses.join(', ')}`);
+      throw new BadRequestException(
+        `Invalid status: ${status}. Valid statuses are: ${validStatuses.join(', ')}`,
+      );
     }
 
     membership.status = status as any;
     return this.membershipRepository.save(membership);
   }
 
-  async updateMembershipType(id: string, membershipTypeId: number): Promise<Membership> {
+  async updateMembershipType(
+    id: string,
+    membershipTypeId: number,
+  ): Promise<Membership> {
     const membership = await this.membershipRepository.findOne({
       where: { id },
       relations: ['user', 'type'],
@@ -223,7 +237,9 @@ export class MembershipService {
     });
 
     if (!membershipType) {
-      throw new NotFoundException(`Membership type with ID ${membershipTypeId} not found`);
+      throw new NotFoundException(
+        `Membership type with ID ${membershipTypeId} not found`,
+      );
     }
 
     membership.type = membershipType;

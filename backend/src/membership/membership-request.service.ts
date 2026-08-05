@@ -96,7 +96,7 @@ export class MembershipRequestService {
 
     // Create or update user
     if (!user) {
-      let role = await this.userRoleRepository.findOne({
+      const role = await this.userRoleRepository.findOne({
         where: { id: createDto.roleId },
       });
 

@@ -26,7 +26,7 @@ export class MembershipType {
     type: 'decimal',
     precision: 10,
     scale: 2,
-    default: 1.00,
+    default: 1.0,
   })
   fineRate: number;
 
@@ -39,6 +39,8 @@ export class MembershipType {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @OneToMany(() => Membership, (membership) => membership.type, { cascade: true })
+  @OneToMany(() => Membership, (membership) => membership.type, {
+    cascade: true,
+  })
   memberships: Membership[];
 }

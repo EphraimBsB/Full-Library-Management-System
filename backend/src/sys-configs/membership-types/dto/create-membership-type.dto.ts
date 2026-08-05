@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsString, IsInt, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
 
 export class CreateMembershipTypeDto {
   @IsString()

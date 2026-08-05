@@ -82,14 +82,14 @@ export class DashboardService {
         .select('SUM(book.totalCopies)', 'total')
         .where('book.deletedAt IS NULL')
         .getRawOne()
-        .then(result => parseInt(result?.total || '0')),
+        .then((result) => parseInt(result?.total || '0')),
 
       this.bookRepository
         .createQueryBuilder('book')
         .select('SUM(book.availableCopies)', 'total')
         .where('book.deletedAt IS NULL')
         .getRawOne()
-        .then(result => parseInt(result?.total || '0')),
+        .then((result) => parseInt(result?.total || '0')),
 
       this.userRepository.count(),
     ]);

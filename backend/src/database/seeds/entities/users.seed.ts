@@ -287,12 +287,11 @@ export class UsersSeed implements ISeeder {
     const userRoleRepository = dataSource.getRepository(UserRole);
 
     // Get required roles
-    const [adminRole, librarianRole, memberRole] =
-      await Promise.all([
-        userRoleRepository.findOneBy({ name: 'Admin' }),
-        userRoleRepository.findOneBy({ name: 'Librarian' }),
-        userRoleRepository.findOneBy({ name: 'Member' }),
-      ]);
+    const [adminRole, librarianRole, memberRole] = await Promise.all([
+      userRoleRepository.findOneBy({ name: 'Admin' }),
+      userRoleRepository.findOneBy({ name: 'Librarian' }),
+      userRoleRepository.findOneBy({ name: 'Member' }),
+    ]);
 
     if (!adminRole || !librarianRole || !memberRole) {
       console.warn('Skipping users seeding: Required roles not found');

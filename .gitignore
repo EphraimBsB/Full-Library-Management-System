@@ -3,8 +3,11 @@ backend/node_modules/
 backend/dist/
 backend/.env
 backend/.DS_Store
-backend/*.log
+backend/logs/
 backend/storage/
+backend/backups/
+
+
 
 # Flutter frontend
 frontend/.dart_tool/

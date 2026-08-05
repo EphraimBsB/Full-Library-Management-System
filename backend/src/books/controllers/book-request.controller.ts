@@ -26,7 +26,10 @@ import {
   ApproveRejectRequestDto,
 } from '../dto/book-request.dto';
 import { BookRequestStatus } from '../entities/book-request.entity';
-import { CreateRenewalRequestDto, ApproveRejectRenewalDto } from '../dto/renewal-request.dto';
+import {
+  CreateRenewalRequestDto,
+  ApproveRejectRenewalDto,
+} from '../dto/renewal-request.dto';
 
 @ApiTags('book-requests')
 @Controller('book-requests')
@@ -185,11 +188,17 @@ export class BookRequestController {
   @Roles(UserRole.MEMBER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a renewal request for an existing loan' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 201, description: 'Renewal request created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Renewal request created successfully',
+  })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Loan not found' })
-  @ApiResponse({ status: 409, description: 'Renewal request already exists or cannot be renewed' })
+  @ApiResponse({
+    status: 409,
+    description: 'Renewal request already exists or cannot be renewed',
+  })
   async createRenewalRequest(
     @Body() createRenewalRequestDto: CreateRenewalRequestDto,
     @Req() req: any,
@@ -223,7 +232,10 @@ export class BookRequestController {
   @Roles(UserRole.LIBRARIAN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Approve a renewal request' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Renewal request approved and loan renewed' })
+  @ApiResponse({
+    status: 200,
+    description: 'Renewal request approved and loan renewed',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Request not found' })
@@ -235,15 +247,15 @@ export class BookRequestController {
   ) {
     const approvedById = req.user.id;
     const updatedLoan = await this.bookRequestService.approveRenewalRequest(
-      requestId, 
-      approvedById, 
-      approveDto.reason
+      requestId,
+      approvedById,
+      approveDto.reason,
     );
-    
+
     return {
       message: 'Renewal request approved successfully',
       loan: updatedLoan,
-      requestId: requestId
+      requestId: requestId,
     };
   }
 

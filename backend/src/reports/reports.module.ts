@@ -12,7 +12,15 @@ import { Publisher } from '../sys-configs/publishers/entities/publisher.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Book, BookLoan, User, BookRequest, Category, Subject, Publisher]),
+    TypeOrmModule.forFeature([
+      Book,
+      BookLoan,
+      User,
+      BookRequest,
+      Category,
+      Subject,
+      Publisher,
+    ]),
   ],
   providers: [ReportsService],
   controllers: [ReportsController],

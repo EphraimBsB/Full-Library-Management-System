@@ -103,7 +103,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 409, description: 'Email or roll number already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'Email or roll number already exists',
+  })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
@@ -190,7 +193,10 @@ export class UsersController {
   @Post('change-password')
   @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid current password or new passwords do not match' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid current password or new passwords do not match',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
@@ -242,7 +248,11 @@ export class UsersController {
 
   @Get('profile/me')
   @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'Profile retrieved successfully', type: UserProfileSummaryDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile retrieved successfully',
+    type: UserProfileSummaryDto,
+  })
   async getMyProfile(@Request() req) {
     return this.usersService.getUserProfileSummary(req.user.id);
   }

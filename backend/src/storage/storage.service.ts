@@ -21,7 +21,11 @@ import {
 } from './interfaces/file-metadata.interface';
 import { STORAGE_CONSTANTS } from './storage.constants';
 import { ImageVariant } from './file-type.enum';
-import { FileManagementQueryDto, SortField, SortOrder } from './dto/file-management-query.dto';
+import {
+  FileManagementQueryDto,
+  SortField,
+  SortOrder,
+} from './dto/file-management-query.dto';
 import { UpdateFileDto } from './dto/update-file.dto';
 import { User } from 'src/users/entities/user.entity';
 
@@ -410,19 +414,32 @@ export class StorageService {
     limit: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 20, search, mimeType, isPublic, userId, sortBy = SortField.CREATED_AT, sortOrder = SortOrder.DESC } = query;
-    
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      mimeType,
+      isPublic,
+      userId,
+      sortBy = SortField.CREATED_AT,
+      sortOrder = SortOrder.DESC,
+    } = query;
+
     const queryBuilder: SelectQueryBuilder<FileRecord> = this.fileRepository
       .createQueryBuilder('file')
       .where('file.deletedAt IS NULL');
 
     // Apply filters
     if (search) {
-      queryBuilder.andWhere('file.originalName ILIKE :search', { search: `%${search}%` });
+      queryBuilder.andWhere('file.originalName ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     if (mimeType) {
-      queryBuilder.andWhere('file.mimeType ILIKE :mimeType', { mimeType: `%${mimeType}%` });
+      queryBuilder.andWhere('file.mimeType ILIKE :mimeType', {
+        mimeType: `%${mimeType}%`,
+      });
     }
 
     if (isPublic !== undefined) {
@@ -549,7 +566,10 @@ export class StorageService {
     return file;
   }
 
-  async updateFile(id: string, updateFileDto: UpdateFileDto): Promise<FileRecord> {
+  async updateFile(
+    id: string,
+    updateFileDto: UpdateFileDto,
+  ): Promise<FileRecord> {
     const file = await this.getFileById(id);
 
     if (updateFileDto.originalName) {
@@ -616,7 +636,9 @@ export class StorageService {
         await this.fileRepository.remove(file);
         deletedCount++;
       } catch (error) {
-        this.logger.error(`Failed to cleanup file ${file.id}: ${error.message}`);
+        this.logger.error(
+          `Failed to cleanup file ${file.id}: ${error.message}`,
+        );
       }
     }
 

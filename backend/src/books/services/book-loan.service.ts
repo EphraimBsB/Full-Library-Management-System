@@ -140,7 +140,8 @@ export class BookLoanService {
     }
 
     const maxLoans = activeMembership.type.maxBooks;
-    const loanPeriodDays = activeMembership.type.loanPeriodDays || this.loanPeriodDays;
+    const loanPeriodDays =
+      activeMembership.type.loanPeriodDays || this.loanPeriodDays;
 
     // 2️⃣ Check current active loan count for user
     const activeLoansCount = await transactionalEntityManager.count(BookLoan, {
@@ -163,11 +164,14 @@ export class BookLoanService {
       const query = transactionalEntityManager
         .createQueryBuilder(BookCopy, 'copy')
         .where('copy.id = :id', { id: preferredCopyIdNumber })
-        .andWhere('(copy.status = :availableStatus OR (copy.status = :reservedStatus AND :hasRequest = true))', {
-          availableStatus: BookCopyStatus.AVAILABLE,
-          reservedStatus: BookCopyStatus.RESERVED,
-          hasRequest: !!requestId,
-        });
+        .andWhere(
+          '(copy.status = :availableStatus OR (copy.status = :reservedStatus AND :hasRequest = true))',
+          {
+            availableStatus: BookCopyStatus.AVAILABLE,
+            reservedStatus: BookCopyStatus.RESERVED,
+            hasRequest: !!requestId,
+          },
+        );
 
       if (bookId) {
         query.andWhere('copy.bookId = :bookId', { bookId: Number(bookId) });
@@ -184,11 +188,14 @@ export class BookLoanService {
       availableCopy = await transactionalEntityManager
         .createQueryBuilder(BookCopy, 'copy')
         .where('copy.bookId = :bookId', { bookId: Number(bookId) })
-        .andWhere('(copy.status = :availableStatus OR (copy.status = :reservedStatus AND :hasRequest = true))', { 
+        .andWhere(
+          '(copy.status = :availableStatus OR (copy.status = :reservedStatus AND :hasRequest = true))',
+          {
             availableStatus: BookCopyStatus.AVAILABLE,
             reservedStatus: BookCopyStatus.RESERVED,
             hasRequest: !!requestId,
-         })
+          },
+        )
         .setLock('pessimistic_write')
         .getOne();
 
@@ -392,7 +399,6 @@ export class BookLoanService {
 
       // 6. Send email notification to user is already handled above in step 6.
 
-
       await this.resetCache();
       return updatedLoan;
     });
@@ -403,7 +409,7 @@ export class BookLoanService {
    */
   async renewLoan(loanId: string, userId: string): Promise<BookLoan> {
     this.logger.log(`Attempting to renew loan ${loanId} for user ${userId}`);
-    
+
     const activeMembership =
       await this.membershipService.findActiveMembership(userId);
     if (!activeMembership) {
@@ -413,7 +419,9 @@ export class BookLoanService {
       );
     }
 
-    this.logger.log(`Found active membership: ${activeMembership.id}, type: ${activeMembership.type?.name || 'Unknown'}`);
+    this.logger.log(
+      `Found active membership: ${activeMembership.id}, type: ${activeMembership.type?.name || 'Unknown'}`,
+    );
 
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const loan = await transactionalEntityManager.findOne(BookLoan, {
@@ -445,24 +453,35 @@ export class BookLoanService {
       let membershipType;
       if (activeMembership.type && typeof activeMembership.type === 'object') {
         membershipType = activeMembership.type;
-        this.logger.log(`Using membership type from active membership: ${membershipType.name}`);
+        this.logger.log(
+          `Using membership type from active membership: ${membershipType.name}`,
+        );
       } else {
-        this.logger.log(`Looking up membership type with ID: ${activeMembership.type}`);
+        this.logger.log(
+          `Looking up membership type with ID: ${activeMembership.type}`,
+        );
         membershipType = await this.membershipTypeRepository.findOne({
           where: { id: activeMembership.type },
         });
       }
 
       if (!membershipType) {
-        this.logger.error(`Membership type not found for membership ${activeMembership.id}`);
+        this.logger.error(
+          `Membership type not found for membership ${activeMembership.id}`,
+        );
         throw new BadRequestException('Membership type not found');
       }
 
-      const maxRenewals = membershipType?.renewalLimit ?? this.loanConfig.maxRenewals;
-      this.logger.log(`Renewal limits - Current: ${loan.renewalCount}, Max: ${maxRenewals}`);
-      
+      const maxRenewals =
+        membershipType?.renewalLimit ?? this.loanConfig.maxRenewals;
+      this.logger.log(
+        `Renewal limits - Current: ${loan.renewalCount}, Max: ${maxRenewals}`,
+      );
+
       if (loan.renewalCount >= maxRenewals) {
-        this.logger.error(`Renewal limit exceeded: ${loan.renewalCount} >= ${maxRenewals}`);
+        this.logger.error(
+          `Renewal limit exceeded: ${loan.renewalCount} >= ${maxRenewals}`,
+        );
         throw new RenewalLimitExceededException(maxRenewals);
       }
 
@@ -543,7 +562,7 @@ export class BookLoanService {
       );
       const dailyFine =
         membership?.type?.fineRate || this.loanConfig.dailyFineAmount;
-      
+
       // Set lost book fine to 10x the daily rate (or could be replaced with a config value)
       const lostBookFine = dailyFine * 10;
 
@@ -741,7 +760,13 @@ export class BookLoanService {
         status: LoanStatus.ACTIVE,
         dueDate: LessThan(new Date()),
       },
-      relations: ['user', 'bookCopy', 'bookCopy.book', 'user.memberships', 'user.memberships.type'],
+      relations: [
+        'user',
+        'bookCopy',
+        'bookCopy.book',
+        'user.memberships',
+        'user.memberships.type',
+      ],
     });
 
     let updated = 0;
@@ -917,7 +942,7 @@ export class BookLoanService {
       const membership = await this.membershipService.findActiveMembership(
         user.id,
       );
-      
+
       // Get grace period from membership type configuration
       const gracePeriodDays = membership?.type?.gracePeriodDays ?? 0;
       const gracePeriodEnd = new Date(dueDate);

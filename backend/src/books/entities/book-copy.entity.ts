@@ -28,6 +28,7 @@ export enum BookCopyStatus {
 @Index(['bookId'])
 @Index(['status'])
 @Index(['bookId', 'status'])
+@Index(['accessNumber'])
 export class BookCopy {
   @PrimaryGeneratedColumn('increment')
   id: number;

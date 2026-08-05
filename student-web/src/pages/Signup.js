@@ -10,7 +10,11 @@ import {
   Alert,
   CircularProgress,
   Grid,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL, API_ENDPOINTS, DEFAULT_HEADERS } from '../constants/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +24,7 @@ const Signup = () => {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [verifyingRollNumber, setVerifyingRollNumber] = useState(false);
   const [rollNumberVerified, setRollNumberVerified] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,6 +56,11 @@ const Signup = () => {
     if (name === 'rollNumber') {
       setRollNumberVerified(false);
     }
+  };
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
   };
 
   const handleRollNumberCheck = async () => {
@@ -371,11 +381,25 @@ const Signup = () => {
                         fullWidth
                         label="Password *"
                         name="password"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={handleChange}
                         disabled={loading}
                         required
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={handleClickShowPassword}
+                                onMouseDown={handleMouseDownPassword}
+                                edge="end"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -383,11 +407,25 @@ const Signup = () => {
                         fullWidth
                         label="Confirm Password *"
                         name="confirmPassword"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         disabled={loading}
                         required
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle confirm password visibility"
+                                onClick={handleClickShowPassword}
+                                onMouseDown={handleMouseDownPassword}
+                                edge="end"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     </Grid>
                   </>

@@ -14,7 +14,8 @@ export class CategoriesSeed implements ISeeder {
       },
       {
         name: 'ICT',
-        description: 'Information and Communication Technology books and resources',
+        description:
+          'Information and Communication Technology books and resources',
       },
       {
         name: 'HEALTH SCIENCE',
@@ -30,7 +31,8 @@ export class CategoriesSeed implements ISeeder {
       },
       {
         name: 'NATURAL SCIENCES',
-        description: 'Books on natural sciences including physics, chemistry, and biology',
+        description:
+          'Books on natural sciences including physics, chemistry, and biology',
       },
     ];
 
@@ -39,7 +41,7 @@ export class CategoriesSeed implements ISeeder {
 
     for (const category of categories) {
       try {
-        let existingCategory = await repository.findOneBy({
+        const existingCategory = await repository.findOneBy({
           name: category.name,
         });
 

@@ -95,18 +95,32 @@ export class BookLoanController {
   @ApiOperation({ summary: 'Issue a book to a specific user by roll number' })
   @ApiBearerAuth()
   @ApiResponse({ status: 201, description: 'Book issued successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request - Invalid data or member issues' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid data or member issues',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Member has reached loan limit or no active membership' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Member has reached loan limit or no active membership',
+  })
   @ApiResponse({ status: 404, description: 'User or book not found' })
-  @ApiResponse({ status: 409, description: 'Book not available or already borrowed by user' })
+  @ApiResponse({
+    status: 409,
+    description: 'Book not available or already borrowed by user',
+  })
   async issueToUser(@Body() issueBookDto: IssueBookToUserDto): Promise<any> {
     try {
       return await this.dataSource.transaction(async (manager) => {
         // 1. Find user by roll number
-        const user = await this.usersService.findByRollNumber(issueBookDto.rollNumber);
+        const user = await this.usersService.findByRollNumber(
+          issueBookDto.rollNumber,
+        );
         if (!user) {
-          throw new NotFoundException(`User with roll number ${issueBookDto.rollNumber} not found`);
+          throw new NotFoundException(
+            `User with roll number ${issueBookDto.rollNumber} not found`,
+          );
         }
 
         // 2. Create loan using existing service within transaction

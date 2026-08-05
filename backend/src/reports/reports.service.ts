@@ -35,7 +35,7 @@ export class ReportsService {
       relations: ['type', 'source', 'categories'],
     });
 
-    const data = books.map(book => ({
+    const data = books.map((book) => ({
       ID: book.id,
       Title: book.title,
       Author: book.author,
@@ -46,7 +46,7 @@ export class ReportsService {
       Source: book.source?.supplier || 'N/A',
       'Total Copies': book.totalCopies,
       'Available Copies': book.availableCopies,
-      Categories: book.categories?.map(c => c.name).join(', ') || 'N/A',
+      Categories: book.categories?.map((c) => c.name).join(', ') || 'N/A',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -61,15 +61,22 @@ export class ReportsService {
       relations: ['user', 'bookCopy', 'bookCopy.book'],
     });
 
-    const data = loans.map(loan => ({
+    const data = loans.map((loan) => ({
       'Loan ID': loan.id,
-      'User Name': `${loan.user?.firstName || ''} ${loan.user?.lastName || ''}`.trim(),
+      'User Name':
+        `${loan.user?.firstName || ''} ${loan.user?.lastName || ''}`.trim(),
       'Roll Number': loan.user?.rollNumber || 'N/A',
       'Book Title': loan.bookCopy?.book?.title || 'Unknown',
       'Access Number': loan.bookCopy?.accessNumber || 'N/A',
-      'Borrowed At': loan.borrowedAt ? new Date(loan.borrowedAt).toLocaleDateString() : 'N/A',
-      'Due Date': loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'N/A',
-      'Returned At': loan.returnedAt ? new Date(loan.returnedAt).toLocaleDateString() : 'Active',
+      'Borrowed At': loan.borrowedAt
+        ? new Date(loan.borrowedAt).toLocaleDateString()
+        : 'N/A',
+      'Due Date': loan.dueDate
+        ? new Date(loan.dueDate).toLocaleDateString()
+        : 'N/A',
+      'Returned At': loan.returnedAt
+        ? new Date(loan.returnedAt).toLocaleDateString()
+        : 'Active',
       Status: loan.status,
     }));
 
@@ -85,14 +92,16 @@ export class ReportsService {
       relations: ['role'],
     });
 
-    const data = users.map(user => ({
+    const data = users.map((user) => ({
       ID: user.id,
       Name: `${user.firstName} ${user.lastName}`,
       Email: user.email,
       'Roll Number': user.rollNumber,
       Role: user.role?.name || 'N/A',
       Degree: user.degree || 'N/A',
-      'Join Date': user.joinDate ? new Date(user.joinDate).toLocaleDateString() : 'N/A',
+      'Join Date': user.joinDate
+        ? new Date(user.joinDate).toLocaleDateString()
+        : 'N/A',
       Status: user.isActive ? 'Active' : 'Inactive',
     }));
 
@@ -108,18 +117,23 @@ export class ReportsService {
       relations: ['user', 'book', 'book.type', 'book.categories'],
     });
 
-    const data = requests.map(request => ({
+    const data = requests.map((request) => ({
       'Request ID': request.id,
-      'User Name': `${request.user?.firstName || ''} ${request.user?.lastName || ''}`.trim(),
+      'User Name':
+        `${request.user?.firstName || ''} ${request.user?.lastName || ''}`.trim(),
       'Roll Number': request.user?.rollNumber || 'N/A',
       'Book Title': request.book?.title || 'Unknown',
-      'Author': request.book?.author || 'N/A',
-      'ISBN': request.book?.isbn || 'N/A',
+      Author: request.book?.author || 'N/A',
+      ISBN: request.book?.isbn || 'N/A',
       'Request Type': request.requestType || 'N/A',
-      'Status': request.status || 'N/A',
-      'Requested At': request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A',
-      'Approved At': request.approvedAt ? new Date(request.approvedAt).toLocaleDateString() : 'N/A',
-      'Reason': request.reason || 'N/A',
+      Status: request.status || 'N/A',
+      'Requested At': request.createdAt
+        ? new Date(request.createdAt).toLocaleDateString()
+        : 'N/A',
+      'Approved At': request.approvedAt
+        ? new Date(request.approvedAt).toLocaleDateString()
+        : 'N/A',
+      Reason: request.reason || 'N/A',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -131,11 +145,11 @@ export class ReportsService {
 
   async exportBooks(query: ExportQueryDto): Promise<Buffer> {
     const whereCondition: any = {};
-    
+
     if (query.startDate || query.endDate) {
       whereCondition.createdAt = Between(
         query.startDate ? new Date(query.startDate) : new Date('1900-01-01'),
-        query.endDate ? new Date(query.endDate) : new Date()
+        query.endDate ? new Date(query.endDate) : new Date(),
       );
     }
 
@@ -148,7 +162,7 @@ export class ReportsService {
       relations: ['type', 'source', 'categories'],
     });
 
-    const data = books.map(book => ({
+    const data = books.map((book) => ({
       ID: book.id,
       Title: book.title,
       Author: book.author,
@@ -159,19 +173,23 @@ export class ReportsService {
       Source: book.source?.supplier || 'N/A',
       'Total Copies': book.totalCopies,
       'Available Copies': book.availableCopies,
-      Categories: book.categories?.map(c => c.name).join(', ') || 'N/A',
+      Categories: book.categories?.map((c) => c.name).join(', ') || 'N/A',
     }));
 
-    return this.createExportBuffer(data, 'Books', query.format || ExportFormat.EXCEL);
+    return this.createExportBuffer(
+      data,
+      'Books',
+      query.format || ExportFormat.EXCEL,
+    );
   }
 
   async exportUsers(query: ExportQueryDto): Promise<Buffer> {
     const whereCondition: any = {};
-    
+
     if (query.startDate || query.endDate) {
       whereCondition.createdAt = Between(
         query.startDate ? new Date(query.startDate) : new Date('1900-01-01'),
-        query.endDate ? new Date(query.endDate) : new Date()
+        query.endDate ? new Date(query.endDate) : new Date(),
       );
     }
 
@@ -184,27 +202,33 @@ export class ReportsService {
       relations: ['role'],
     });
 
-    const data = users.map(user => ({
+    const data = users.map((user) => ({
       ID: user.id,
       Name: `${user.firstName} ${user.lastName}`,
       Email: user.email,
       'Roll Number': user.rollNumber,
       Role: user.role?.name || 'N/A',
       Degree: user.degree || 'N/A',
-      'Join Date': user.joinDate ? new Date(user.joinDate).toLocaleDateString() : 'N/A',
+      'Join Date': user.joinDate
+        ? new Date(user.joinDate).toLocaleDateString()
+        : 'N/A',
       Status: user.isActive ? 'Active' : 'Inactive',
     }));
 
-    return this.createExportBuffer(data, 'Users', query.format || ExportFormat.EXCEL);
+    return this.createExportBuffer(
+      data,
+      'Users',
+      query.format || ExportFormat.EXCEL,
+    );
   }
 
   async exportLoans(query: ExportQueryDto): Promise<Buffer> {
     const whereCondition: any = {};
-    
+
     if (query.startDate || query.endDate) {
       whereCondition.borrowedAt = Between(
         query.startDate ? new Date(query.startDate) : new Date('1900-01-01'),
-        query.endDate ? new Date(query.endDate) : new Date()
+        query.endDate ? new Date(query.endDate) : new Date(),
       );
     }
 
@@ -213,67 +237,94 @@ export class ReportsService {
       relations: ['user', 'bookCopy', 'bookCopy.book'],
     });
 
-    const data = loans.map(loan => ({
+    const data = loans.map((loan) => ({
       'Loan ID': loan.id,
-      'User Name': `${loan.user?.firstName || ''} ${loan.user?.lastName || ''}`.trim(),
+      'User Name':
+        `${loan.user?.firstName || ''} ${loan.user?.lastName || ''}`.trim(),
       'Roll Number': loan.user?.rollNumber || 'N/A',
       'Book Title': loan.bookCopy?.book?.title || 'Unknown',
       'Access Number': loan.bookCopy?.accessNumber || 'N/A',
-      'Borrowed At': loan.borrowedAt ? new Date(loan.borrowedAt).toLocaleDateString() : 'N/A',
-      'Due Date': loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'N/A',
-      'Returned At': loan.returnedAt ? new Date(loan.returnedAt).toLocaleDateString() : 'Active',
+      'Borrowed At': loan.borrowedAt
+        ? new Date(loan.borrowedAt).toLocaleDateString()
+        : 'N/A',
+      'Due Date': loan.dueDate
+        ? new Date(loan.dueDate).toLocaleDateString()
+        : 'N/A',
+      'Returned At': loan.returnedAt
+        ? new Date(loan.returnedAt).toLocaleDateString()
+        : 'Active',
       Status: loan.status,
     }));
 
-    return this.createExportBuffer(data, 'Loans', query.format || ExportFormat.EXCEL);
+    return this.createExportBuffer(
+      data,
+      'Loans',
+      query.format || ExportFormat.EXCEL,
+    );
   }
 
   async exportCategories(query: ExportQueryDto): Promise<Buffer> {
     const categories = await this.categoryRepository.find({
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
 
-    const data = categories.map(category => ({
+    const data = categories.map((category) => ({
       ID: category.id,
       Name: category.name,
       Description: category.description || 'N/A',
       'Is Active': category.isActive ? 'Active' : 'Inactive',
     }));
 
-    return this.createExportBuffer(data, 'Categories', query.format || ExportFormat.EXCEL);
+    return this.createExportBuffer(
+      data,
+      'Categories',
+      query.format || ExportFormat.EXCEL,
+    );
   }
 
   async exportSubjects(query: ExportQueryDto): Promise<Buffer> {
     const subjects = await this.subjectRepository.find({
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
 
-    const data = subjects.map(subject => ({
+    const data = subjects.map((subject) => ({
       ID: subject.id,
       Name: subject.name,
       Description: subject.description || 'N/A',
       'Is Active': subject.isActive ? 'Active' : 'Inactive',
     }));
 
-    return this.createExportBuffer(data, 'Subjects', query.format || ExportFormat.EXCEL);
+    return this.createExportBuffer(
+      data,
+      'Subjects',
+      query.format || ExportFormat.EXCEL,
+    );
   }
 
   async exportPublishers(query: ExportQueryDto): Promise<Buffer> {
     const publishers = await this.publisherRepository.find({
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
 
-    const data = publishers.map(publisher => ({
+    const data = publishers.map((publisher) => ({
       ID: publisher.id,
       Name: publisher.name,
       Description: publisher.description || 'N/A',
       'Is Active': publisher.isActive ? 'Active' : 'Inactive',
     }));
 
-    return this.createExportBuffer(data, 'Publishers', query.format || ExportFormat.EXCEL);
+    return this.createExportBuffer(
+      data,
+      'Publishers',
+      query.format || ExportFormat.EXCEL,
+    );
   }
 
-  private createExportBuffer(data: any[], sheetName: string, format: ExportFormat): Buffer {
+  private createExportBuffer(
+    data: any[],
+    sheetName: string,
+    format: ExportFormat,
+  ): Buffer {
     if (format === ExportFormat.JSON) {
       return Buffer.from(JSON.stringify(data, null, 2), 'utf-8');
     }

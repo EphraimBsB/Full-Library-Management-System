@@ -9,7 +9,7 @@ const configService = new ConfigService();
 export const dataSourceOptions: DataSourceOptions = {
   type: 'mysql',
   host: configService.get('DB_HOST', 'localhost'),
-  port: parseInt(configService.get('DB_PORT', '3306') as string, 10),
+  port: parseInt(configService.get('DB_PORT', '3306'), 10),
   username: configService.get('DB_USERNAME', 'root'),
   password: configService.get('DB_PASSWORD', ''),
   database: configService.get('DB_DATABASE', 'library_db'),

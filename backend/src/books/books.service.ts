@@ -43,7 +43,7 @@ export class BooksService {
     private readonly queueService: QueueService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-  ) { }
+  ) {}
 
   private async resetCache(): Promise<void> {
     const store: any = (this.cacheManager as any).store;
@@ -75,16 +75,16 @@ export class BooksService {
    */
   isIpAllowed(clientIp: string): boolean {
     const allowedPrefixes = process.env.LIBRARY_NETWORK_PREFIXES || '';
-    
+
     if (!allowedPrefixes.trim()) {
       // If no prefixes configured, allow by default (no restriction)
       return true;
     }
 
-    const prefixes = allowedPrefixes.split(',').map(p => p.trim());
-    
+    const prefixes = allowedPrefixes.split(',').map((p) => p.trim());
+
     // Check if client IP starts with any allowed prefix
-    return prefixes.some(prefix => {
+    return prefixes.some((prefix) => {
       // Simple prefix matching (works for "10.0.0" or similar)
       return clientIp.startsWith(prefix);
     });
@@ -252,15 +252,22 @@ export class BooksService {
     }
 
     // 📚 Filter by categories (handle both plural array and singular string)
-    const categoriesFilter = filters.categories || (singularCategory ? [singularCategory] : []);
+    const categoriesFilter =
+      filters.categories || (singularCategory ? [singularCategory] : []);
     if (categoriesFilter.length > 0 && categoriesFilter[0] !== '') {
-      qb.andWhere('categories.name IN (:...categories) OR categories.id IN (:...categories)', { categories: categoriesFilter });
+      qb.andWhere(
+        'categories.name IN (:...categories) OR categories.id IN (:...categories)',
+        { categories: categoriesFilter },
+      );
     }
 
     // 📖 Filter by subjects (handle both plural array and singular string)
-    const subjectsFilter = filters.subjects || (singularSubject ? [singularSubject] : []);
+    const subjectsFilter =
+      filters.subjects || (singularSubject ? [singularSubject] : []);
     if (subjectsFilter.length > 0 && subjectsFilter[0] !== '') {
-      qb.andWhere('subjects.name IN (:...subjects)', { subjects: subjectsFilter });
+      qb.andWhere('subjects.name IN (:...subjects)', {
+        subjects: subjectsFilter,
+      });
     }
 
     // 🚦 Filter by status
@@ -272,7 +279,14 @@ export class BooksService {
 
     // 🎯 Apply other filters dynamically (e.g. typeId, sourceId)
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '' && key !== 'sortBy' && key !== 'sortOrder' && key !== 'categories' && key !== 'subjects') {
+      if (
+        value !== undefined &&
+        value !== '' &&
+        key !== 'sortBy' &&
+        key !== 'sortOrder' &&
+        key !== 'categories' &&
+        key !== 'subjects'
+      ) {
         qb.andWhere(`book.${key} = :${key}`, { [key]: value });
       }
     });
@@ -358,8 +372,9 @@ export class BooksService {
 
       // Update other fields
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { categories, subjects, copies, totalCopies, ...bookData } = updateBookDto;
-      
+      const { categories, subjects, copies, totalCopies, ...bookData } =
+        updateBookDto;
+
       // Handle ebookUrl explicitly - convert empty string to null for database
       if ('ebookUrl' in updateBookDto) {
         // If ebookUrl is explicitly provided (even as empty string), handle it
@@ -369,7 +384,7 @@ export class BooksService {
           bookData.ebookUrl = updateBookDto.ebookUrl; // Keep the URL
         }
       }
-      
+
       Object.assign(book, bookData);
 
       // Update copies if provided
@@ -385,7 +400,9 @@ export class BooksService {
         for (let i = 0; i < copies.length; i++) {
           const incoming = copies[i];
           // Try to match by ID first, then fallback to index matching for "simple" update
-          let target = incoming.id ? pool.find((e) => e.id === incoming.id) : null;
+          let target = incoming.id
+            ? pool.find((e) => e.id === incoming.id)
+            : null;
 
           if (!target && i < existingCopies.length) {
             // Index-based fallback: match with the original copy at this position if it hasn't been claimed by ID yet
@@ -393,11 +410,12 @@ export class BooksService {
           }
 
           if (target) {
-            if (incoming.accessNumber) target.accessNumber = incoming.accessNumber;
+            if (incoming.accessNumber)
+              target.accessNumber = incoming.accessNumber;
             if (incoming.notes !== undefined) target.notes = incoming.notes;
             toSave.push(target);
             // Remove from pool so it's not reused or mistakenly deleted
-            pool = pool.filter((e) => e.id !== target!.id);
+            pool = pool.filter((e) => e.id !== target.id);
           } else {
             // New copy
             toSave.push(
@@ -413,13 +431,18 @@ export class BooksService {
         }
 
         // Batch save for efficiency
-        const synchronizedCopies = await queryRunner.manager.save(BookCopy, toSave);
+        const synchronizedCopies = await queryRunner.manager.save(
+          BookCopy,
+          toSave,
+        );
 
         // Any copies remaining in the pool are those that were either explicitly removed (missing ID)
         // or truncated (list length decreased)
         if (pool.length > 0) {
           const inUseCopies = pool.filter(
-            (c) => c.status === BookCopyStatus.BORROWED || c.status === BookCopyStatus.READING,
+            (c) =>
+              c.status === BookCopyStatus.BORROWED ||
+              c.status === BookCopyStatus.READING,
           );
           if (inUseCopies.length > 0) {
             throw new BadRequestException(
@@ -534,7 +557,9 @@ export class BooksService {
 
     // If new copies were created, trigger the queue asynchronously
     if (savedCopies.length > 0) {
-       this.queueService.processNextInQueue(book.id.toString()).catch(e => console.error(e));
+      this.queueService
+        .processNextInQueue(book.id.toString())
+        .catch((e) => console.error(e));
     }
   }
 
@@ -752,7 +777,9 @@ export class BooksService {
       });
 
       if (!copy) {
-        throw new NotFoundException(`Book copy with ID ${copyId} not found for book ${bookId}`);
+        throw new NotFoundException(
+          `Book copy with ID ${copyId} not found for book ${bookId}`,
+        );
       }
 
       // Update copy fields
@@ -774,10 +801,12 @@ export class BooksService {
       // Update book's available copies count if status changed
       if (updateCopyDto.status !== undefined) {
         await this.updateBookAvailableCopies(bookId);
-        
+
         // If the copy became available, trigger the queue
         if (updateCopyDto.status === BookCopyStatus.AVAILABLE) {
-           this.queueService.processNextInQueue(bookId.toString()).catch(e => console.error(e));
+          this.queueService
+            .processNextInQueue(bookId.toString())
+            .catch((e) => console.error(e));
         }
       }
 
@@ -792,7 +821,9 @@ export class BooksService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException(`Failed to update book copy: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update book copy: ${error.message}`,
+      );
     }
   }
 

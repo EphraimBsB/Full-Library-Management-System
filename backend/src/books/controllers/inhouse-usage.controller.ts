@@ -61,10 +61,14 @@ export class InhouseUsageController {
     @Request() req,
   ): Promise<{ allowed: boolean; message: string }> {
     // Extract client IP (considering X-Forwarded-For header for proxies)
-    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip || req.socket.remoteAddress || '';
-    
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+      req.ip ||
+      req.socket.remoteAddress ||
+      '';
+
     const allowed = this.booksService.isIpAllowed(clientIp);
-    
+
     return {
       allowed,
       message: allowed

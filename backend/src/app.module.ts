@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static'; // Add this import
 import { join } from 'path';
+import type { Response } from 'express';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
@@ -14,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { DataImportModule } from './data-import/data-import.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { StorageModule } from './storage/storage.module';
 import { MembershipModule } from './membership/membership.module';
 import { CategoriesModule } from './sys-configs/categories/categories.module';
@@ -29,6 +31,7 @@ import { ShelvesModule } from './sys-configs/shelves/shelves.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { StudentsModule } from './auth/students/students.module';
 import { ReportsModule } from './reports/reports.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -36,6 +39,12 @@ import { ReportsModule } from './reports/reports.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 seconds
+        limit: 100, // limit each IP to 100 requests per ttl
+      },
+    ]),
     ScheduleModule.forRoot(),
     DatabaseModule,
     NotificationsModule,
@@ -60,7 +69,7 @@ import { ReportsModule } from './reports/reports.module';
       rootPath: join(process.cwd(), 'public'),
       serveRoot: '/uploads',
       serveStaticOptions: {
-        setHeaders: (res, path, stat) => {
+        setHeaders: (res: Response, path: string) => {
           // Set CORS headers for static files
           res.setHeader('Access-Control-Allow-Origin', '*');
           res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -88,6 +97,7 @@ import { ReportsModule } from './reports/reports.module';
     DataImportModule,
     StudentsModule,
     ReportsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
@@ -95,6 +105,10 @@ import { ReportsModule } from './reports/reports.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

@@ -10,6 +10,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { UserRole } from '../../sys-configs/user-roles/entities/user-role.entity';
@@ -22,6 +23,9 @@ import { BookNote } from '../../books/entities/book-note.entity';
 import { BookFavorite } from '../../books/entities/book-favorite.entity';
 
 @Entity('users')
+@Index(['email'])
+@Index(['rollNumber'])
+@Index(['isActive'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

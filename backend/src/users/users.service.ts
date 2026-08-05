@@ -31,7 +31,10 @@ import { BookNoteService } from '../books/services/book-note.service';
 import { BookLoan, LoanStatus } from '../books/entities/book-loan.entity';
 import { BookFavorite } from '../books/entities/book-favorite.entity';
 import { BookNote } from '../books/entities/book-note.entity';
-import { MembershipService, MembershipStatus } from '../membership/membership.service';
+import {
+  MembershipService,
+  MembershipStatus,
+} from '../membership/membership.service';
 import { MembershipType } from '../sys-configs/membership-types/entities/membership-type.entity';
 
 @Injectable()
@@ -280,7 +283,9 @@ export class UsersService {
       }
 
       if (attempts >= maxAttempts) {
-        throw new BadRequestException('Unable to generate unique roll number after multiple attempts');
+        throw new BadRequestException(
+          'Unable to generate unique roll number after multiple attempts',
+        );
       }
     } else {
       // Check if provided roll number already exists
@@ -393,7 +398,6 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User> {
-    
     const user = await this.userRepository.findOne({
       where: {
         id,
@@ -483,19 +487,32 @@ export class UsersService {
 
     // Handle membership updates separately
     if (updateUserDto.membershipTypeId || updateUserDto.membershipStatus) {
-      const membershipsResult = await this.membershipService.findAllMemberships(undefined, id, { page: 1, limit: 1 });
+      const membershipsResult = await this.membershipService.findAllMemberships(
+        undefined,
+        id,
+        { page: 1, limit: 1 },
+      );
       const currentMembership = membershipsResult.data[0];
 
       if (currentMembership) {
         if (updateUserDto.membershipStatus) {
-          await this.membershipService.updateMembershipStatus(currentMembership.id, updateUserDto.membershipStatus);
+          await this.membershipService.updateMembershipStatus(
+            currentMembership.id,
+            updateUserDto.membershipStatus,
+          );
         }
         if (updateUserDto.membershipTypeId) {
-          await this.membershipService.updateMembershipType(currentMembership.id, updateUserDto.membershipTypeId);
+          await this.membershipService.updateMembershipType(
+            currentMembership.id,
+            updateUserDto.membershipTypeId,
+          );
         }
       } else if (updateUserDto.membershipTypeId) {
         // Create new membership if user doesn't have one
-        await this.membershipService.createMembership(user, updateUserDto.membershipTypeId.toString());
+        await this.membershipService.createMembership(
+          user,
+          updateUserDto.membershipTypeId.toString(),
+        );
       }
     }
 
@@ -507,7 +524,8 @@ export class UsersService {
     }
 
     // Remove membership fields from user update as they're handled separately
-    const { membershipTypeId, membershipStatus, course, ...userUpdateData } = updateUserDto;
+    const { membershipTypeId, membershipStatus, course, ...userUpdateData } =
+      updateUserDto;
 
     // Map course to semester since that's what the User entity expects
     if (course !== undefined) {
@@ -611,13 +629,16 @@ export class UsersService {
   //   return savedUser;
   // }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
     const user = await this.findOne(userId);
 
     // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(
       changePasswordDto.currentPassword,
-      user.passwordHash
+      user.passwordHash,
     );
 
     if (!isCurrentPasswordValid) {
@@ -632,27 +653,38 @@ export class UsersService {
     // Check if new password is same as current password
     const isSamePassword = await bcrypt.compare(
       changePasswordDto.newPassword,
-      user.passwordHash
+      user.passwordHash,
     );
 
     if (isSamePassword) {
-      throw new BadRequestException('New password must be different from current password');
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
     }
 
     // Hash and update new password
-    const hashedPassword = await this.hashPassword(changePasswordDto.newPassword);
+    const hashedPassword = await this.hashPassword(
+      changePasswordDto.newPassword,
+    );
     user.passwordHash = hashedPassword;
-    
+
     await this.userRepository.save(user);
   }
 
-  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+  async updateProfile(
+    userId: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<User> {
     const user = await this.findOne(userId);
 
     // Check if email is being updated and conflicts with existing users
     if (updateProfileDto.email && updateProfileDto.email !== user.email) {
       const existingUser = await this.userRepository.findOne({
-        where: { email: updateProfileDto.email, id: Not(userId), deletedAt: IsNull() },
+        where: {
+          email: updateProfileDto.email,
+          id: Not(userId),
+          deletedAt: IsNull(),
+        },
       });
 
       if (existingUser) {
@@ -662,11 +694,18 @@ export class UsersService {
 
     // Handle membership status update separately
     if (updateProfileDto.membershipStatus) {
-      const membershipsResult = await this.membershipService.findAllMemberships(undefined, userId, { page: 1, limit: 1 });
+      const membershipsResult = await this.membershipService.findAllMemberships(
+        undefined,
+        userId,
+        { page: 1, limit: 1 },
+      );
       const currentMembership = membershipsResult.data[0];
-      
+
       if (currentMembership) {
-        await this.membershipService.updateMembershipStatus(currentMembership.id, updateProfileDto.membershipStatus);
+        await this.membershipService.updateMembershipStatus(
+          currentMembership.id,
+          updateProfileDto.membershipStatus,
+        );
       }
     }
 
@@ -675,7 +714,7 @@ export class UsersService {
 
     // Update only provided fields
     Object.assign(user, userUpdateData);
-    
+
     return this.userRepository.save(user);
   }
 
@@ -691,14 +730,14 @@ export class UsersService {
     // Invalidate any existing reset tokens for this user
     await this.passwordResetTokenRepository.update(
       { userId: user.id, isUsed: false },
-      { isUsed: true, usedAt: new Date() }
+      { isUsed: true, usedAt: new Date() },
     );
 
     // Generate secure reset token
     const resetToken = this.generateSecureToken();
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 2); // Token expires in 2 hours
-    
+
     // Save reset token
     const passwordResetToken = this.passwordResetTokenRepository.create({
       token: resetToken,
@@ -709,7 +748,7 @@ export class UsersService {
 
     // Send password reset email
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
-    
+
     try {
       await this.emailService.sendEmail(
         user.email,
@@ -722,7 +761,7 @@ export class UsersService {
           },
           resetUrl,
           expiryHours: 2,
-        }
+        },
       );
     } catch (error) {
       console.error('Failed to send email:', error);
@@ -730,9 +769,11 @@ export class UsersService {
         message: error.message,
         code: error.code,
         command: error.command,
-        stack: error.stack
+        stack: error.stack,
       });
-      throw new BadRequestException('Failed to send password reset email. Please try again later.');
+      throw new BadRequestException(
+        'Failed to send password reset email. Please try again later.',
+      );
     }
   }
 
@@ -776,7 +817,7 @@ export class UsersService {
     // Invalidate any other active reset tokens for this user
     await this.passwordResetTokenRepository.update(
       { userId: resetToken.userId, isUsed: false, id: Not(resetToken.id) },
-      { isUsed: true, usedAt: new Date() }
+      { isUsed: true, usedAt: new Date() },
     );
   }
 
@@ -785,9 +826,12 @@ export class UsersService {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  async sendEmailVerification(userId: string, hasPaidLibraryFee: boolean = true): Promise<void> {
+  async sendEmailVerification(
+    userId: string,
+    hasPaidLibraryFee: boolean = true,
+  ): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -795,7 +839,7 @@ export class UsersService {
     // Invalidate any existing email verification tokens for this user
     await this.emailVerificationRepository.update(
       { userId, isVerified: false },
-      { isVerified: true, verifiedAt: new Date() }
+      { isVerified: true, verifiedAt: new Date() },
     );
 
     // Generate secure verification token
@@ -813,7 +857,7 @@ export class UsersService {
 
     // Send verification email
     const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/verify-email?token=${verificationToken}`;
-    
+
     try {
       await this.emailService.sendEmail(
         user.email,
@@ -826,15 +870,19 @@ export class UsersService {
           },
           verificationUrl,
           hasPaidLibraryFee,
-        }
+        },
       );
     } catch (error) {
       console.error('Failed to send verification email:', error);
-      throw new BadRequestException('Failed to send verification email. Please try again later.');
+      throw new BadRequestException(
+        'Failed to send verification email. Please try again later.',
+      );
     }
   }
 
-  async verifyEmail(token: string): Promise<{ message: string; success: boolean }> {
+  async verifyEmail(
+    token: string,
+  ): Promise<{ message: string; success: boolean }> {
     const verification = await this.emailVerificationRepository.findOne({
       where: { token, isVerified: false },
       relations: ['user'],
@@ -870,7 +918,7 @@ export class UsersService {
     const verification = await this.emailVerificationRepository.findOne({
       where: { userId, isVerified: true },
     });
-    
+
     return !!verification;
   }
 }

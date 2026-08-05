@@ -22,13 +22,24 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Export books data' })
   @ApiQuery({ name: 'format', required: false, enum: ['excel', 'csv', 'json'] })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date (YYYY-MM-DD)',
+  })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
-  async exportBooks(@Res() res: express.Response, @Query() query: ExportQueryDto) {
+  async exportBooks(
+    @Res() res: express.Response,
+    @Query() query: ExportQueryDto,
+  ) {
     const buffer = await this.reportsService.exportBooks(query);
     const filename = `books_export_${new Date().toISOString().split('T')[0]}.${query.format || 'xlsx'}`;
-    
+
     res.set({
       'Content-Type': this.getContentType(query.format),
       'Content-Disposition': `attachment; filename="${filename}"`,
@@ -41,13 +52,24 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Export users data' })
   @ApiQuery({ name: 'format', required: false, enum: ['excel', 'csv', 'json'] })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date (YYYY-MM-DD)',
+  })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
-  async exportUsers(@Res() res: express.Response, @Query() query: ExportQueryDto) {
+  async exportUsers(
+    @Res() res: express.Response,
+    @Query() query: ExportQueryDto,
+  ) {
     const buffer = await this.reportsService.exportUsers(query);
     const filename = `users_export_${new Date().toISOString().split('T')[0]}.${query.format || 'xlsx'}`;
-    
+
     res.set({
       'Content-Type': this.getContentType(query.format),
       'Content-Disposition': `attachment; filename="${filename}"`,
@@ -60,13 +82,24 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Export loans data' })
   @ApiQuery({ name: 'format', required: false, enum: ['excel', 'csv', 'json'] })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date (YYYY-MM-DD)',
+  })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
-  async exportLoans(@Res() res: express.Response, @Query() query: ExportQueryDto) {
+  async exportLoans(
+    @Res() res: express.Response,
+    @Query() query: ExportQueryDto,
+  ) {
     const buffer = await this.reportsService.exportLoans(query);
     const filename = `loans_export_${new Date().toISOString().split('T')[0]}.${query.format || 'xlsx'}`;
-    
+
     res.set({
       'Content-Type': this.getContentType(query.format),
       'Content-Disposition': `attachment; filename="${filename}"`,
@@ -79,10 +112,13 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Export categories data' })
   @ApiQuery({ name: 'format', required: false, enum: ['excel', 'csv', 'json'] })
-  async exportCategories(@Res() res: express.Response, @Query() query: ExportQueryDto) {
+  async exportCategories(
+    @Res() res: express.Response,
+    @Query() query: ExportQueryDto,
+  ) {
     const buffer = await this.reportsService.exportCategories(query);
     const filename = `categories_export_${new Date().toISOString().split('T')[0]}.${query.format || 'xlsx'}`;
-    
+
     res.set({
       'Content-Type': this.getContentType(query.format),
       'Content-Disposition': `attachment; filename="${filename}"`,
@@ -95,10 +131,13 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Export subjects data' })
   @ApiQuery({ name: 'format', required: false, enum: ['excel', 'csv', 'json'] })
-  async exportSubjects(@Res() res: express.Response, @Query() query: ExportQueryDto) {
+  async exportSubjects(
+    @Res() res: express.Response,
+    @Query() query: ExportQueryDto,
+  ) {
     const buffer = await this.reportsService.exportSubjects(query);
     const filename = `subjects_export_${new Date().toISOString().split('T')[0]}.${query.format || 'xlsx'}`;
-    
+
     res.set({
       'Content-Type': this.getContentType(query.format),
       'Content-Disposition': `attachment; filename="${filename}"`,
@@ -111,10 +150,13 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Export publishers data' })
   @ApiQuery({ name: 'format', required: false, enum: ['excel', 'csv', 'json'] })
-  async exportPublishers(@Res() res: express.Response, @Query() query: ExportQueryDto) {
+  async exportPublishers(
+    @Res() res: express.Response,
+    @Query() query: ExportQueryDto,
+  ) {
     const buffer = await this.reportsService.exportPublishers(query);
     const filename = `publishers_export_${new Date().toISOString().split('T')[0]}.${query.format || 'xlsx'}`;
-    
+
     res.set({
       'Content-Type': this.getContentType(query.format),
       'Content-Disposition': `attachment; filename="${filename}"`,

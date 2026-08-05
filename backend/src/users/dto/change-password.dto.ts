@@ -7,16 +7,17 @@ export class ChangePasswordDto {
   @IsNotEmpty({ message: 'Current password is required' })
   currentPassword: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'New password',
     minLength: 8,
-    example: 'NewPassword123!'
+    example: 'NewPassword123!',
   })
   @IsString()
   @IsNotEmpty({ message: 'New password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
   newPassword: string;
 

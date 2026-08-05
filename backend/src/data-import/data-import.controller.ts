@@ -48,7 +48,7 @@ const editFileName = (req, file, callback) => {
 
 const tempDir = os.tmpdir();
 if (!fs.existsSync(tempDir)) {
-  fs.mkdirSync(tempDir, { recursive: true }); 
+  fs.mkdirSync(tempDir, { recursive: true });
 }
 
 @ApiTags('data-import')
@@ -67,10 +67,13 @@ export class DataImportController {
     summary: 'Subscribe to import progress updates',
     description: 'Server-Sent Events endpoint for real-time import progress',
   })
-  importProgress(@Request() req, @Query('token') token?: string): Observable<MessageEvent> {
+  importProgress(
+    @Request() req,
+    @Query('token') token?: string,
+  ): Observable<MessageEvent> {
     // Validate token from query parameter if not using JWT guard
     let userId: string;
-    
+
     if (req.user) {
       // Using JWT guard - user is already authenticated
       userId = req.user.id;
@@ -88,10 +91,10 @@ export class DataImportController {
 
     const subject = new Subject<MessageEvent>();
     const connectionId = `${userId}-${Date.now()}`;
-    
+
     // Store the connection
     this.activeConnections.set(connectionId, subject);
-    
+
     // Send initial connection message
     subject.next({
       data: JSON.stringify({
@@ -100,9 +103,9 @@ export class DataImportController {
         timestamp: new Date(),
       }),
     });
-    
+
     // Clean up on disconnect
-    return new Observable(observer => {
+    return new Observable((observer) => {
       const subscription = subject.subscribe(observer);
       return () => {
         subscription.unsubscribe();
@@ -179,10 +182,7 @@ export class DataImportController {
     status: 500,
     description: 'Internal server error',
   })
-  async importBooks(
-    @UploadedFile() file: Express.Multer.File,
-    @Request() req,
-  ) {
+  async importBooks(@UploadedFile() file: Express.Multer.File, @Request() req) {
     if (!file) {
       throw new BadRequestException('No file uploaded or invalid file format');
     }
@@ -198,7 +198,7 @@ export class DataImportController {
       });
 
       const fileBuffer = fs.readFileSync(file.path);
-      
+
       // Create a progress callback
       const progressCallback = (progress: any) => {
         this.sendProgressUpdate(req.user.id, progress);
@@ -251,7 +251,8 @@ export class DataImportController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Download books import template',
-    description: 'Download an Excel template with required columns for book import',
+    description:
+      'Download an Excel template with required columns for book import',
   })
   @ApiResponse({
     status: 200,
@@ -266,42 +267,42 @@ export class DataImportController {
       // Create template data
       const templateData = [
         {
-          'Title': 'Sample Book Title',
-          'Author': 'Author Name',
-          'ISBN': '978-0123456789',
-          'Publisher': 'Publisher Name',
+          Title: 'Sample Book Title',
+          Author: 'Author Name',
+          ISBN: '978-0123456789',
+          Publisher: 'Publisher Name',
           'Publication Year': '2023',
-          'Edition': '1st Edition',
-          'Category': 'Fiction, General',
-          'Description': 'Book description goes here',
+          Edition: '1st Edition',
+          Category: 'Fiction, General',
+          Description: 'Book description goes here',
           'Total Copies': '5',
           'Available Copies': '5',
           'Call Number': 'FIC.123',
-          'Location': 'Main Library',
-          'Shelf': 'A1',
-          'Price': '29.99',
-          'Type': '1',
-          'Source': '1',
-          'DDC': '823.9',
+          Location: 'Main Library',
+          Shelf: 'A1',
+          Price: '29.99',
+          Type: '1',
+          Source: '1',
+          DDC: '823.9',
         },
         {
-          'Title': 'Another Book',
-          'Author': 'Another Author',
-          'ISBN': '978-0987654321',
-          'Publisher': 'Another Publisher',
+          Title: 'Another Book',
+          Author: 'Another Author',
+          ISBN: '978-0987654321',
+          Publisher: 'Another Publisher',
           'Publication Year': '2022',
-          'Edition': '2nd Edition',
-          'Category': 'Non-Fiction, Science',
-          'Description': 'Another book description',
+          Edition: '2nd Edition',
+          Category: 'Non-Fiction, Science',
+          Description: 'Another book description',
           'Total Copies': '3',
           'Available Copies': '3',
           'Call Number': 'SCI.456',
-          'Location': 'Science Section',
-          'Shelf': 'B2',
-          'Price': '45.00',
-          'Type': '1',
-          'Source': '1',
-          'DDC': '500',
+          Location: 'Science Section',
+          Shelf: 'B2',
+          Price: '45.00',
+          Type: '1',
+          Source: '1',
+          DDC: '500',
         },
       ];
 
@@ -323,11 +324,11 @@ export class DataImportController {
         { wch: 15 }, // Available Copies
         { wch: 12 }, // Call Number
         { wch: 12 }, // Location
-        { wch: 8 },  // Shelf
-        { wch: 8 },  // Price
-        { wch: 5 },  // Type
-        { wch: 5 },  // Source
-        { wch: 8 },  // DDC
+        { wch: 8 }, // Shelf
+        { wch: 8 }, // Price
+        { wch: 5 }, // Type
+        { wch: 5 }, // Source
+        { wch: 8 }, // DDC
       ];
       ws['!cols'] = colWidths;
 
@@ -337,8 +338,14 @@ export class DataImportController {
       const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
       // Set headers
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=books_import_template.xlsx');
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=books_import_template.xlsx',
+      );
       res.setHeader('Content-Length', buffer.length);
 
       // Send buffer

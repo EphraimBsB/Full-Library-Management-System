@@ -165,14 +165,15 @@ export class BooksSeed implements ISeeder {
       // Generate book copies with proper status types
       const copies = Array.from({ length: bookData.totalCopies }, (_, i) => ({
         barcode: `BK-${faker.string.alphanumeric(8).toUpperCase()}`,
-        status: (i < bookData.availableCopies
-          ? 'available'
-          : faker.helpers.arrayElement([
-              'on_loan',
-              'lost',
-              'damaged',
-              'in_repair',
-            ])) as 'available' | 'on_loan' | 'lost' | 'damaged' | 'in_repair',
+        status:
+          (i < bookData.availableCopies
+            ? 'available'
+            : faker.helpers.arrayElement([
+                'on_loan',
+                'lost',
+                'damaged',
+                'in_repair',
+              ])) as 'available' | 'on_loan' | 'lost' | 'damaged' | 'in_repair',
         acquisitionDate: faker.date.past({ years: 5 }),
         notes: faker.helpers.maybe(() => faker.lorem.sentence(), {
           probability: 0.3,
@@ -317,7 +318,7 @@ export class BooksSeed implements ISeeder {
               subjects: bookData.subjects,
               type: bookData.type,
               source: bookData.source,
-              copies: copies as any[], // Type assertion to avoid TypeScript errors
+              copies: copies, // Type assertion to avoid TypeScript errors
             });
 
             await bookRepository.save(book);

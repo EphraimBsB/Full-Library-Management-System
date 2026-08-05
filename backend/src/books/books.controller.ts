@@ -8,12 +8,12 @@ import {
   Delete,
   Query,
   ParseIntPipe,
-  DefaultValuePipe,
   HttpStatus,
   HttpCode,
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import {
   ApiTags,
   ApiOperation,
@@ -21,7 +21,6 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
-  getSchemaPath,
 } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { BooksService } from './books.service';
@@ -31,7 +30,6 @@ import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
 import { BookQueryDto } from './dto/book-query.dto';
 import { Book } from './entities/book.entity';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
-import { BatchCreateBooksDto, BatchUpdateBooksDto } from './dto/batch-book.dto';
 
 @ApiTags('books')
 @Controller('books')
@@ -62,6 +60,8 @@ export class BooksController {
 
   @Get()
   @Public()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300000) // Cache for 5 minutes (300,000 milliseconds)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get all books with optional filtering and pagination',
@@ -172,7 +172,10 @@ export class BooksController {
     status: HttpStatus.OK,
     description: 'The book copy has been successfully updated.',
   })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Book or copy not found.' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Book or copy not found.',
+  })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input data.',

@@ -64,7 +64,8 @@ export class SubjectsService {
     const cacheKey = this.getSubjectsListCacheKey({ page, limit, search });
 
     // Check cache first
-    const cachedData = await this.cacheManager.get<PaginatedResponseDto<Subject>>(cacheKey);
+    const cachedData =
+      await this.cacheManager.get<PaginatedResponseDto<Subject>>(cacheKey);
     if (cachedData) {
       return cachedData;
     }

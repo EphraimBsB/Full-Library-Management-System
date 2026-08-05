@@ -229,7 +229,9 @@ export class DataImportService {
 
         // Send batch progress update
         if (progressCallback) {
-          const currentProgress = Math.round(((i + this.BATCH_SIZE) / totalRows) * 95); // 95% max during processing
+          const currentProgress = Math.round(
+            ((i + this.BATCH_SIZE) / totalRows) * 95,
+          ); // 95% max during processing
           progressCallback({
             type: 'processing',
             message: `Processing batch ${Math.floor(i / this.BATCH_SIZE) + 1} of ${Math.ceil(totalRows / this.BATCH_SIZE)}...`,
@@ -237,8 +239,8 @@ export class DataImportService {
             totalRows,
             currentRow: Math.min(i + this.BATCH_SIZE, totalRows),
             processedRows: results.length,
-            importedRows: results.filter(r => r.success).length,
-            failedRows: results.filter(r => !r.success).length,
+            importedRows: results.filter((r) => r.success).length,
+            failedRows: results.filter((r) => !r.success).length,
           });
         }
       }
@@ -288,7 +290,13 @@ export class DataImportService {
     const batchResults: ImportResultDto[] = [];
 
     // Step 1: Pre-process all categories in the batch to avoid race conditions
-    await this.preProcessBatchCategories(rawRows, startRow, batchSize, headersByIndex, headerRow);
+    await this.preProcessBatchCategories(
+      rawRows,
+      startRow,
+      batchSize,
+      headersByIndex,
+      headerRow,
+    );
 
     for (let i = 0; i < batchSize; i++) {
       const rowIndex = startRow + i;
@@ -434,7 +442,9 @@ export class DataImportService {
           error.message?.includes('Conflict') ||
           error.message?.includes('ISBN')
         ) {
-          this.logger.log(`ISBN duplication: ${dto.isbn} - Skipping duplicate book`);
+          this.logger.log(
+            `ISBN duplication: ${dto.isbn} - Skipping duplicate book`,
+          );
           result.success = false;
           result.status = 'duplicate';
           result.isbn = dto.isbn;
@@ -476,19 +486,28 @@ export class DataImportService {
       const rowObj = this.buildRowObject(rowArr, headersByIndex, headerRow);
 
       // Skip empty rows
-      if (rowArr.every((cell) => cell === '' || cell === null || cell === undefined)) {
+      if (
+        rowArr.every(
+          (cell) => cell === '' || cell === null || cell === undefined,
+        )
+      ) {
         continue;
       }
 
       // Extract categories from this row
-      const category = this.getCellValue(rowObj, ['category', 'categories', 'subject', 'subjects']);
+      const category = this.getCellValue(rowObj, [
+        'category',
+        'categories',
+        'subject',
+        'subjects',
+      ]);
       if (category) {
         const categories = category
           .toString()
           .split(',')
           .map((s: string) => s.trim())
           .filter((c: string) => c);
-        
+
         categories.forEach((catName: string) => {
           if (catName) allCategoryNames.add(catName);
         });
@@ -502,7 +521,9 @@ export class DataImportService {
   }
 
   // Create categories in a single transaction
-  private async createCategoriesInTransaction(categoryNames: string[]): Promise<void> {
+  private async createCategoriesInTransaction(
+    categoryNames: string[],
+  ): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -516,7 +537,9 @@ export class DataImportService {
 
         if (!existingCategory) {
           // Create category within the transaction
-          const newCategory = queryRunner.manager.create(Category, { name: categoryName });
+          const newCategory = queryRunner.manager.create(Category, {
+            name: categoryName,
+          });
           await queryRunner.manager.save(newCategory);
         }
       }
@@ -524,7 +547,10 @@ export class DataImportService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(`Failed to pre-create categories: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to pre-create categories: ${error.message}`,
+        error.stack,
+      );
       throw error;
     } finally {
       await queryRunner.release();
@@ -610,10 +636,12 @@ export class DataImportService {
 
     // Calculate detailed statistics
     const detailedStats = {
-      duplicates: results.filter(r => r.status === 'duplicate').length,
-      emptyRows: results.filter(r => r.status === 'empty').length,
-      validationErrors: results.filter(r => r.status === 'validation_error').length,
-      worldcatEnriched: results.filter(r => r.status === 'worldcat_enriched').length,
+      duplicates: results.filter((r) => r.status === 'duplicate').length,
+      emptyRows: results.filter((r) => r.status === 'empty').length,
+      validationErrors: results.filter((r) => r.status === 'validation_error')
+        .length,
+      worldcatEnriched: results.filter((r) => r.status === 'worldcat_enriched')
+        .length,
     };
 
     const failedResults = results.filter((r) => !r.success);

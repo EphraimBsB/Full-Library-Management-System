@@ -36,16 +36,18 @@ export class StorageController {
   @Post('upload')
   @Public()
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file', {
-    limits: {
-      fileSize: 100 * 1024 * 1024, // 100MB limit
-      fieldSize: 100 * 1024 * 1024, // 100MB for form fields
-    },
-    fileFilter: (req, file, callback) => {
-      // Allow all file types, validation will be done in service
-      callback(null, true);
-    }
-  }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 100 * 1024 * 1024, // 100MB limit
+        fieldSize: 100 * 1024 * 1024, // 100MB for form fields
+      },
+      fileFilter: (req, file, callback) => {
+        // Allow all file types, validation will be done in service
+        callback(null, true);
+      },
+    }),
+  )
   async uploadFile(
     @UploadedFile() file: UploadedFileType,
     @GetUser() user?: User,

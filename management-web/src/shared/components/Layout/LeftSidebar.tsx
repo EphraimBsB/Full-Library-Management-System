@@ -15,6 +15,7 @@ import {
   People,
   Settings,
   Logout,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -246,6 +247,39 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
             }}
           />
         </ListItemButton>
+
+        {/* Admin Dashboard */}
+        {user?.role?.name === 'Admin' && (
+          <ListItemButton
+            onClick={() => navigate('/admin')}
+            sx={{
+              px: 3,
+              py: 1,
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: 'auto',
+                mr: 2,
+              }}
+            >
+              <Box sx={{ fontSize: 14 }}>
+                <AdminPanelSettings />
+              </Box>
+            </ListItemIcon>
+            <ListItemText
+              primary="Admin System"
+              sx={{
+                '& .MuiListItemText-primary': {
+                  fontSize: 11,
+                  color: '#344054',
+                  fontWeight: 400,
+                },
+                margin: 0,
+              }}
+            />
+          </ListItemButton>
+        )}
 
         {/* Log Out */}
         <ListItemButton

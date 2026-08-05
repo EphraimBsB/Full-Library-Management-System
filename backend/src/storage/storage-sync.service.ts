@@ -16,7 +16,8 @@ export class StorageSyncService {
     private readonly fileRepository: Repository<FileRecord>,
     private readonly configService: ConfigService,
   ) {
-    this.storagePath = this.configService.get<string>('STORAGE_PATH') || './storage';
+    this.storagePath =
+      this.configService.get<string>('STORAGE_PATH') || './storage';
   }
 
   async syncOrphanedFiles(): Promise<{
@@ -30,7 +31,7 @@ export class StorageSyncService {
 
     try {
       const originalsPath = path.join(this.storagePath, 'originals');
-      
+
       // Scan all files in the originals directory
       const allFiles = await this.scanDirectory(originalsPath);
       foundFiles = allFiles.length;
@@ -41,7 +42,7 @@ export class StorageSyncService {
         try {
           // Extract relative path from storage
           const relativePath = path.relative(originalsPath, filePath);
-          
+
           // Check if file already exists in database
           const existingRecord = await this.fileRepository.findOne({
             where: { storagePath: relativePath, deletedAt: IsNull() },
@@ -51,7 +52,7 @@ export class StorageSyncService {
             // Get file stats
             const stats = await fs.stat(filePath);
             const fileName = path.basename(filePath);
-            
+
             // Try to determine MIME type
             let mimeType = 'application/octet-stream';
             try {
@@ -66,11 +67,14 @@ export class StorageSyncService {
                 '.webp': 'image/webp',
                 '.txt': 'text/plain',
                 '.doc': 'application/msword',
-                '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                '.docx':
+                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 '.xls': 'application/vnd.ms-excel',
-                '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                '.xlsx':
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 '.ppt': 'application/vnd.ms-powerpoint',
-                '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                '.pptx':
+                  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
                 '.epub': 'application/epub+zip',
                 '.mobi': 'application/x-mobipocket-ebook',
                 '.azw': 'application/vnd.amazon.ebook',
@@ -83,9 +87,10 @@ export class StorageSyncService {
             // Extract user ID from path
             const pathParts = relativePath.split(path.sep);
             let userId = 'unknown';
-            
+
             // Find UUID in path (user ID)
-            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            const uuidPattern =
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             for (const part of pathParts) {
               if (uuidPattern.test(part)) {
                 userId = part;
@@ -109,7 +114,7 @@ export class StorageSyncService {
 
             await this.fileRepository.save(fileRecord);
             syncedFiles++;
-            
+
             this.logger.log(`Synced file: ${fileName} (User: ${userId})`);
           }
         } catch (error) {
@@ -132,13 +137,13 @@ export class StorageSyncService {
 
   private async scanDirectory(dirPath: string): Promise<string[]> {
     const files: string[] = [];
-    
+
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
-        
+
         if (entry.isDirectory()) {
           // Recursively scan subdirectories
           const subFiles = await this.scanDirectory(fullPath);
@@ -149,9 +154,11 @@ export class StorageSyncService {
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to read directory ${dirPath}: ${error.message}`);
+      this.logger.error(
+        `Failed to read directory ${dirPath}: ${error.message}`,
+      );
     }
-    
+
     return files;
   }
 
@@ -184,7 +191,10 @@ export class StorageSyncService {
       });
 
       // Calculate orphaned files
-      const orphanedFiles = Math.max(0, totalFilesInStorage - totalFilesInDatabase);
+      const orphanedFiles = Math.max(
+        0,
+        totalFilesInStorage - totalFilesInDatabase,
+      );
 
       return {
         totalFilesInStorage,
