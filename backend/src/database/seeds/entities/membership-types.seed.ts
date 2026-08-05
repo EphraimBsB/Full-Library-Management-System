@@ -81,7 +81,7 @@ export class MembershipTypesSeed implements ISeeder {
     const results: string[] = [];
 
     for (const type of types) {
-      let existingType = await repository.findOneBy({ name: type.name });
+      const existingType = await repository.findOneBy({ name: type.name });
 
       if (!existingType) {
         const newType = repository.create(type);

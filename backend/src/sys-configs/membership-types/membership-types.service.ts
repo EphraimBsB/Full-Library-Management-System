@@ -1,8 +1,15 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MembershipType } from './entities/membership-type.entity';
-import { Membership, MembershipStatus } from 'src/membership/entities/membership.entity';
+import {
+  Membership,
+  MembershipStatus,
+} from 'src/membership/entities/membership.entity';
 import { CreateMembershipTypeDto } from './dto/create-membership-type.dto';
 import { UpdateMembershipTypeDto } from './dto/update-membership-type.dto';
 
@@ -50,15 +57,15 @@ export class MembershipTypesService {
   async remove(id: number): Promise<void> {
     // Check if there are any active memberships using this type
     const activeMembershipsCount = await this.membershipRepository.count({
-      where: { 
+      where: {
         membershipTypeId: id,
-        status: MembershipStatus.ACTIVE
+        status: MembershipStatus.ACTIVE,
       },
     });
 
     if (activeMembershipsCount > 0) {
       throw new ConflictException(
-        `Cannot delete membership type. It is currently being used by ${activeMembershipsCount} active membership(s). Please deactivate or reassign these memberships first.`
+        `Cannot delete membership type. It is currently being used by ${activeMembershipsCount} active membership(s). Please deactivate or reassign these memberships first.`,
       );
     }
 

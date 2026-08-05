@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEmail, IsUrl, MaxLength, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsUrl,
+  MaxLength,
+  IsEnum,
+} from 'class-validator';
 import { MembershipStatus } from '../../membership/entities/membership.entity';
 
 export class UpdateProfileDto {

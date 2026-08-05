@@ -28,7 +28,8 @@ export class SubjectsSeed implements ISeeder {
       {
         name: 'ADVERTISING',
         category: 'Business',
-        description: 'Study of advertising strategies and promotional techniques',
+        description:
+          'Study of advertising strategies and promotional techniques',
       },
       {
         name: 'MARKETING',
@@ -58,7 +59,8 @@ export class SubjectsSeed implements ISeeder {
       {
         name: 'HUMAN RESOURCE',
         category: 'Business',
-        description: 'Study of human resource management and personnel development',
+        description:
+          'Study of human resource management and personnel development',
       },
       {
         name: 'PRODUCTION MANAGEMENT',

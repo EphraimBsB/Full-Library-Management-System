@@ -33,7 +33,7 @@ export class NotificationsGateway implements OnGatewayConnection {
       }
 
       // Attach to socket and join a room by userId for targeted notifications
-      (client.data as any).userId = userId;
+      client.data.userId = userId;
       client.join(userId);
     } catch (e) {
       client.disconnect(true);

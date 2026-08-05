@@ -4,7 +4,7 @@ import { IsOptional, IsString, IsEnum } from 'class-validator';
 export enum ExportFormat {
   EXCEL = 'excel',
   CSV = 'csv',
-  JSON = 'json'
+  JSON = 'json',
 }
 
 export enum ExportType {
@@ -14,46 +14,46 @@ export enum ExportType {
   CATEGORIES = 'categories',
   SUBJECTS = 'subjects',
   PUBLISHERS = 'publishers',
-  AUTHORS = 'authors'
+  AUTHORS = 'authors',
 }
 
 export class ExportQueryDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Export format',
     enum: ExportFormat,
-    default: ExportFormat.EXCEL
+    default: ExportFormat.EXCEL,
   })
   @IsOptional()
   @IsEnum(ExportFormat)
   format?: ExportFormat = ExportFormat.EXCEL;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Date range start (YYYY-MM-DD)',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   startDate?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Date range end (YYYY-MM-DD)',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   endDate?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Filter by specific field',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   filter?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Search term',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()

@@ -66,7 +66,7 @@ export class BookRequestService {
         try {
           const response = await fetch(
             `https://ilimsapi.isbatuniversity.ac.ug:9093/api/LibMember?rollno=${requestingUser.rollNumber}`,
-            { headers: { 'Accept': 'application/json' } },
+            { headers: { Accept: 'application/json' } },
           );
           if (response.ok) {
             const rawData = await response.text();
@@ -85,12 +85,19 @@ export class BookRequestService {
               );
             }
           } else {
-            this.logger.warn(`Library fee API returned status ${response.status} for roll ${requestingUser.rollNumber}`);
+            this.logger.warn(
+              `Library fee API returned status ${response.status} for roll ${requestingUser.rollNumber}`,
+            );
           }
         } catch (error) {
           if (error instanceof BadRequestException) throw error;
-          this.logger.error(`Failed to check library fee for ${requestingUser.rollNumber}`, error);
-          throw new BadRequestException('Unable to verify library fee status. Please try again later.');
+          this.logger.error(
+            `Failed to check library fee for ${requestingUser.rollNumber}`,
+            error,
+          );
+          throw new BadRequestException(
+            'Unable to verify library fee status. Please try again later.',
+          );
         }
       }
 
@@ -125,10 +132,7 @@ export class BookRequestService {
           where: {
             book: { id: book.id },
             user: { id: userId },
-            status: In([
-              BookRequestStatus.PENDING,
-              BookRequestStatus.QUEUED,
-            ]),
+            status: In([BookRequestStatus.PENDING, BookRequestStatus.QUEUED]),
           },
         }),
         transactionalEntityManager.findOne(BookLoan, {
@@ -343,11 +347,17 @@ export class BookRequestService {
           rejectedById,
         );
       } else {
-        this.logger.warn(`Cannot send rejection email: user or user.email is undefined for request ${requestId}`);
+        this.logger.warn(
+          `Cannot send rejection email: user or user.email is undefined for request ${requestId}`,
+        );
       }
 
       // apply the update without touching relations
-      await transactionalEntityManager.update(BookRequest, { id: requestId }, updatePayload);
+      await transactionalEntityManager.update(
+        BookRequest,
+        { id: requestId },
+        updatePayload,
+      );
 
       // return the fresh request so caller can see new status
       const updated = await transactionalEntityManager.findOne(BookRequest, {
@@ -451,7 +461,9 @@ export class BookRequestService {
       }
 
       if (loan.user.id !== userId) {
-        throw new ConflictException('You can only request renewal for your own loans');
+        throw new ConflictException(
+          'You can only request renewal for your own loans',
+        );
       }
 
       if (loan.status !== LoanStatus.ACTIVE) {
@@ -471,7 +483,9 @@ export class BookRequestService {
       );
 
       if (existingRenewalRequest) {
-        throw new ConflictException('A renewal request for this loan is already pending');
+        throw new ConflictException(
+          'A renewal request for this loan is already pending',
+        );
       }
 
       // 3️⃣ Check membership validity
@@ -558,7 +572,8 @@ export class BookRequestService {
       }
 
       // Get active membership for the user
-      const activeMembership = await this.membershipService.findActiveMembership(request.user.id);
+      const activeMembership =
+        await this.membershipService.findActiveMembership(request.user.id);
       if (!activeMembership) {
         throw new BadRequestException(
           'Active membership is required to renew books',
@@ -614,7 +629,9 @@ export class BookRequestService {
 
       const maxRenewals = membershipType?.renewalLimit ?? 3;
       if (loan.renewalCount >= maxRenewals) {
-        throw new ConflictException(`Maximum renewal limit (${maxRenewals}) reached`);
+        throw new ConflictException(
+          `Maximum renewal limit (${maxRenewals}) reached`,
+        );
       }
 
       const baseDate = loan.dueDate > new Date() ? loan.dueDate : new Date();
@@ -677,14 +694,18 @@ export class BookRequestService {
       `Renewal request rejected: ${requestId}, reason: ${reason}`,
     );
 
-    const updated = await this.bookRequestRepository.findOne({ where: { id: requestId } });
+    const updated = await this.bookRequestRepository.findOne({
+      where: { id: requestId },
+    });
     return updated!;
   }
 
   /**
    * Get all renewal requests with optional status filter
    */
-  async findRenewalRequests(status?: BookRequestStatus): Promise<BookRequest[]> {
+  async findRenewalRequests(
+    status?: BookRequestStatus,
+  ): Promise<BookRequest[]> {
     const query = this.bookRequestRepository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.user', 'user')

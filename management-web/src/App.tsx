@@ -14,6 +14,7 @@ import { BookGrid } from './features/dashboard/components/BookGrid';
 import { MembersPage } from './features/members/components/MembersPage';
 import { LoansPage } from './features/loans/components/LoansPage';
 import SettingsPage from './features/settings/components/SettingsPage';
+import { AdminDashboard } from './features/admin/components/AdminDashboard';
 import { theme } from './core/theme';
 
 const queryClient = new QueryClient({
@@ -134,6 +135,16 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <SettingsPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <AdminDashboard />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

@@ -38,7 +38,7 @@ export class AuditService {
       (req as any).connection?.socket?.remoteAddress ||
       '') as string;
 
-    const userAgent = (req.headers['user-agent'] || '') as string;
+    const userAgent = req.headers['user-agent'] || '';
 
     return {
       ipAddress: ipAddress || null,

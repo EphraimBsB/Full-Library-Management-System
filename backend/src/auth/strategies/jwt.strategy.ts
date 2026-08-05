@@ -21,11 +21,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(
-    payload: any,
-  ): Promise<User> {
+  async validate(payload: any): Promise<User> {
     // this.logger.log(`JWT validation for user ID: ${payload.sub}`);
-    
+
     const user = await this.usersService.findOne(payload.sub);
 
     if (!user) {

@@ -13,8 +13,8 @@ export class NotificationsController {
     @Query('limit') limit = '20',
     @Query('offset') offset = '0',
   ) {
-    const lim = Math.min(parseInt(limit as string, 10) || 20, 100);
-    const off = parseInt(offset as string, 10) || 0;
+    const lim = Math.min(parseInt(limit, 10) || 20, 100);
+    const off = parseInt(offset, 10) || 0;
     return this.service.listForUser(user.id, lim, off);
   }
 

@@ -6,7 +6,12 @@ export class ImportResultDto {
   errors?: string[];
   createdId?: number;
   data?: Record<string, any>;
-  status?: 'imported' | 'duplicate' | 'empty' | 'validation_error' | 'worldcat_enriched';
+  status?:
+    | 'imported'
+    | 'duplicate'
+    | 'empty'
+    | 'validation_error'
+    | 'worldcat_enriched';
   isbn?: string;
   author?: string;
   publisher?: string;

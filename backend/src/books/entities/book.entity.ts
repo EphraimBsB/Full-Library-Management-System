@@ -17,17 +17,12 @@ import {
 } from 'typeorm';
 import {
   IsString,
-  IsUUID,
   IsOptional,
   IsUrl,
   IsNumber,
   Min,
   Max,
-  IsEnum,
-  IsDateString,
-  IsBoolean,
   ValidateNested,
-  ArrayMinSize,
   IsInt,
   IsISBN,
 } from 'class-validator';
@@ -48,6 +43,7 @@ import { BookFavorite } from './book-favorite.entity';
 @Index(['title', 'author'])
 @Index(['publicationYear'])
 @Index(['type'])
+@Index(['isbn'])
 export class Book {
   @PrimaryGeneratedColumn('increment')
   id: number;

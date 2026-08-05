@@ -27,13 +27,16 @@ import { UpdateFileDto } from './dto/update-file.dto';
 export class FileManagementController {
   constructor(
     private readonly storageService: StorageService,
-    private readonly storageSyncService: StorageSyncService
+    private readonly storageSyncService: StorageSyncService,
   ) {}
 
   @Get('sync-status')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get storage sync status (admin only)' })
-  @ApiResponse({ status: 200, description: 'Sync status retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sync status retrieved successfully',
+  })
   async getSyncStatus(@GetUser() user: User): Promise<{
     totalFilesInStorage: number;
     totalFilesInDatabase: number;
@@ -50,7 +53,10 @@ export class FileManagementController {
   @Get('stats')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get file storage statistics' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+  })
   async getStorageStats(@GetUser() user: User): Promise<{
     totalFiles: number;
     totalSize: number;
@@ -77,7 +83,13 @@ export class FileManagementController {
     @GetUser() user: User,
   ): Promise<FileRecord> {
     // Prevent sync-status from being treated as an ID
-    if (id === 'sync-status' || id === 'sync' || id === 'stats' || id === 'cleanup' || id === 'batch-delete') {
+    if (
+      id === 'sync-status' ||
+      id === 'sync' ||
+      id === 'stats' ||
+      id === 'cleanup' ||
+      id === 'batch-delete'
+    ) {
       throw new NotFoundException('Route not found');
     }
 
@@ -88,7 +100,11 @@ export class FileManagementController {
     }
 
     // Non-admin users can only access their own files unless public
-    if (user.role.name !== 'Admin' && file.userId !== user.id && !file.isPublic) {
+    if (
+      user.role.name !== 'Admin' &&
+      file.userId !== user.id &&
+      !file.isPublic
+    ) {
       throw new NotFoundException('File not found');
     }
 
@@ -110,7 +126,7 @@ export class FileManagementController {
     }
 
     const result = await this.storageSyncService.syncOrphanedFiles();
-    
+
     return {
       message: `Sync completed: ${result.syncedFiles} of ${result.foundFiles} files synced to database`,
       ...result,
@@ -182,14 +198,54 @@ export class FileManagementController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all files with filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Files retrieved successfully' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by filename' })
-  @ApiQuery({ name: 'mimeType', required: false, type: String, description: 'Filter by MIME type' })
-  @ApiQuery({ name: 'isPublic', required: false, type: Boolean, description: 'Filter by public status' })
-  @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by user ID (admin only)' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort by field (createdAt, size, originalName)' })
-  @ApiQuery({ name: 'sortOrder', required: false, type: String, description: 'Sort order (ASC, DESC)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by filename',
+  })
+  @ApiQuery({
+    name: 'mimeType',
+    required: false,
+    type: String,
+    description: 'Filter by MIME type',
+  })
+  @ApiQuery({
+    name: 'isPublic',
+    required: false,
+    type: Boolean,
+    description: 'Filter by public status',
+  })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    type: String,
+    description: 'Filter by user ID (admin only)',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Sort by field (createdAt, size, originalName)',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    type: String,
+    description: 'Sort order (ASC, DESC)',
+  })
   async getFiles(
     @Query() query: FileManagementQueryDto,
     @GetUser() user: User,
@@ -218,7 +274,7 @@ export class FileManagementController {
     @GetUser() user: User,
   ): Promise<FileRecord> {
     const file = await this.storageService.getFileById(id);
-    
+
     if (!file) {
       throw new NotFoundException('File not found');
     }
@@ -240,7 +296,7 @@ export class FileManagementController {
     @GetUser() user: User,
   ): Promise<{ message: string }> {
     const file = await this.storageService.getFileById(id);
-    
+
     if (!file) {
       throw new NotFoundException('File not found');
     }

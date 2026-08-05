@@ -5,8 +5,11 @@ export class AddRollNumberNullable1710000300000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Check if roll_number column exists and is already nullable
-    const rollNumberColumn = await queryRunner.hasColumn('users', 'roll_number');
-    
+    const rollNumberColumn = await queryRunner.hasColumn(
+      'users',
+      'roll_number',
+    );
+
     if (rollNumberColumn) {
       await queryRunner.query(`
         ALTER TABLE users 
@@ -15,8 +18,11 @@ export class AddRollNumberNullable1710000300000 implements MigrationInterface {
     }
 
     // Check if phone_number column exists and is already nullable
-    const phoneNumberColumn = await queryRunner.hasColumn('users', 'phone_number');
-    
+    const phoneNumberColumn = await queryRunner.hasColumn(
+      'users',
+      'phone_number',
+    );
+
     if (phoneNumberColumn) {
       await queryRunner.query(`
         ALTER TABLE users 

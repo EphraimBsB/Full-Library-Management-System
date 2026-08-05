@@ -4,7 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, In } from 'typeorm';
 import { QueueEntry, QueueStatus } from '../entities/queue-entry.entity';
 import { BookCopy, BookCopyStatus } from '../entities/book-copy.entity';
-import { BookRequest, BookRequestStatus } from '../entities/book-request.entity';
+import {
+  BookRequest,
+  BookRequestStatus,
+} from '../entities/book-request.entity';
 import { QueueService } from './queue.service';
 
 @Injectable()
@@ -40,12 +43,14 @@ export class QueueCleanupService {
         return;
       }
 
-      this.logger.log(`Found ${expiredEntries.length} expired queue entries. Processing decay...`);
+      this.logger.log(
+        `Found ${expiredEntries.length} expired queue entries. Processing decay...`,
+      );
 
       for (const entry of expiredEntries) {
         await this.processExpiredEntry(entry);
       }
-      
+
       this.logger.log('Completed cleanup of expired queue entries');
     } catch (error) {
       this.logger.error('Failed to process expired queue entries', error.stack);
@@ -60,11 +65,15 @@ export class QueueCleanupService {
 
       // 2. If there was an associated request, mark it as CANCELLED or appropriate status
       if (entry.bookRequest) {
-         if (entry.bookRequest.status !== BookRequestStatus.FULFILLED && entry.bookRequest.status !== BookRequestStatus.REJECTED) {
-             entry.bookRequest.status = BookRequestStatus.CANCELLED;
-             entry.bookRequest.rejectionReason = 'Automated cancellation due to queue reservation expiry';
-             await this.bookRequestRepository.save(entry.bookRequest);
-         }
+        if (
+          entry.bookRequest.status !== BookRequestStatus.FULFILLED &&
+          entry.bookRequest.status !== BookRequestStatus.REJECTED
+        ) {
+          entry.bookRequest.status = BookRequestStatus.CANCELLED;
+          entry.bookRequest.rejectionReason =
+            'Automated cancellation due to queue reservation expiry';
+          await this.bookRequestRepository.save(entry.bookRequest);
+        }
       }
 
       // 3. Find any RESERVED copies for this book and release ONE of them
@@ -80,20 +89,26 @@ export class QueueCleanupService {
       if (reservedCopy) {
         reservedCopy.status = BookCopyStatus.AVAILABLE;
         await this.bookCopyRepository.save(reservedCopy);
-        this.logger.log(`Released reserved copy ${reservedCopy.id} for book ${entry.book.id} back to AVAILABLE`);
+        this.logger.log(
+          `Released reserved copy ${reservedCopy.id} for book ${entry.book.id} back to AVAILABLE`,
+        );
       }
 
       // 4. Update the queue count for the book (since someone dropped out)
       // Note: This relies on the core book repository. We can just process next.
-      
+
       // 5. Trigger the queue again! Now that a copy is back to AVAILABLE (or we just removed a blocker),
       // the next person in line should get it.
       await this.queueService.processNextInQueue(entry.book.id.toString());
-      
-      this.logger.log(`Successfully expired entry ${entry.id} for user ${entry.user?.id || 'unknown'} and triggered next in queue.`);
 
+      this.logger.log(
+        `Successfully expired entry ${entry.id} for user ${entry.user?.id || 'unknown'} and triggered next in queue.`,
+      );
     } catch (error) {
-       this.logger.error(`Failed to process expired entry ${entry.id}`, error.stack);
+      this.logger.error(
+        `Failed to process expired entry ${entry.id}`,
+        error.stack,
+      );
     }
   }
 }
