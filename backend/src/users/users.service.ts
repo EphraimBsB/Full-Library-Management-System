@@ -415,6 +415,29 @@ export class UsersService {
 
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
+    
+    // Check for active loans
+    const userLoans = await this.bookLoanService.getUserLoans(id);
+    const hasActiveLoans = userLoans.some(loan => loan.status === LoanStatus.ACTIVE);
+    
+    if (hasActiveLoans) {
+      throw new BadRequestException('Cannot delete user with active loans');
+    }
+
+    // Obfuscate unique fields to allow re-registration with the same details
+    // and effectively "delete" the login credentials
+    const timestamp = Date.now();
+    user.email = `deleted_${timestamp}_${user.email}`;
+    if (user.rollNumber) {
+      user.rollNumber = `deleted_${timestamp}_${user.rollNumber}`;
+    }
+    
+    // Clear password to completely remove login capability
+    user.passwordHash = 'deleted';
+    
+    await this.userRepository.save(user);
+
+    // Soft delete the user to preserve history (loans, etc)
     await this.userRepository.softRemove(user);
   }
 
