@@ -424,21 +424,8 @@ export class UsersService {
       throw new BadRequestException('Cannot delete user with active loans');
     }
 
-    // Obfuscate unique fields to allow re-registration with the same details
-    // and effectively "delete" the login credentials
-    const timestamp = Date.now();
-    user.email = `deleted_${timestamp}_${user.email}`;
-    if (user.rollNumber) {
-      user.rollNumber = `deleted_${timestamp}_${user.rollNumber}`;
-    }
-    
-    // Clear password to completely remove login capability
-    user.passwordHash = 'deleted';
-    
-    await this.userRepository.save(user);
-
-    // Soft delete the user to preserve history (loans, etc)
-    await this.userRepository.softRemove(user);
+    // Hard delete the user to completely remove them and their data from the database
+    await this.userRepository.remove(user);
   }
 
   async activateUser(userId: string): Promise<User> {

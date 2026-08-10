@@ -15,6 +15,7 @@ import { MembersPage } from './features/members/components/MembersPage';
 import { LoansPage } from './features/loans/components/LoansPage';
 import SettingsPage from './features/settings/components/SettingsPage';
 import { AdminDashboard } from './features/admin/components/AdminDashboard';
+import { VisitorAnalytics } from './features/analytics/components/VisitorAnalytics';
 import { theme } from './core/theme';
 
 const queryClient = new QueryClient({
@@ -135,6 +136,16 @@ function App() {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <SettingsPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <VisitorAnalytics />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

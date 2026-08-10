@@ -24,4 +24,11 @@ export const DashboardService = {
   getSummary: async (): Promise<DashboardSummary> => {
     return apiClient.get<DashboardSummary>('/dashboard/summary');
   },
+  getVisitorStats: async () => {
+    return apiClient.get<any>('/analytics/dashboard');
+  },
+  getRecentVisits: async () => {
+    return apiClient.get<any[]>('/analytics/visits');
+  },
 };
+

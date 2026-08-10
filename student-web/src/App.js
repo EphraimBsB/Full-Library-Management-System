@@ -13,6 +13,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import EbookReaderPage from './pages/EbookReaderPage';
 import BookDetailsPage from './pages/BookDetailsPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import VisitorTracker from './components/VisitorTracker';
 
 // Create a theme
 const theme = createTheme({
@@ -112,6 +113,7 @@ function App() {
         <CssBaseline />
         <AuthProvider>
           <Router>
+            <VisitorTracker />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
