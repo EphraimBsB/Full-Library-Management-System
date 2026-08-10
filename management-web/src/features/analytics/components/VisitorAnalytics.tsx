@@ -180,8 +180,8 @@ export const VisitorAnalytics: React.FC = () => {
       {activeTab === 0 && (
         <Box>
           <Paper sx={{ p: 2, mb: 2, borderRadius: 2, boxShadow: 'none', border: '1px solid #EAECF0' }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={4}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, alignItems: 'center' }}>
+              <Box sx={{ flex: 1, width: '100%' }}>
                 <TextField
                   fullWidth
                   type="date"
@@ -191,8 +191,8 @@ export const VisitorAnalytics: React.FC = () => {
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
                 />
-              </Grid>
-              <Grid item xs={12} md={4}>
+              </Box>
+              <Box sx={{ flex: 1, width: '100%' }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Device</InputLabel>
                   <Select
@@ -206,8 +206,8 @@ export const VisitorAnalytics: React.FC = () => {
                     <MenuItem value="Tablet">Tablet</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12} md={4}>
+              </Box>
+              <Box sx={{ flex: 1, width: '100%' }}>
                 <TextField
                   fullWidth
                   label="Search Resource or Query"
@@ -215,8 +215,8 @@ export const VisitorAnalytics: React.FC = () => {
                   value={searchQueryFilter}
                   onChange={(e) => setSearchQueryFilter(e.target.value)}
                 />
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Paper>
 
           <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: '1px solid #EAECF0' }}>
