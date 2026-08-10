@@ -38,14 +38,6 @@ export const VisitorAnalytics: React.FC = () => {
     refetchInterval: 10000, // Refresh every 10 seconds
   });
 
-  const getBrowserFromUserAgent = (ua: string) => {
-    if (!ua) return 'Unknown';
-    if (ua.includes('Edg')) return 'Edge';
-    if (ua.includes('Chrome')) return 'Chrome';
-    if (ua.includes('Firefox')) return 'Firefox';
-    if (ua.includes('Safari')) return 'Safari';
-    return 'Other';
-  };
 
   const getDeviceFromUserAgent = (ua: string) => {
     if (!ua) return 'Desktop';
@@ -108,7 +100,7 @@ export const VisitorAnalytics: React.FC = () => {
   const top5Pages = pageData.slice(0, 5);
   const top3Searches = searchData.slice(0, 3);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
