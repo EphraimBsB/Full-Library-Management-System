@@ -17,7 +17,13 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemIcon
+  ListItemIcon,
+  TextField,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Grid
 } from '@mui/material';
 import { 
   MenuBook, 
@@ -31,6 +37,9 @@ import { theme } from '../../../core/theme';
 
 export const VisitorAnalytics: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
+  const [dateFilter, setDateFilter] = useState('');
+  const [deviceFilter, setDeviceFilter] = useState('All');
+  const [searchQueryFilter, setSearchQueryFilter] = useState('');
 
   const { data: visits, isLoading, error } = useQuery({
     queryKey: ['recentVisits'],
@@ -45,6 +54,34 @@ export const VisitorAnalytics: React.FC = () => {
     if (ua.includes('Tablet') || ua.includes('iPad')) return 'Tablet';
     return 'Desktop';
   };
+
+  const filteredVisits = useMemo(() => {
+    if (!visits) return [];
+    return visits.filter((v: any) => {
+      // Date filter
+      if (dateFilter) {
+        const visitDate = new Date(v.visitedAt).toISOString().split('T')[0];
+        if (visitDate !== dateFilter) return false;
+      }
+      
+      // Device filter
+      if (deviceFilter !== 'All') {
+        const device = getDeviceFromUserAgent(v.userAgent);
+        if (device !== deviceFilter) return false;
+      }
+      
+      // Search Query filter
+      if (searchQueryFilter) {
+        const query = searchQueryFilter.toLowerCase();
+        const sq = v.searchQuery ? v.searchQuery.toLowerCase() : '';
+        const pv = v.pageVisited ? v.pageVisited.toLowerCase() : '';
+        const rt = v.resourceTitle ? v.resourceTitle.toLowerCase() : '';
+        if (!sq.includes(query) && !pv.includes(query) && !rt.includes(query)) return false;
+      }
+      
+      return true;
+    });
+  }, [visits, dateFilter, deviceFilter, searchQueryFilter]);
 
   // Aggregated Data for Charts
   const deviceData = useMemo(() => {
@@ -132,8 +169,8 @@ export const VisitorAnalytics: React.FC = () => {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab label="Browsing Activities" />
-          <Tab label="Top Resources (5)" />
-          <Tab label="Top Search (3)" />
+          <Tab label={`Top Resources (${top5Pages.length})`} />
+          <Tab label={`Top Search (${top3Searches.length})`} />
           <Tab label="Busiest Time" />
           <Tab label="Most Used Devices" />
         </Tabs>
@@ -141,7 +178,48 @@ export const VisitorAnalytics: React.FC = () => {
 
       {/* Tab 0: Browsing Activities */}
       {activeTab === 0 && (
-        <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: '1px solid #EAECF0' }}>
+        <Box>
+          <Paper sx={{ p: 2, mb: 2, borderRadius: 2, boxShadow: 'none', border: '1px solid #EAECF0' }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Filter by Date"
+                  InputLabelProps={{ shrink: true }}
+                  size="small"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Device</InputLabel>
+                  <Select
+                    value={deviceFilter}
+                    label="Device"
+                    onChange={(e) => setDeviceFilter(e.target.value)}
+                  >
+                    <MenuItem value="All">All Devices</MenuItem>
+                    <MenuItem value="Desktop">Desktop</MenuItem>
+                    <MenuItem value="Mobile">Mobile</MenuItem>
+                    <MenuItem value="Tablet">Tablet</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Search Resource or Query"
+                  size="small"
+                  value={searchQueryFilter}
+                  onChange={(e) => setSearchQueryFilter(e.target.value)}
+                />
+              </Grid>
+            </Grid>
+          </Paper>
+
+          <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 'none', border: '1px solid #EAECF0' }}>
           <Table sx={{ minWidth: 650 }}>
             <TableHead sx={{ backgroundColor: '#F9FAFB' }}>
               <TableRow>
@@ -154,14 +232,14 @@ export const VisitorAnalytics: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {visits?.length === 0 ? (
+              {filteredVisits.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 4, color: '#667085' }}>
-                    No recent visits found. Make sure the student portal is being browsed.
+                    No recent visits match your filters.
                   </TableCell>
                 </TableRow>
               ) : (
-                visits?.map((visit: any) => (
+                filteredVisits.map((visit: any) => (
                   <TableRow key={visit.id} hover>
                     <TableCell>
                       {new Date(visit.visitedAt).toLocaleString()}
@@ -193,6 +271,7 @@ export const VisitorAnalytics: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        </Box>
       )}
 
       {/* Tab 1: Top Resources */}
