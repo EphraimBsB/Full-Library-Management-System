@@ -11,6 +11,7 @@ import {
   MenuBook,
   People,
   TrendingUp,
+  Visibility,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { theme } from '../../../core/theme';
@@ -89,6 +90,13 @@ export const DashboardSummary: React.FC = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboardSummary'],
     queryFn: DashboardService.getSummary,
+    refetchInterval: 10000,
+  });
+
+  const { data: visitorData } = useQuery({
+    queryKey: ['visitorStats'],
+    queryFn: DashboardService.getVisitorStats,
+    refetchInterval: 10000,
   });
 
   if (isLoading) {
@@ -117,6 +125,12 @@ export const DashboardSummary: React.FC = () => {
       value: data?.stats.totalUsers || 0,
       icon: <People />,
       color: theme.colors.info,
+    },
+    {
+      title: 'Site Visitors (Today)',
+      value: visitorData?.uniqueSessionsToday || 0,
+      icon: <Visibility />,
+      color: '#4caf50',
     }
     //  {
     //   title: 'Overdue Loans',

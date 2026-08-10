@@ -16,6 +16,7 @@ import {
   Settings,
   Logout,
   AdminPanelSettings,
+  BarChart,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -49,6 +50,11 @@ const navigationItems = [
     label: 'Members',
     route: '/members',
   },
+  {
+    icon: <BarChart />,
+    label: 'Analytics',
+    route: '/analytics',
+  },
 ];
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
@@ -74,14 +80,14 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   // Get current route to determine selected index
   const getCurrentIndex = () => {
     const currentPath = location.pathname;
-    const routes = ['/dashboard', '/books', '/loans', '/members'];
+    const routes = ['/dashboard', '/books', '/loans', '/members', '/analytics'];
     return routes.findIndex(route => currentPath.includes(route));
   };
 
   const selectedIndex = getCurrentIndex();
 
   const handleNavigation = (index: number) => {
-    const routes = ['/dashboard', '/books', '/loans', '/members'];
+    const routes = ['/dashboard', '/books', '/loans', '/members', '/analytics'];
     if (routes[index]) {
       navigate(routes[index]);
     }

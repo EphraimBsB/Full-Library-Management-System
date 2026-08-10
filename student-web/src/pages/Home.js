@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -22,10 +23,11 @@ import HeroSection from '../components/home/HeroSection';
 import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const [page, setPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('q') || '');
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [showAllSubjects, setShowAllSubjects] = useState(false);
   const [visibleSubjectCount, setVisibleSubjectCount] = useState(8);
@@ -48,13 +50,20 @@ const Home = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Debounce search term
+  // Debounce search term and update URL for analytics tracking
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
+      if (searchTerm) {
+        setSearchParams({ q: searchTerm }, { replace: true });
+      } else {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('q');
+        setSearchParams(newParams, { replace: true });
+      }
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, searchParams, setSearchParams]);
 
   // Fetch subjects
   const {

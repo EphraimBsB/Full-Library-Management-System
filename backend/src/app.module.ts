@@ -32,6 +32,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { StudentsModule } from './auth/students/students.module';
 import { ReportsModule } from './reports/reports.module';
 import { AdminModule } from './admin/admin.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { AdminModule } from './admin/admin.module';
     StudentsModule,
     ReportsModule,
     AdminModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

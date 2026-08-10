@@ -415,7 +415,17 @@ export class UsersService {
 
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
-    await this.userRepository.softRemove(user);
+    
+    // Check for active loans
+    const userLoans = await this.bookLoanService.getUserLoans(id);
+    const hasActiveLoans = userLoans.some(loan => loan.status === LoanStatus.ACTIVE);
+    
+    if (hasActiveLoans) {
+      throw new BadRequestException('Cannot delete user with active loans');
+    }
+
+    // Hard delete the user to completely remove them and their data from the database
+    await this.userRepository.remove(user);
   }
 
   async activateUser(userId: string): Promise<User> {
