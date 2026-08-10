@@ -1,23 +1,25 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('site_visits')
 export class SiteVisit {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ nullable: true })
   sessionId: string;
 
   @Column({ nullable: true })
   ipAddress: string;
 
-  @Column({ nullable: true })
+  @Index()
+  @Column('text', { nullable: true })
   pageVisited: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   userAgent: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   searchQuery: string;
 
   @Column('int', { nullable: true })
@@ -27,6 +29,7 @@ export class SiteVisit {
   duration: number;
 
 
+  @Index()
   @CreateDateColumn()
   visitedAt: Date;
 }

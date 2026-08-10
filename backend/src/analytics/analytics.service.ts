@@ -45,11 +45,15 @@ export class AnalyticsService {
       }
     }
 
-    this.visitBuffer.push({
-      ...createVisitDto,
-      ipAddress,
-      visitedAt: new Date(), // Set the timestamp now so it's accurate to the request time
-    });
+    if (this.visitBuffer.length < 10000) {
+      this.visitBuffer.push({
+        ...createVisitDto,
+        ipAddress,
+        visitedAt: new Date(), // Set the timestamp now so it's accurate to the request time
+      });
+    } else {
+      this.logger.warn('Visit buffer has reached its memory limit (10000). Dropping incoming analytics to protect server RAM.');
+    }
   }
 
   // Bulk insert visits every 10 seconds to avoid database overload
@@ -64,8 +68,8 @@ export class AnalyticsService {
     try {
       await this.visitRepository.insert(batch);
       // this.logger.debug(`Batch inserted ${batch.length} visits`);
-    } catch (error) {
-      this.logger.error('Failed to insert visit batch', error);
+    } catch (error: any) {
+      this.logger.error(`Failed to insert visit batch: ${error.message}`, error.stack);
       // Optional: push back to buffer if insert fails
       // this.visitBuffer.push(...batch);
     }
@@ -88,19 +92,18 @@ export class AnalyticsService {
       this.visitRepository.count(),
     ]);
 
-    // Get unique sessions today
+    // Get unique sessions today using an optimized SQL COUNT
     const uniqueSessionsToday = await this.visitRepository
       .createQueryBuilder('visit')
-      .select('visit.sessionId')
+      .select('COUNT(DISTINCT visit.sessionId)', 'count')
       .where('visit.visitedAt >= :today', { today })
-      .groupBy('visit.sessionId')
-      .getRawMany();
+      .getRawOne();
 
     return {
       todayVisits,
       weekVisits,
       totalVisits,
-      uniqueSessionsToday: uniqueSessionsToday.length,
+      uniqueSessionsToday: parseInt(uniqueSessionsToday.count || '0', 10),
     };
   }
 
