@@ -22,6 +22,7 @@ import { MembershipType } from '../sys-configs/membership-types/entities/members
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
     private jwtService: JwtService,
     private httpService: HttpService,
