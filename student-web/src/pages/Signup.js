@@ -314,7 +314,7 @@ const Signup = () => {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled
                         required
                         sx={{ backgroundColor: '#f5f5f5' }}
                       />
@@ -326,7 +326,7 @@ const Signup = () => {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled
                         sx={{ backgroundColor: '#f5f5f5' }}
                       />
                     </Grid>
@@ -338,7 +338,7 @@ const Signup = () => {
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled
                         required
                         sx={{ backgroundColor: '#f5f5f5' }}
                       />
@@ -350,7 +350,7 @@ const Signup = () => {
                         name="phoneNumber"
                         value={formData.phoneNumber}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled
                         sx={{ backgroundColor: '#f5f5f5' }}
                       />
                     </Grid>
@@ -361,7 +361,7 @@ const Signup = () => {
                         name="degree"
                         value={formData.degree}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled
                         sx={{ backgroundColor: '#f5f5f5' }}
                       />
                     </Grid>
@@ -372,7 +372,7 @@ const Signup = () => {
                         name="semester"
                         value={formData.semester}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled
                         sx={{ backgroundColor: '#f5f5f5' }}
                       />
                     </Grid>

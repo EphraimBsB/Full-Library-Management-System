@@ -63,11 +63,18 @@ export interface GetUsersParams {
   page?: number;
   limit?: number;
   search?: string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC' | 'asc' | 'desc';
+  isActive?: boolean;
 }
 
 export const UserService = {
   getUsers: async (params: GetUsersParams): Promise<PaginatedResponse<User>> => {
     return apiClient.get<PaginatedResponse<User>>('/users', { params });
+  },
+
+  getStats: async (): Promise<{ total: number; active: number; inactive: number }> => {
+    return apiClient.get<{ total: number; active: number; inactive: number }>('/users/stats');
   },
 
   getUser: async (id: string): Promise<User> => {

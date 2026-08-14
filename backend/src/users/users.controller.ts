@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   Request,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -65,6 +67,14 @@ export class UsersController {
     return this.usersService.createMember(createMemberDto);
   }
 
+  @Get('stats')
+  @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+  @ApiOperation({ summary: 'Get member statistics' })
+  @ApiResponse({ status: 200, description: 'Stats retrieved successfully' })
+  getStats() {
+    return this.usersService.getStats();
+  }
+
   @Get()
   @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
   @ApiOperation({ summary: 'Get all users with pagination' })
@@ -73,8 +83,15 @@ export class UsersController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy = 'createdAt',
+    @Query('sortOrder') sortOrder: 'ASC' | 'DESC' = 'DESC',
+    @Query('isActive') isActive?: string,
   ) {
-    return this.usersService.findAll({ page, limit, search });
+    let isActiveBool: boolean | undefined = undefined;
+    if (isActive === 'true') isActiveBool = true;
+    if (isActive === 'false') isActiveBool = false;
+    
+    return this.usersService.findAll({ page: Number(page), limit: Number(limit), search, sortBy, sortOrder }, isActiveBool);
   }
 
   @Get(':id')
@@ -231,8 +248,21 @@ export class UsersController {
   @ApiOperation({ summary: 'Send email verification' })
   @ApiResponse({ status: 200, description: 'Verification email sent' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async sendEmailVerification(@Body() body: { userId: string }) {
-    await this.usersService.sendEmailVerification(body.userId);
+  async sendEmailVerification(@Body() body: { identifier: string }) {
+    if (!body.identifier) {
+      throw new BadRequestException('Identifier is required');
+    }
+    
+    let user = await this.usersService.findByEmail(body.identifier);
+    if (!user) {
+      user = await this.usersService.findByRollNumber(body.identifier);
+    }
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.usersService.sendEmailVerification(user.id);
     return { message: 'Verification email sent' };
   }
 

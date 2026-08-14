@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { ApiService } from '../../services/api';
 
 const LoginDialog = ({ open, onClose, message = 'Please log in to continue' }) => {
   const { login } = useAuth();
@@ -117,9 +118,30 @@ const LoginDialog = ({ open, onClose, message = 'Please log in to continue' }) =
     }
   };
 
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState(null);
+
+  const handleResendVerification = async () => {
+    if (!formData.emailOrRollNumber) return;
+    
+    setResendLoading(true);
+    setResendMessage(null);
+    try {
+      await ApiService.api.post('/users/send-email-verification', {
+        identifier: formData.emailOrRollNumber
+      });
+      setResendMessage({ type: 'success', text: 'Verification email sent successfully! Please check your inbox.' });
+    } catch (error) {
+      setResendMessage({ type: 'error', text: error.response?.data?.message || 'Failed to resend verification email.' });
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   const handleClose = () => {
     setFormData({ emailOrRollNumber: '', password: '' });
     setErrors({});
+    setResendMessage(null);
     onClose();
   };
 
@@ -168,8 +190,31 @@ const LoginDialog = ({ open, onClose, message = 'Please log in to continue' }) =
               severity="error" 
               sx={{ mb: 2 }}
               icon={<ErrorOutline />}
+              action={
+                errors.submit.includes('Email not verified') && (
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    onClick={handleResendVerification}
+                    disabled={resendLoading}
+                  >
+                    {resendLoading ? 'SENDING...' : 'RESEND EMAIL'}
+                  </Button>
+                )
+              }
             >
               {errors.submit}
+            </Alert>
+          )}
+
+          {/* Resend Message Display */}
+          {resendMessage && (
+            <Alert 
+              severity={resendMessage.type} 
+              sx={{ mb: 2 }}
+              onClose={() => setResendMessage(null)}
+            >
+              {resendMessage.text}
             </Alert>
           )}
 

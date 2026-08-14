@@ -74,12 +74,13 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
     checkNetwork();
   }, [readDialogOpen]);
 
-  const handleReadClick = () => {
+  const handleReadClick = async () => {
     if (!isAuthenticated) {
       setPendingAction('read');
       setLoginDialogOpen(true);
       return;
     }
+
     // always show the reading options dialog; network will be checked there
     setReadDialogOpen(true);
   };
@@ -198,7 +199,21 @@ const BookCard = ({ book, onBorrowRequest, onStartReading, onSessionStart, activ
     }
   };
 
-  const handleEbookRead = () => {
+  const handleEbookRead = async () => {
+    // Check library membership status before allowing ebook read
+    if (user?.id) {
+      try {
+        const profile = await ApiService.getProfileSummary(user.id);
+        if (profile?.membershipStatus?.toLowerCase() === 'inactive') {
+          setReadDialogOpen(false);
+          setMembershipWarningOpen(true);
+          return;
+        }
+      } catch (e) {
+        // If check fails, let the user proceed
+      }
+    }
+
     setReadDialogOpen(false);
     if (book.ebookUrl) {
       navigate(`/ebook-reader/${book.id}`);

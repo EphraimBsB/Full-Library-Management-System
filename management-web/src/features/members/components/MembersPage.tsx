@@ -26,11 +26,14 @@ import { MemberCard } from './MemberCard';
 import { MemberFormDialog } from './MemberFormDialog';
 import { MemberDetailsDialog } from './MemberDetailsDialog';
 
+import { Pagination } from '@mui/material';
+
 export const MembersPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'firstName' | 'joinDate' | 'rollNumber'>('firstName');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(1);
 
   const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
   const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(null);
@@ -40,34 +43,30 @@ export const MembersPage: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
+  const { data: statsResponse } = useQuery({
+    queryKey: ['members-stats'],
+    queryFn: () => UserService.getStats(),
+  });
+
   const { data: membersResponse, isLoading, error } = useQuery({
-    queryKey: ['members', search],
-    queryFn: () => UserService.getUsers({ search }),
+    queryKey: ['members', search, filter, sortBy, sortOrder, page],
+    queryFn: () => UserService.getUsers({ 
+      search, 
+      page, 
+      limit: 12, // Using 12 for better grid rendering
+      sortBy, 
+      sortOrder, 
+      isActive: filter === 'all' ? undefined : filter === 'active' ? true : false 
+    }),
   });
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value);
+    setPage(1); // Reset page on search
   };
 
   const members = membersResponse?.data || [];
-  
-  const filteredMembers = members
-    .filter(member => {
-      if (filter === 'active') return member.isActive;
-      if (filter === 'inactive') return !member.isActive;
-      return true;
-    })
-    .sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === 'firstName') {
-        comparison = a.firstName.localeCompare(b.firstName);
-      } else if (sortBy === 'joinDate') {
-        comparison = new Date(a.joinDate).getTime() - new Date(b.joinDate).getTime();
-      } else if (sortBy === 'rollNumber') {
-        comparison = (a.rollNumber || '').localeCompare(b.rollNumber || '');
-      }
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
+  const totalPages = Math.ceil((membersResponse?.total || 0) / (membersResponse?.limit || 12));
 
   return (
     <Box sx={{ p: 0 }}>
@@ -101,6 +100,24 @@ export const MembersPage: React.FC = () => {
           Add New Member
         </Button>
       </Box>
+
+      {/* Stats Cards */}
+      {statsResponse && (
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 4 }}>
+          <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1 }}>Total Members</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>{statsResponse.total}</Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1 }}>Active Members</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#12B76A' }}>{statsResponse.active}</Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1 }}>Inactive Members</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#F04438' }}>{statsResponse.inactive}</Typography>
+          </Box>
+        </Box>
+      )}
 
       {/* Toolbar */}
       <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
@@ -171,21 +188,22 @@ export const MembersPage: React.FC = () => {
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography color="error">Failed to load members. Please try again.</Typography>
         </Box>
-      ) : filteredMembers.length === 0 ? (
+      ) : members.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8, backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #EAECF0' }}>
           <Typography sx={{ color: '#667085', mb: 1 }}>No members found matching your criteria.</Typography>
           <Button 
             variant="text" 
-            onClick={() => { setSearch(''); setFilter('all'); }}
+            onClick={() => { setSearch(''); setFilter('all'); setPage(1); }}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             Clear all filters
           </Button>
         </Box>
       ) : (
-        <Box 
-          sx={{ 
-            display: 'grid', 
+        <>
+          <Box 
+            sx={{ 
+              display: 'grid', 
             gridTemplateColumns: {
               xs: 'repeat(1, minmax(0, 1fr))',
               sm: 'repeat(2, minmax(0, 1fr))',
@@ -199,7 +217,7 @@ export const MembersPage: React.FC = () => {
             alignItems: 'start'
           }}
         >
-          {filteredMembers.map((member) => (
+          {members.map((member) => (
             <MemberCard 
               key={member.id}
               member={member} 
@@ -210,6 +228,19 @@ export const MembersPage: React.FC = () => {
             />
           ))}
         </Box>
+
+        {totalPages > 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+            <Pagination 
+              count={totalPages} 
+              page={page} 
+              onChange={(_, value) => setPage(value)} 
+              color="primary" 
+              size="medium"
+            />
+          </Box>
+        )}
+        </>
       )}
 
       {/* Filter Menu */}
@@ -219,15 +250,15 @@ export const MembersPage: React.FC = () => {
         onClose={() => setFilterMenuAnchor(null)}
         PaperProps={{ sx: { borderRadius: '8px', mt: 1, minWidth: 160 } }}
       >
-        <MenuItem onClick={() => { setFilter('all'); setFilterMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setFilter('all'); setFilterMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{filter === 'all' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>All Members</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setFilter('active'); setFilterMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setFilter('active'); setFilterMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{filter === 'active' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>Active Only</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setFilter('inactive'); setFilterMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setFilter('inactive'); setFilterMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{filter === 'inactive' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>Inactive Only</ListItemText>
         </MenuItem>
@@ -240,24 +271,24 @@ export const MembersPage: React.FC = () => {
         onClose={() => setSortMenuAnchor(null)}
         PaperProps={{ sx: { borderRadius: '8px', mt: 1, minWidth: 180 } }}
       >
-        <MenuItem onClick={() => { setSortBy('firstName'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortBy('firstName'); setSortMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{sortBy === 'firstName' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>Name</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setSortBy('joinDate'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortBy('joinDate'); setSortMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{sortBy === 'joinDate' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>Join Date</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setSortBy('rollNumber'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortBy('rollNumber'); setSortMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{sortBy === 'rollNumber' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>Roll Number</ListItemText>
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => { setSortOrder('asc'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortOrder('asc'); setSortMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{sortOrder === 'asc' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>Ascending</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setSortOrder('desc'); setSortMenuAnchor(null); }}>
+        <MenuItem onClick={() => { setSortOrder('desc'); setSortMenuAnchor(null); setPage(1); }}>
           <ListItemIcon>{sortOrder === 'desc' && <Check fontSize="small" />}</ListItemIcon>
           <ListItemText sx={{ fontSize: 12 }}>Descending</ListItemText>
         </MenuItem>

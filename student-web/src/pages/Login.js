@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { ApiService } from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,8 +42,29 @@ const Login = () => {
     }
   };
 
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState(null);
+
+  const handleResendVerification = async () => {
+    if (!formData.email) return;
+    
+    setResendLoading(true);
+    setResendMessage(null);
+    try {
+      await ApiService.api.post('/users/send-email-verification', {
+        identifier: formData.email
+      });
+      setResendMessage({ type: 'success', text: 'Verification email sent successfully! Please check your inbox.' });
+    } catch (err) {
+      setResendMessage({ type: 'error', text: err.response?.data?.message || 'Failed to resend verification email.' });
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setResendMessage(null);
     
     try {
       await login(formData);
@@ -76,8 +98,33 @@ const Login = () => {
             </Box>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert 
+                severity="error" 
+                sx={{ mb: 3 }}
+                action={
+                  error.includes('Email not verified') && (
+                    <Button 
+                      color="inherit" 
+                      size="small" 
+                      onClick={handleResendVerification}
+                      disabled={resendLoading}
+                    >
+                      {resendLoading ? 'SENDING...' : 'RESEND EMAIL'}
+                    </Button>
+                  )
+                }
+              >
                 {error}
+              </Alert>
+            )}
+
+            {resendMessage && (
+              <Alert 
+                severity={resendMessage.type} 
+                sx={{ mb: 3 }}
+                onClose={() => setResendMessage(null)}
+              >
+                {resendMessage.text}
               </Alert>
             )}
 

@@ -31,6 +31,7 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { ApiService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const EbookReaderPage = () => {
   const { bookId } = useParams();
@@ -48,11 +49,26 @@ const EbookReaderPage = () => {
 
   const pdfRef = useRef(null);
 
+  const { user } = useAuth();
+
   const loadBookDetails = useCallback(async () => {
     if (!bookId || bookId === 'undefined' || bookId === 'null') {
       return;
     }
     try {
+      if (user?.id) {
+        const profile = await ApiService.getProfileSummary(user.id);
+        if (profile?.membershipStatus?.toLowerCase() === 'inactive') {
+          setSnackbar({
+            open: true,
+            message: 'You need an active library membership to read ebooks.',
+            severity: 'error',
+          });
+          setTimeout(() => navigate('/'), 3000);
+          return;
+        }
+      }
+
       // You'll need to add this API method to get book details by ID
       const bookData = await ApiService.getBookDetails(bookId);
       setBook(bookData);
@@ -63,7 +79,7 @@ const EbookReaderPage = () => {
         severity: 'error',
       });
     }
-  }, [bookId]);
+  }, [bookId, navigate, user]);
 
   const loadNotes = useCallback(async () => {
     if (!bookId || bookId === 'undefined' || bookId === 'null') {

@@ -15,6 +15,9 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { StudentsService } from '../auth/students/students.service';
 import * as bcrypt from 'bcrypt';
 import { MembershipStatus } from 'src/membership/membership.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like } from 'typeorm';
+import { MembershipType } from '../sys-configs/membership-types/entities/membership-type.entity';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +27,8 @@ export class AuthService {
     private httpService: HttpService,
     @Inject(forwardRef(() => StudentsService))
     private studentsService: StudentsService,
+    @InjectRepository(MembershipType)
+    private readonly membershipTypeRepository: Repository<MembershipType>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -151,9 +156,24 @@ export class AuthService {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Determine the appropriate membership type based on the program (degree)
+      // We assume ID 1 is for UG (Undergraduate) and ID 2 is for PG (Postgraduate)
+      let assignedMembershipTypeId = 1;
+      const degreeLower = degree ? degree.toLowerCase() : '';
+      
+      if (
+        degreeLower.includes('master') ||
+        degreeLower.includes('postgraduate') ||
+        degreeLower.includes('pg ') ||
+        degreeLower.includes('-pg') ||
+        degreeLower.includes('msc') ||
+        degreeLower.includes('mba') ||
+        degreeLower.includes('phd')
+      ) {
+        assignedMembershipTypeId = 2;
+      }
+
       // Prepare createMember data
-      // membershipTypeId 1 = 'Student' type (used for all students regardless of active/inactive status)
-      // The membership's status field (Active/Inactive) is controlled separately via membershipStatus
       const createMemberData = {
         firstName: firstName || '',
         lastName: lastName || '',
@@ -163,7 +183,7 @@ export class AuthService {
         phoneNumber: phoneNumber || '',
         degree: degree || '',
         semester: semester || '', // ✅ Semester saved
-        membershipTypeId: 1, // Always 'Student' membership type for student registrations
+        membershipTypeId: assignedMembershipTypeId, // Dynamically assigned based on program
         membershipStatus: membershipStatus, // ✅ Pass Active/Inactive status based on checkMembership result
         roleId: 3, // MEMBER role
         isActive: false, // Account requires email verification

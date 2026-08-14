@@ -36,6 +36,7 @@ import {
   MembershipStatus,
 } from '../membership/membership.service';
 import { MembershipType } from '../sys-configs/membership-types/entities/membership-type.entity';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
@@ -58,6 +59,8 @@ export class UsersService {
     private readonly bookNoteService: BookNoteService,
     @Inject(forwardRef(() => MembershipService))
     private readonly membershipService: MembershipService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
     private readonly emailService: EmailService,
   ) {}
 
@@ -360,17 +363,32 @@ export class UsersService {
     return userWithRole;
   }
 
-  async findAll({
-    page = 1,
-    limit = 10,
-    search,
-  }: PaginationOptions): Promise<PaginatedResponseDto<User>> {
+  async getStats() {
+    const total = await this.userRepository.count({ where: { deletedAt: IsNull() } });
+    const active = await this.userRepository.count({ where: { isActive: true, deletedAt: IsNull() } });
+    const inactive = total - active;
+    
+    return {
+      total,
+      active,
+      inactive,
+    };
+  }
+
+  async findAll(
+    { page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'DESC' }: PaginationOptions,
+    isActive?: boolean
+  ): Promise<PaginatedResponseDto<User>> {
     const skip = (page - 1) * limit;
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.memberships', 'membership')
       .leftJoinAndSelect('membership.type', 'membershipType')
       .where('user.deletedAt IS NULL');
+
+    if (isActive !== undefined) {
+      queryBuilder.andWhere('user.isActive = :isActive', { isActive });
+    }
 
     if (search) {
       queryBuilder.andWhere(
@@ -379,8 +397,18 @@ export class UsersService {
       );
     }
 
+    // Map frontend sorting fields to DB columns
+    const sortFieldMap = {
+      'firstName': 'user.firstName',
+      'joinDate': 'user.joinDate',
+      'rollNumber': 'user.rollNumber',
+      'createdAt': 'user.createdAt',
+    };
+    const dbSortField = sortFieldMap[sortBy] || 'user.createdAt';
+    const dbSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
     const [data, total] = await queryBuilder
-      .orderBy('user.createdAt', 'DESC')
+      .orderBy(dbSortField, dbSortOrder)
       .skip(skip)
       .take(limit)
       .getManyAndCount();
@@ -421,11 +449,49 @@ export class UsersService {
     const hasActiveLoans = userLoans.some(loan => loan.status === LoanStatus.ACTIVE);
     
     if (hasActiveLoans) {
-      throw new BadRequestException('Cannot delete user with active loans');
+      throw new BadRequestException('Cannot delete user with active loans. Please have them return all books first.');
     }
 
-    // Hard delete the user to completely remove them and their data from the database
-    await this.userRepository.remove(user);
+    try {
+      // Send rejection/removal email BEFORE deleting, since we need their email address
+      await this.emailService.sendEmail(
+        user.email,
+        'Library Account Removed',
+        'account-removed',
+        {
+          user: {
+            firstName: user.firstName,
+            lastName: user.lastName,
+          },
+        },
+      );
+    } catch (e) {
+      console.error('Failed to send account removal email', e);
+      // We continue with deletion even if email fails
+    }
+
+    // Hard delete the user and completely remove all related data from the database
+    // We do this using queryBuilder to avoid foreign key constraint errors
+    await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
+      // Delete from tables that reference the user
+      // Assuming these are the entities referencing the user
+      await transactionalEntityManager.query('DELETE FROM book_favorites WHERE userId = ?', [id]);
+      await transactionalEntityManager.query('DELETE FROM book_notes WHERE userId = ?', [id]);
+      await transactionalEntityManager.query('DELETE FROM queue_entries WHERE userId = ?', [id]);
+      await transactionalEntityManager.query('DELETE FROM book_requests WHERE userId = ?', [id]);
+      await transactionalEntityManager.query('DELETE FROM email_verifications WHERE userId = ?', [id]);
+      await transactionalEntityManager.query('DELETE FROM password_reset_tokens WHERE userId = ?', [id]);
+      
+      // Membership requests reference userId implicitly via user? Or has a separate relation
+      await transactionalEntityManager.query('DELETE FROM membership_requests WHERE userId = ?', [id]);
+      
+      // Book loans are soft deleted usually, but if we are doing a hard delete of user:
+      await transactionalEntityManager.query('DELETE FROM book_loans WHERE userId = ?', [id]);
+      
+      // Finally memberships and the user
+      await transactionalEntityManager.query('DELETE FROM memberships WHERE userId = ?', [id]);
+      await transactionalEntityManager.query('DELETE FROM users WHERE id = ?', [id]);
+    });
   }
 
   async activateUser(userId: string): Promise<User> {
@@ -917,6 +983,33 @@ export class UsersService {
     await this.userRepository.update(verification.userId, {
       isActive: true,
     });
+
+    const user = verification.user;
+
+    // Check membership fee status and activate membership if paid
+    if (user.rollNumber) {
+      try {
+        const membershipResult = await this.authService.checkMembership(user.rollNumber);
+        if (membershipResult && membershipResult.result === true) {
+          // Find user's current membership
+          const membershipsResult = await this.membershipService.findAllMemberships(
+            undefined,
+            user.id,
+            { page: 1, limit: 1 },
+          );
+          const currentMembership = membershipsResult.data[0];
+          
+          if (currentMembership && currentMembership.status !== MembershipStatus.ACTIVE) {
+            await this.membershipService.updateMembershipStatus(
+              currentMembership.id,
+              MembershipStatus.ACTIVE
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error checking membership during email verification:', error);
+      }
+    }
 
     return {
       message: 'Email verified successfully. Your account is now active.',
