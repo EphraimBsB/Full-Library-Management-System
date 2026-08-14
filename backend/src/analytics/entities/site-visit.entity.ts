@@ -13,7 +13,7 @@ export class SiteVisit {
   ipAddress: string;
 
   @Index()
-  @Column('text', { nullable: true })
+  @Column({ length: 255, nullable: true })
   pageVisited: string;
 
   @Column('text', { nullable: true })

@@ -123,6 +123,8 @@ export class AuthService {
     }
 
     try {
+
+
       // Check if user already exists
       const existingUser = await this.usersService.findByRollNumber(rollNumber);
       if (existingUser) {
