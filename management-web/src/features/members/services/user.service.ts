@@ -66,6 +66,7 @@ export interface GetUsersParams {
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC' | 'asc' | 'desc';
   isActive?: boolean;
+  isMembershipActive?: boolean;
 }
 
 export const UserService = {
@@ -73,8 +74,8 @@ export const UserService = {
     return apiClient.get<PaginatedResponse<User>>('/users', { params });
   },
 
-  getStats: async (): Promise<{ total: number; active: number; inactive: number }> => {
-    return apiClient.get<{ total: number; active: number; inactive: number }>('/users/stats');
+  getStats: async (): Promise<{ totalAccounts: number; activeAccounts: number; inactiveAccounts: number; activeMemberships: number; inactiveMemberships: number }> => {
+    return apiClient.get('/users/stats');
   },
 
   getUser: async (id: string): Promise<User> => {

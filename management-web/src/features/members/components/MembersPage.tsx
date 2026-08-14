@@ -30,13 +30,15 @@ import { Pagination } from '@mui/material';
 
 export const MembersPage: React.FC = () => {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [accountFilter, setAccountFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [membershipFilter, setMembershipFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'firstName' | 'joinDate' | 'rollNumber'>('firstName');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
 
   const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
-  const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(null);
+  const [accountFilterMenuAnchor, setAccountFilterMenuAnchor] = useState<null | HTMLElement>(null);
+  const [membershipFilterMenuAnchor, setMembershipFilterMenuAnchor] = useState<null | HTMLElement>(null);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -49,14 +51,15 @@ export const MembersPage: React.FC = () => {
   });
 
   const { data: membersResponse, isLoading, error } = useQuery({
-    queryKey: ['members', search, filter, sortBy, sortOrder, page],
+    queryKey: ['members', search, accountFilter, membershipFilter, sortBy, sortOrder, page],
     queryFn: () => UserService.getUsers({ 
       search, 
       page, 
       limit: 12, // Using 12 for better grid rendering
       sortBy, 
       sortOrder, 
-      isActive: filter === 'all' ? undefined : filter === 'active' ? true : false 
+      isActive: accountFilter === 'all' ? undefined : accountFilter === 'active' ? true : false,
+      isMembershipActive: membershipFilter === 'all' ? undefined : membershipFilter === 'active' ? true : false
     }),
   });
 
@@ -103,18 +106,31 @@ export const MembersPage: React.FC = () => {
 
       {/* Stats Cards */}
       {statsResponse && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 4 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr 1fr 1fr' }, gap: 2, mb: 4 }}>
           <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
-            <Typography variant="body2" sx={{ color: '#667085', mb: 1 }}>Total Members</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>{statsResponse.total}</Typography>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1, fontSize: 11 }}>Total Accounts</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>{statsResponse.totalAccounts}</Typography>
+            <Typography variant="caption" sx={{ color: '#98A2B3', display: 'block', mt: 0.5, fontSize: 10 }}>All registered users</Typography>
           </Box>
           <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
-            <Typography variant="body2" sx={{ color: '#667085', mb: 1 }}>Active Members</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: '#12B76A' }}>{statsResponse.active}</Typography>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1, fontSize: 11 }}>Active Accounts</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#12B76A' }}>{statsResponse.activeAccounts}</Typography>
+            <Typography variant="caption" sx={{ color: '#98A2B3', display: 'block', mt: 0.5, fontSize: 10 }}>Verified login access</Typography>
           </Box>
           <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
-            <Typography variant="body2" sx={{ color: '#667085', mb: 1 }}>Inactive Members</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: '#F04438' }}>{statsResponse.inactive}</Typography>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1, fontSize: 11 }}>Inactive Accounts</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#F04438' }}>{statsResponse.inactiveAccounts}</Typography>
+            <Typography variant="caption" sx={{ color: '#98A2B3', display: 'block', mt: 0.5, fontSize: 10 }}>Disabled or unverified</Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1, fontSize: 11 }}>Active Memberships</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#12B76A' }}>{statsResponse.activeMemberships}</Typography>
+            <Typography variant="caption" sx={{ color: '#98A2B3', display: 'block', mt: 0.5, fontSize: 10 }}>Valid library access</Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #EAECF0' }}>
+            <Typography variant="body2" sx={{ color: '#667085', mb: 1, fontSize: 11 }}>Inactive Memberships</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: '#F04438' }}>{statsResponse.inactiveMemberships}</Typography>
+            <Typography variant="caption" sx={{ color: '#98A2B3', display: 'block', mt: 0.5, fontSize: 10 }}>Expired or suspended</Typography>
           </Box>
         </Box>
       )}
@@ -147,7 +163,7 @@ export const MembersPage: React.FC = () => {
         <Button
           variant="outlined"
           startIcon={<FilterList />}
-          onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
+          onClick={(e) => setAccountFilterMenuAnchor(e.currentTarget)}
           sx={{ 
             textTransform: 'none', 
             borderRadius: '8px', 
@@ -158,7 +174,24 @@ export const MembersPage: React.FC = () => {
             fontSize: 12
           }}
         >
-          Filter
+          Account Filter
+        </Button>
+
+        <Button
+          variant="outlined"
+          startIcon={<FilterList />}
+          onClick={(e) => setMembershipFilterMenuAnchor(e.currentTarget)}
+          sx={{ 
+            textTransform: 'none', 
+            borderRadius: '8px', 
+            color: '#344054', 
+            borderColor: '#D0D5DD',
+            backgroundColor: 'white',
+            fontWeight: 600,
+            fontSize: 12
+          }}
+        >
+          Membership Filter
         </Button>
 
         <Button
@@ -193,7 +226,7 @@ export const MembersPage: React.FC = () => {
           <Typography sx={{ color: '#667085', mb: 1 }}>No members found matching your criteria.</Typography>
           <Button 
             variant="text" 
-            onClick={() => { setSearch(''); setFilter('all'); setPage(1); }}
+            onClick={() => { setSearch(''); setAccountFilter('all'); setMembershipFilter('all'); setPage(1); }}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             Clear all filters
@@ -243,24 +276,45 @@ export const MembersPage: React.FC = () => {
         </>
       )}
 
-      {/* Filter Menu */}
+      {/* Account Filter Menu */}
       <Menu
-        anchorEl={filterMenuAnchor}
-        open={Boolean(filterMenuAnchor)}
-        onClose={() => setFilterMenuAnchor(null)}
+        anchorEl={accountFilterMenuAnchor}
+        open={Boolean(accountFilterMenuAnchor)}
+        onClose={() => setAccountFilterMenuAnchor(null)}
         PaperProps={{ sx: { borderRadius: '8px', mt: 1, minWidth: 160 } }}
       >
-        <MenuItem onClick={() => { setFilter('all'); setFilterMenuAnchor(null); setPage(1); }}>
-          <ListItemIcon>{filter === 'all' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText sx={{ fontSize: 12 }}>All Members</ListItemText>
+        <MenuItem onClick={() => { setAccountFilter('all'); setAccountFilterMenuAnchor(null); setPage(1); }}>
+          <ListItemIcon>{accountFilter === 'all' && <Check fontSize="small" />}</ListItemIcon>
+          <ListItemText sx={{ fontSize: 12 }}>All Accounts</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setFilter('active'); setFilterMenuAnchor(null); setPage(1); }}>
-          <ListItemIcon>{filter === 'active' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText sx={{ fontSize: 12 }}>Active Only</ListItemText>
+        <MenuItem onClick={() => { setAccountFilter('active'); setAccountFilterMenuAnchor(null); setPage(1); }}>
+          <ListItemIcon>{accountFilter === 'active' && <Check fontSize="small" />}</ListItemIcon>
+          <ListItemText sx={{ fontSize: 12 }}>Active Accounts Only</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setFilter('inactive'); setFilterMenuAnchor(null); setPage(1); }}>
-          <ListItemIcon>{filter === 'inactive' && <Check fontSize="small" />}</ListItemIcon>
-          <ListItemText sx={{ fontSize: 12 }}>Inactive Only</ListItemText>
+        <MenuItem onClick={() => { setAccountFilter('inactive'); setAccountFilterMenuAnchor(null); setPage(1); }}>
+          <ListItemIcon>{accountFilter === 'inactive' && <Check fontSize="small" />}</ListItemIcon>
+          <ListItemText sx={{ fontSize: 12 }}>Inactive Accounts Only</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Membership Filter Menu */}
+      <Menu
+        anchorEl={membershipFilterMenuAnchor}
+        open={Boolean(membershipFilterMenuAnchor)}
+        onClose={() => setMembershipFilterMenuAnchor(null)}
+        PaperProps={{ sx: { borderRadius: '8px', mt: 1, minWidth: 160 } }}
+      >
+        <MenuItem onClick={() => { setMembershipFilter('all'); setMembershipFilterMenuAnchor(null); setPage(1); }}>
+          <ListItemIcon>{membershipFilter === 'all' && <Check fontSize="small" />}</ListItemIcon>
+          <ListItemText sx={{ fontSize: 12 }}>All Memberships</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { setMembershipFilter('active'); setMembershipFilterMenuAnchor(null); setPage(1); }}>
+          <ListItemIcon>{membershipFilter === 'active' && <Check fontSize="small" />}</ListItemIcon>
+          <ListItemText sx={{ fontSize: 12 }}>Active Memberships Only</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { setMembershipFilter('inactive'); setMembershipFilterMenuAnchor(null); setPage(1); }}>
+          <ListItemIcon>{membershipFilter === 'inactive' && <Check fontSize="small" />}</ListItemIcon>
+          <ListItemText sx={{ fontSize: 12 }}>Inactive Memberships Only</ListItemText>
         </MenuItem>
       </Menu>
 

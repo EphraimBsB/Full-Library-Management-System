@@ -364,20 +364,32 @@ export class UsersService {
   }
 
   async getStats() {
-    const total = await this.userRepository.count({ where: { deletedAt: IsNull() } });
-    const active = await this.userRepository.count({ where: { isActive: true, deletedAt: IsNull() } });
-    const inactive = total - active;
+    const totalAccounts = await this.userRepository.count({ where: { deletedAt: IsNull() } });
+    const activeAccounts = await this.userRepository.count({ where: { isActive: true, deletedAt: IsNull() } });
+    const inactiveAccounts = totalAccounts - activeAccounts;
+
+    const activeMemberships = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoin('user.memberships', 'membership')
+      .where('user.deletedAt IS NULL')
+      .andWhere('membership.status = :status', { status: 'active' })
+      .getCount();
+      
+    const inactiveMemberships = totalAccounts - activeMemberships;
     
     return {
-      total,
-      active,
-      inactive,
+      totalAccounts,
+      activeAccounts,
+      inactiveAccounts,
+      activeMemberships,
+      inactiveMemberships,
     };
   }
 
   async findAll(
     { page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'DESC' }: PaginationOptions,
-    isActive?: boolean
+    isActive?: boolean,
+    isMembershipActive?: boolean
   ): Promise<PaginatedResponseDto<User>> {
     const skip = (page - 1) * limit;
     const queryBuilder = this.userRepository
@@ -388,6 +400,14 @@ export class UsersService {
 
     if (isActive !== undefined) {
       queryBuilder.andWhere('user.isActive = :isActive', { isActive });
+    }
+
+    if (isMembershipActive !== undefined) {
+      if (isMembershipActive) {
+        queryBuilder.andWhere('membership.status = :activeStatus', { activeStatus: 'active' });
+      } else {
+        queryBuilder.andWhere('(membership.id IS NULL OR membership.status != :activeStatus)', { activeStatus: 'active' });
+      }
     }
 
     if (search) {

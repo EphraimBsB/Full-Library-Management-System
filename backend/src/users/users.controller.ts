@@ -86,12 +86,17 @@ export class UsersController {
     @Query('sortBy') sortBy = 'createdAt',
     @Query('sortOrder') sortOrder: 'ASC' | 'DESC' = 'DESC',
     @Query('isActive') isActive?: string,
+    @Query('isMembershipActive') isMembershipActive?: string,
   ) {
     let isActiveBool: boolean | undefined = undefined;
-    if (isActive === 'true') isActiveBool = true;
-    if (isActive === 'false') isActiveBool = false;
+    if (isActive === 'true' || isActive === true as any) isActiveBool = true;
+    if (isActive === 'false' || isActive === false as any) isActiveBool = false;
     
-    return this.usersService.findAll({ page: Number(page), limit: Number(limit), search, sortBy, sortOrder }, isActiveBool);
+    let isMembershipActiveBool: boolean | undefined = undefined;
+    if (isMembershipActive === 'true' || isMembershipActive === true as any) isMembershipActiveBool = true;
+    if (isMembershipActive === 'false' || isMembershipActive === false as any) isMembershipActiveBool = false;
+    
+    return this.usersService.findAll({ page: Number(page), limit: Number(limit), search, sortBy, sortOrder }, isActiveBool, isMembershipActiveBool);
   }
 
   @Get(':id')
